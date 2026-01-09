@@ -14,6 +14,7 @@ void Router::connect(Direction dir, Router* neighbor) {
 }
 
 bool Router::inject_packet(Packet p) {
+    // 檢查本地緩衝區是否已滿 (Check if local buffer is full)
     if (input_buffers[LOCAL].size() < Config::BUFFER_SIZE) {
         input_buffers[LOCAL].push(p);
         return true;
@@ -27,10 +28,10 @@ Direction Router::compute_next_hop(int dst_id) {
     int dst_x = dst_id % Config::MESH_WIDTH;
     int dst_y = dst_id / Config::MESH_WIDTH;
 
-    // XY Routing
+    // XY Routing (XY 路由演算法)
     if (dst_x > x) return EAST;
     if (dst_x < x) return WEST;
-    if (dst_y > y) return SOUTH; // Assuming Y increases downwards, 0 is top
+    if (dst_y > y) return SOUTH; // Assuming Y increases downwards, 0 is top (假設 Y 向下增加，0 在頂部)
     if (dst_y < y) return NORTH;
 
     return LOCAL;
@@ -41,14 +42,8 @@ void Router::step() {
     // Process one packet from each input buffer if possible.
     // In a real hardware cycle, arbitration happens.
     // Here we iterate all ports to approximate behavior.
-
-    // We need a temp storage for packets moving in this cycle to avoid instantaneous propagation
-    // For simplicity in this functional model, we will move directly but be careful about order.
-    // Better approach: Two-phase or simply process and push to neighbor's input.
-    // Since it is a functional C model, exact cycle accuracy isn't the primary goal, but logic correctness is.
-
-    // To avoid processing a packet that just arrived in the SAME cycle, we can't easily do that without double buffering.
-    // But let's keep it simple: Just iterate.
+    // 簡單的模擬步驟：如果可能，從每個輸入緩衝區處理一個封包。
+    // 在真實硬體週期中，會發生仲裁。這裡我們遍歷所有埠來近似此行為。
 
     for (int i = 0; i < NUM_DIRS; ++i) {
         if (!input_buffers[i].empty()) {
@@ -58,25 +53,23 @@ void Router::step() {
 
             bool success = false;
             if (out_dir == LOCAL) {
-                // Eject
+                // Eject (彈出封包)
                 ejected_packets.push_back(p);
                 success = true;
             } else {
-                // Forward
+                // Forward (轉發封包)
                 Router* next_router = neighbors[out_dir];
                 if (next_router) {
                     // Reverse direction for neighbor (North's neighbor is South)
-                    // Wait, we just need to push to the specific port of the neighbor?
-                    // Usually Input buffer is associated with the port.
-                    // If I send East, it enters the West port of the East neighbor.
-
+                    // 計算鄰居的入口方向 (北方的鄰居在南方)
                     Direction neighbor_ingress;
                     if (out_dir == NORTH) neighbor_ingress = SOUTH;
                     else if (out_dir == SOUTH) neighbor_ingress = NORTH;
                     else if (out_dir == EAST) neighbor_ingress = WEST;
                     else if (out_dir == WEST) neighbor_ingress = EAST;
-                    else neighbor_ingress = LOCAL; // Should not happen for forwarding
+                    else neighbor_ingress = LOCAL;
 
+                    // 檢查鄰居緩衝區空間 (Check neighbor buffer space)
                     if (next_router->input_buffers[neighbor_ingress].size() < Config::BUFFER_SIZE) {
                         next_router->input_buffers[neighbor_ingress].push(p);
                         success = true;
