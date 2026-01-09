@@ -1,0 +1,8 @@
+# Ignore C++ build artifacts
+*.o
+*.exe
+noc_c_model/noc_sim
+
+# Ignore Python cache
+__pycache__/
+*.pyc
