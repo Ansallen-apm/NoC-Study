@@ -6,3 +6,7 @@ noc_c_model/noc_sim
 # Ignore Python cache
 __pycache__/
 *.pyc
+
+# Ignore SystemC build
+systemc-2.3.3/
+*.tar.gz
