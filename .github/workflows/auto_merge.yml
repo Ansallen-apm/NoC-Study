@@ -1,0 +1,30 @@
+name: Auto Merge PRs # 自動合併 Pull Requests
+
+# 觸發條件設定 (Triggers)
+on:
+  pull_request:
+    types:
+      - opened           # 當 PR 被建立時
+      - synchronize      # 當 PR 有新 commit 更新時
+      - reopened         # 當 PR 被重新開啟時
+      - ready_for_review # 當 PR 從草稿 (draft) 狀態轉為準備審查 (ready for review) 時
+
+# 權限設定 (Permissions)
+permissions:
+  contents: write       # 允許修改程式碼內容 (為了合併 PR 需要寫入權限)
+  pull-requests: write  # 允許操作與修改 Pull Requests 狀態
+
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest # 在最新的 Ubuntu 環境中執行
+    steps:
+      - name: Checkout repository # 檢索專案的程式碼
+        uses: actions/checkout@v3
+
+      - name: Auto-merge Pull Request # 執行自動合併操作
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }} # 使用內建的 GitHub Token 來進行授權
+        run: |
+          # 嘗試直接合併 (Merge) 當前的 Pull Request。
+          # 如果遇到分支保護規則 (branch protections) 阻擋，則嘗試使用管理者 (admin) 權限來強制合併。
+          gh pr merge ${{ github.event.pull_request.number }} --merge || gh pr merge ${{ github.event.pull_request.number }} --merge --admin
