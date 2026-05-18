@@ -19,14 +19,18 @@ This document tracks immediate and upcoming tasks for the NoC DSE framework proj
 
 ## Cross-Verification Integration (交叉驗證整合)
 
-*   [ ] **Integrate Open Source Simulators**: Introduce mature, standalone open-source NoC models as submodules to serve as verification baselines.
+*   [x] **Integrate Open Source Simulators**: Introduce mature, standalone open-source NoC models as submodules to serve as verification baselines.
         **(整合開源模擬器)**：引入成熟的、獨立的開源 NoC 模型作為 submodules，以作為驗證基準。
         *   *Target 1*: **BookSim** (A widely used, flexible cycle-accurate simulator).
             *(目標 1)*：**BookSim** (一個廣泛使用、高彈性的週期精確模擬器)。
         *   *Target 2*: **Noxim** (A well-known cycle-accurate simulator built on SystemC).
             *(目標 2)*：**Noxim** (一個基於 SystemC 建構的著名週期精確模擬器)。
-    *Note: Add these under a `third_party/` directory via `git submodule add`.*
-    *(註：透過 `git submodule add` 將這些新增到 `third_party/` 目錄下。)*
+        *   *Target 3*: **ProNoC** (An EDA tool that facilitates prototyping of NoC-based multi-core systems).
+            *(目標 3)*：**ProNoC** (一個促進基於 NoC 的多核心系統原型設計的 EDA 工具)。
+        *   *Target 4*: **Constellation** (A Chisel-based NoC generator/simulator).
+            *(目標 4)*：**Constellation** (一個基於 Chisel 的 NoC 生成器/模擬器)。
+    *Note: Added under `third_party/` directory via `git submodule add`.*
+    *(註：已透過 `git submodule add` 將這些新增到 `third_party/` 目錄下。)*
 
 ## Long Term / Phases 3 & 4 (長期任務 / 階段 3 & 4)
 

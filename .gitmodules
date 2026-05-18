@@ -1,0 +1,12 @@
+[submodule "third_party/booksim"]
+	path = third_party/booksim
+	url = https://github.com/booksim/booksim2.git
+[submodule "third_party/noxim"]
+	path = third_party/noxim
+	url = https://github.com/davidepatti/noxim.git
+[submodule "third_party/pronoc"]
+	path = third_party/pronoc
+	url = https://github.com/amonemi/ProNoC.git
+[submodule "third_party/constellation"]
+	path = third_party/constellation
+	url = https://github.com/ucb-bar/constellation.git
