@@ -27,3 +27,4 @@
 *   `noc_c_model/`: 舊版 C++ 功能性模型（將進行重構）。
 *   `noc_tlm_model/`: SystemC 交易層級建模。
 *   `noc_rtl/`: Verilog 實作。
+*   `third_party/`: 包含用於交叉驗證的獨立開源模擬器（目前包含：`booksim`、`noxim`、`pronoc`、`constellation`）。

@@ -47,15 +47,15 @@ This document outlines the phased implementation strategy for building the compr
 **Goal (目標):** Integrate mature open-source simulators to validate our models and provide a robust baseline.
 (整合相對成熟的開源模擬器來驗證我們的模型並提供穩健的基準線。)
 
-*   **Item 3.1: Submodule Integration (Submodule 整合)**
-    *   *Plan (規劃)*: Add prominent standalone simulators like BookSim or Noxim as Git submodules in a `third_party/` directory.
-      (在 `third_party/` 目錄中，將著名的獨立模擬器（如 BookSim 或 Noxim）新增為 Git submodules。)
-*   **Item 3.2: Universal Trace Format Adapter (通用 Trace 格式適配器)**
-    *   *Plan (規劃)*: Create scripts that convert our standard traffic trace files into the specific formats required by the integrated third-party simulators.
-      (建立腳本，將我們標準的流量 trace 檔案轉換為整合的第三方模擬器所需的特定格式。)
-*   **Item 3.3: Automated Comparison Scripts (自動化比較腳本)**
-    *   *Plan (規劃)*: Write wrapper scripts that run a simulation on our C++ model and the third-party models simultaneously, extracting and plotting comparison graphs (e.g., Latency vs. Injected Load).
-      (撰寫封裝腳本，同時在我們的 C++ 模型和第三方模型上執行模擬，提取並繪製比較圖表（例如：延遲 vs. 注入負載）。)
+*   **Item 3.1: Submodule Integration (Submodule 整合)** - **[COMPLETED (已完成)]**
+    *   *Plan (規劃)*: Add prominent standalone simulators (BookSim, Noxim, ProNoC, Constellation) as Git submodules in a `third_party/` directory.
+      (在 `third_party/` 目錄中，將著名的獨立模擬器（BookSim, Noxim, ProNoC, Constellation）新增為 Git submodules。)
+*   **Item 3.2: Universal Configuration & Format Adapter (通用配置與格式適配器)**
+    *   *Plan (規劃)*: Design a unified `NoC_config.yaml` to serve as the master parameter input for all DSE processes. Create parsing scripts that read this YAML and automatically translate the parameters (e.g., topology, routing, packet size) and standard traffic trace files into the distinct, specific input formats required by the four integrated third-party simulators.
+      (設計一個統一的 `NoC_config.yaml` 作為所有 DSE 流程的主參數輸入。建立解析腳本，讀取此 YAML 並自動將參數（如拓撲、路由、封包大小）與標準流量 trace 檔案，轉換為這四個整合的第三方模擬器所需的各別特定輸入格式。)
+*   **Item 3.3: Automated Orchestration & Comparison Scripts (自動化調度與比較腳本)**
+    *   *Plan (規劃)*: Write wrapper scripts that execute these submodules automatically based on the generated configs. Run simulations on our C++ model and the third-party models simultaneously, then extract, parse, and plot comparison graphs (e.g., Latency vs. Injected Load) to establish baselines.
+      (撰寫封裝腳本，根據產生的設定檔自動執行這些子模組。同時在我們的 C++ 模型和第三方模型上執行模擬，然後提取、解析並繪製比較圖表（例如：延遲 vs. 注入負載），以建立基準線。)
 
 ---
 

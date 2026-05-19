@@ -27,3 +27,4 @@ To understand the details of the project, please refer to the following document
 *   `noc_c_model/`: Legacy C++ functional model (Will be refactored).
 *   `noc_tlm_model/`: SystemC Transaction Level Modeling.
 *   `noc_rtl/`: Verilog implementation.
+*   `third_party/`: Contains integrated open-source standalone simulators for cross-verification (Currently includes: `booksim`, `noxim`, `pronoc`, `constellation`).
