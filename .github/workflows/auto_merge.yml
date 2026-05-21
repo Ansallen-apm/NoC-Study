@@ -21,10 +21,11 @@ jobs:
       - name: Checkout repository # 檢索專案的程式碼
         uses: actions/checkout@v3
 
-      - name: Auto-merge Pull Request # 執行自動合併操作
+      - name: Enable Auto-merge for Pull Request # 啟用自動合併功能
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }} # 使用內建的 GitHub Token 來進行授權
         run: |
-          # 嘗試直接合併 (Merge) 當前的 Pull Request。
-          # 如果遇到分支保護規則 (branch protections) 阻擋，則嘗試使用管理者 (admin) 權限來強制合併。
-          gh pr merge ${{ github.event.pull_request.number }} --merge || gh pr merge ${{ github.event.pull_request.number }} --merge --admin
+          # 使用 --auto 參數：這會將 PR 放入自動合併佇列。
+          # 系統會等待所有必備的 Checks (例如 CI 測試) 通過，以及符合分支保護規則後，才會安全地執行合併 (Merge)。
+          # 注意：此功能需要在 Repository Settings 中開啟 "Allow auto-merge"。
+          gh pr merge ${{ github.event.pull_request.number }} --auto --merge
