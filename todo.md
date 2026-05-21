@@ -5,9 +5,9 @@ This document tracks immediate and upcoming tasks for the NoC DSE framework proj
 
 ## High Priority / Phase 1 (高優先級 / 階段 1)
 
-*   [ ] **Create Python Topology Generator**: Write base scripts to construct Mesh and Torus networks as abstract graphs.
+*   [x] **Create Python Topology Generator**: Write base scripts to construct Mesh and Torus networks as abstract graphs.
         **(建立 Python 拓撲產生器)**：撰寫基礎腳本，將 Mesh 和 Torus 網路建構為抽象圖形。
-*   [ ] **Implement Analytical Formulas**: Code the calculations for Bisection Bandwidth and Average Hop Count in Python.
+*   [x] **Implement Analytical Formulas**: Code the calculations for Bisection Bandwidth and Average Hop Count in Python.
         **(實作分析公式)**：在 Python 中撰寫二分頻寬和平均跳數的計算程式。
 
 ## Medium Priority / Phase 2 (中優先級 / 階段 2)
