@@ -11,3 +11,4 @@ __pycache__/
 systemc-2.3.3/
 *.tar.gz
 dse_tools/dse_theory_results.*
+dse_tools/*.png

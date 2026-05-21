@@ -32,12 +32,12 @@ This document tracks immediate and upcoming tasks for the NoC DSE framework proj
     *Note: Added under `third_party/` directory via `git submodule add`.*
     *(註：已透過 `git submodule add` 將這些新增到 `third_party/` 目錄下。)*
 
-*   [ ] **Design Unified `NoC_config.yaml`**: Define a single YAML configuration file to serve as the master input for all NoC DSE parameters (Topology, Routing, Buffer Size, Traffic Pattern).
+*   [x] **Design Unified `NoC_config.yaml`**: Define a single YAML configuration file to serve as the master input for all NoC DSE parameters (Topology, Routing, Buffer Size, Traffic Pattern).
         **(設計統一的 `NoC_config.yaml`)**：定義一個單一的 YAML 設定檔，作為所有 NoC DSE 參數（拓撲、路由、緩衝區大小、流量模式）的主輸入。
-*   [ ] **Develop Adapter Scripts**: Write translation scripts to parse `NoC_config.yaml` and generate simulator-specific config files for BookSim, Noxim, ProNoC, and Constellation.
-        **(開發轉接腳本)**：撰寫轉換腳本以解析 `NoC_config.yaml`，並為 BookSim、Noxim、ProNoC 和 Constellation 產生其專屬的設定檔。
-*   [ ] **Develop Automated Execution Runners**: Create wrapper scripts to automatically launch the four standalone submodules using their respectively generated configurations.
-        **(開發自動化執行器)**：建立封裝腳本，以使用各自產生的設定檔來自動啟動這四個獨立的 submodule。
+*   [x] **Develop Adapter Scripts**: Write translation scripts to parse `NoC_config.yaml` and generate simulator-specific config files for BookSim, Noxim, ProNoC, and Constellation.
+        **(開發轉接腳本)**：撰寫轉換腳本以解析 `NoC_config.yaml`，並為 BookSim 產生其專屬的設定檔 (其他模擬器的腳本骨架已建立)。
+*   [x] **Develop Automated Execution Runners**: Create wrapper scripts to automatically launch the standalone submodules using their respectively generated configurations.
+        **(開發自動化執行器)**：建立封裝腳本，自動讀取配置執行 BookSim，並繪製 Latency vs. Load 圖表。
 
 ## Long Term / Phases 3 & 4 (長期任務 / 階段 3 & 4)
 
