@@ -66,18 +66,19 @@ def generate_html(theory_data, booksim_data, output_filepath):
                 </tr>
     """
 
-    # 篩選出特定資料來顯示以避免表格過長
-    # 我們只看 injection_rate = 0.2 的資料，並選幾個代表性的 nodes (4, 8, 16)
-    target_nodes = [4, 8, 16]
+    # 針對完整 DSE，我們顯示代表性的切面 (Injection Rate = 0.3)
+    # 並列出所有測試過的 node sizes
+    target_nodes = [4, 6, 8, 10, 16]
+    target_rate = 0.3
 
     for node_size in target_nodes:
         key = f"Ring_{node_size}"
         if key in booksim_data:
-            # 為了乾淨的展示，我們固定看 Buffer Size = 8 的表現，來比較 VC=1 和 VC=2
-            for p_size in [2, 8]:
-                for vcs in [1, 2]:
+            # 我們固定看 Buffer Size = 8 的表現，來比較 VC=1, VC=2, VC=4
+            for p_size in [2, 4]:
+                for vcs in [1, 2, 4]:
                     # 尋找匹配的設定
-                    record = next((r for r in booksim_data[key] if r['injection_rate'] == 0.2 and r['buffer_size'] == 8 and r['packet_size'] == p_size and r['num_vcs'] == vcs), None)
+                    record = next((r for r in booksim_data[key] if r['injection_rate'] == target_rate and r['buffer_size'] == 8 and r['packet_size'] == p_size and r['num_vcs'] == vcs), None)
 
                     if record:
                         lat = record['latency']
@@ -126,10 +127,10 @@ def main():
     with open('report_theory_ring.json', 'r', encoding='utf-8') as f:
         theory_data = json.load(f)
 
-    with open('report_booksim_ring.json', 'r', encoding='utf-8') as f:
+    with open('report_full_booksim_ring.json', 'r', encoding='utf-8') as f:
         booksim_data = json.load(f)
 
-    generate_html(theory_data, booksim_data, 'ring_dse_comparison.html')
+    generate_html(theory_data, booksim_data, 'full_ring_dse_comparison.html')
     print("報告產生完畢：ring_dse_comparison.html")
 
 if __name__ == "__main__":

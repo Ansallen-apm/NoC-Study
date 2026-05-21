@@ -96,12 +96,11 @@ def main():
         print(f"錯誤：找不到 BookSim 執行檔 {BOOKSIM_EXEC}")
         return
 
-    widths = [4, 6, 7, 8, 10, 12, 16]
-    packet_sizes = [1, 2, 4, 8]
-    buffer_sizes = [2, 4, 8, 16]
+    # 優化後的代表性參數空間 (共 3 * 2 * 2 * 2 * 2 = 48 種組合)
+    widths = [4, 8, 16]
+    packet_sizes = [1, 4]
+    buffer_sizes = [4, 8]
     num_vcs = [1, 2]
-    # 為了簡化，每個配置只測 2 個具代表性的注入率：
-    # 0.05 測試輕載延遲， 0.2 測試中/重載及死結情況
     injection_rates = [0.05, 0.2]
 
     tasks = []
