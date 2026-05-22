@@ -28,6 +28,26 @@ def generate_mesh_topology(width, height):
 
     return G_int
 
+def generate_ring_topology(nodes):
+    """
+    產生 Ring (1D Torus) 拓撲結構。
+
+    參數:
+        nodes (int): Ring 的總節點數。
+
+    回傳:
+        nx.Graph: 代表 Ring 拓撲的圖形物件。
+    """
+    G = nx.cycle_graph(nodes)
+
+    # 儲存額外的拓撲資訊
+    G.graph['type'] = 'ring'
+    G.graph['width'] = nodes
+    G.graph['height'] = 1
+    G.graph['num_nodes'] = nodes
+
+    return G
+
 def generate_torus_topology(width, height):
     """
     產生 2D Torus 拓撲結構 (邊緣相連的 Mesh)。

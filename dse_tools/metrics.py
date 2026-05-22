@@ -94,9 +94,22 @@ def analyze_channel_load(G, routing_algorithm='xy'):
                     dst_x, dst_y = dst % width, dst // width
                     curr_x, curr_y = src_x, src_y
 
+                    topo_type = G.graph.get('type')
+                    height = G.graph.get('height', 1)
+
                     # 先走 X 方向
                     while curr_x != dst_x:
-                        next_x = curr_x + (1 if dst_x > curr_x else -1)
+                        dist_x = dst_x - curr_x
+                        if topo_type == 'torus' or topo_type == 'ring':
+                            # 判斷是否跨越邊界比較近
+                            if abs(dist_x) > width / 2.0:
+                                step = 1 if dist_x < 0 else -1
+                            else:
+                                step = 1 if dist_x > 0 else -1
+                        else:
+                            step = 1 if dist_x > 0 else -1
+
+                        next_x = (curr_x + step) % width
                         next_node = curr_y * width + next_x
                         path.append((curr, next_node))
                         curr_x = next_x
@@ -104,7 +117,16 @@ def analyze_channel_load(G, routing_algorithm='xy'):
 
                     # 再走 Y 方向
                     while curr_y != dst_y:
-                        next_y = curr_y + (1 if dst_y > curr_y else -1)
+                        dist_y = dst_y - curr_y
+                        if topo_type == 'torus':
+                            if abs(dist_y) > height / 2.0:
+                                step = 1 if dist_y < 0 else -1
+                            else:
+                                step = 1 if dist_y > 0 else -1
+                        else:
+                            step = 1 if dist_y > 0 else -1
+
+                        next_y = (curr_y + step) % height
                         next_node = next_y * width + curr_x
                         path.append((curr, next_node))
                         curr_y = next_y

@@ -1,6 +1,6 @@
 import json
 import yaml
-from topology import generate_mesh_topology, generate_torus_topology
+from topology import generate_mesh_topology, generate_torus_topology, generate_ring_topology
 from metrics import calculate_average_hop_count, calculate_bisection_bandwidth, analyze_channel_load
 
 def analyze_topology(name, graph, channel_bandwidth):
@@ -29,20 +29,44 @@ def analyze_topology(name, graph, channel_bandwidth):
 
 def main():
     """
-    主程式：負責產生拓撲、計算指標，並將結果輸出為 JSON 與 YAML。
+    主程式：解析 NoC_config.yaml，動態產生對應的拓撲、計算指標，並將結果輸出。
     """
     print("啟動 NoC DSE 階段 1：理論指標分析...")
 
-    channel_bandwidth = 32 # 預設通道頻寬 (位元/週期)
+    config_path = "NoC_config.yaml"
+    try:
+        with open(config_path, 'r', encoding='utf-8') as f:
+            config = yaml.safe_load(f)
+    except FileNotFoundError:
+        print(f"錯誤：找不到設定檔 {config_path}")
+        return
+
+    arch = config.get('architecture', {})
+    topo_type = arch.get('topology', 'mesh').lower()
+    width = arch.get('width', 4)
+    height = arch.get('height', 4)
+    # Channel bandwidth typically is packet_size or flit width, here using fixed 32 for demo or scaling by packet
+    channel_bandwidth = 32
+
     results = {}
 
-    # 1. 分析 4x4 Mesh
-    mesh_4x4 = generate_mesh_topology(4, 4)
-    results["Mesh_4x4"] = analyze_topology("Mesh_4x4", mesh_4x4, channel_bandwidth)
+    print(f"從 {config_path} 讀取到拓撲設定: {topo_type} (W:{width}, H:{height})")
 
-    # 2. 分析 4x4 Torus
-    torus_4x4 = generate_torus_topology(4, 4)
-    results["Torus_4x4"] = analyze_topology("Torus_4x4", torus_4x4, channel_bandwidth)
+    # 動態產生對應的拓撲
+    name = f"{topo_type.capitalize()}_{width}x{height}"
+
+    if topo_type == 'mesh':
+        graph = generate_mesh_topology(width, height)
+    elif topo_type == 'torus':
+        graph = generate_torus_topology(width, height)
+    elif topo_type == 'ring':
+        graph = generate_ring_topology(width)
+        name = f"Ring_{width}"
+    else:
+        print(f"不支援的拓撲類型: {topo_type}")
+        return
+
+    results[name] = analyze_topology(name, graph, channel_bandwidth)
 
     # 3. 輸出結果為 JSON 檔案
     json_filename = "report/dse_theory_results.json"
