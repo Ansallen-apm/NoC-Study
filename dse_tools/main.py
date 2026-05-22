@@ -45,13 +45,13 @@ def main():
     results["Torus_4x4"] = analyze_topology("Torus_4x4", torus_4x4, channel_bandwidth)
 
     # 3. 輸出結果為 JSON 檔案
-    json_filename = "dse_theory_results.json"
+    json_filename = "report/dse_theory_results.json"
     with open(json_filename, 'w', encoding='utf-8') as f:
         json.dump(results, f, ensure_ascii=False, indent=4)
     print(f"\n分析完成！結果已儲存為 JSON 檔案：{json_filename}")
 
     # 4. 輸出結果為 YAML 檔案
-    yaml_filename = "dse_theory_results.yaml"
+    yaml_filename = "report/dse_theory_results.yaml"
     with open(yaml_filename, 'w', encoding='utf-8') as f:
         yaml.dump(results, f, allow_unicode=True, default_flow_style=False)
     print(f"分析完成！結果已儲存為 YAML 檔案：{yaml_filename}")

@@ -10,7 +10,12 @@ __pycache__/
 # Ignore SystemC build
 systemc-2.3.3/
 *.tar.gz
-dse_tools/dse_theory_results.*
 dse_tools/*.png
 dse_tools/*.json
 dse_tools/*.html
+
+# EXPLICITLY ALLOW artifacts inside the report directory so they can be committed
+!dse_tools/report/
+!dse_tools/report/*.json
+!dse_tools/report/*.html
+!dse_tools/report/*.png

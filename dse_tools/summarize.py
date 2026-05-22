@@ -1,9 +1,9 @@
 import json
 
 def generate_summary():
-    with open('report_theory_ring.json', 'r', encoding='utf-8') as f:
+    with open('report/report_theory_ring.json', 'r', encoding='utf-8') as f:
         theory = json.load(f)
-    with open('report_booksim_ring.json', 'r', encoding='utf-8') as f:
+    with open('report/report_full_booksim_ring.json', 'r', encoding='utf-8') as f:
         booksim = json.load(f)
 
     summary = "=== Ring Topology DSE (BookSim) 結果總結 ===\n\n"
