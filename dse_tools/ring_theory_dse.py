@@ -54,10 +54,10 @@ def main():
 
     results = analyze_ring_theory(widths)
 
-    with open('report_theory_ring.json', 'w', encoding='utf-8') as f:
+    with open('report/report_theory_ring.json', 'w', encoding='utf-8') as f:
         json.dump(results, f, ensure_ascii=False, indent=4)
 
-    print("理論分析完成，已匯出至 report_theory_ring.json")
+    print("理論分析完成，已匯出至 report/report_theory_ring.json")
 
 if __name__ == "__main__":
     main()

@@ -1,0 +1,392 @@
+{
+    "Ring_4": [
+        {
+            "packet_size": 1,
+            "buffer_size": 4,
+            "num_vcs": 1,
+            "injection_rate": 0.05,
+            "latency": Infinity,
+            "is_deadlock": false
+        },
+        {
+            "packet_size": 1,
+            "buffer_size": 4,
+            "num_vcs": 1,
+            "injection_rate": 0.2,
+            "latency": Infinity,
+            "is_deadlock": false
+        },
+        {
+            "packet_size": 1,
+            "buffer_size": 4,
+            "num_vcs": 2,
+            "injection_rate": 0.05,
+            "latency": 12.798,
+            "is_deadlock": false
+        },
+        {
+            "packet_size": 1,
+            "buffer_size": 8,
+            "num_vcs": 1,
+            "injection_rate": 0.2,
+            "latency": Infinity,
+            "is_deadlock": false
+        },
+        {
+            "packet_size": 1,
+            "buffer_size": 8,
+            "num_vcs": 1,
+            "injection_rate": 0.05,
+            "latency": Infinity,
+            "is_deadlock": false
+        },
+        {
+            "packet_size": 1,
+            "buffer_size": 8,
+            "num_vcs": 2,
+            "injection_rate": 0.05,
+            "latency": 12.798,
+            "is_deadlock": false
+        },
+        {
+            "packet_size": 1,
+            "buffer_size": 4,
+            "num_vcs": 2,
+            "injection_rate": 0.2,
+            "latency": 13.5678,
+            "is_deadlock": false
+        },
+        {
+            "packet_size": 4,
+            "buffer_size": 4,
+            "num_vcs": 1,
+            "injection_rate": 0.05,
+            "latency": Infinity,
+            "is_deadlock": false
+        },
+        {
+            "packet_size": 4,
+            "buffer_size": 4,
+            "num_vcs": 1,
+            "injection_rate": 0.2,
+            "latency": Infinity,
+            "is_deadlock": false
+        },
+        {
+            "packet_size": 1,
+            "buffer_size": 8,
+            "num_vcs": 2,
+            "injection_rate": 0.2,
+            "latency": 13.5653,
+            "is_deadlock": false
+        },
+        {
+            "packet_size": 4,
+            "buffer_size": 8,
+            "num_vcs": 1,
+            "injection_rate": 0.05,
+            "latency": Infinity,
+            "is_deadlock": false
+        },
+        {
+            "packet_size": 4,
+            "buffer_size": 8,
+            "num_vcs": 1,
+            "injection_rate": 0.2,
+            "latency": Infinity,
+            "is_deadlock": false
+        },
+        {
+            "packet_size": 4,
+            "buffer_size": 4,
+            "num_vcs": 2,
+            "injection_rate": 0.05,
+            "latency": 18.8434,
+            "is_deadlock": false
+        },
+        {
+            "packet_size": 4,
+            "buffer_size": 8,
+            "num_vcs": 2,
+            "injection_rate": 0.05,
+            "latency": 17.8636,
+            "is_deadlock": false
+        },
+        {
+            "packet_size": 4,
+            "buffer_size": 4,
+            "num_vcs": 2,
+            "injection_rate": 0.2,
+            "latency": 487.915,
+            "is_deadlock": false
+        },
+        {
+            "packet_size": 4,
+            "buffer_size": 8,
+            "num_vcs": 2,
+            "injection_rate": 0.2,
+            "latency": 235.974,
+            "is_deadlock": false
+        }
+    ],
+    "Ring_8": [
+        {
+            "packet_size": 1,
+            "buffer_size": 4,
+            "num_vcs": 1,
+            "injection_rate": 0.05,
+            "latency": Infinity,
+            "is_deadlock": false
+        },
+        {
+            "packet_size": 1,
+            "buffer_size": 4,
+            "num_vcs": 1,
+            "injection_rate": 0.2,
+            "latency": Infinity,
+            "is_deadlock": false
+        },
+        {
+            "packet_size": 1,
+            "buffer_size": 4,
+            "num_vcs": 2,
+            "injection_rate": 0.05,
+            "latency": 19.3159,
+            "is_deadlock": false
+        },
+        {
+            "packet_size": 1,
+            "buffer_size": 8,
+            "num_vcs": 1,
+            "injection_rate": 0.05,
+            "latency": Infinity,
+            "is_deadlock": false
+        },
+        {
+            "packet_size": 1,
+            "buffer_size": 8,
+            "num_vcs": 1,
+            "injection_rate": 0.2,
+            "latency": Infinity,
+            "is_deadlock": false
+        },
+        {
+            "packet_size": 1,
+            "buffer_size": 8,
+            "num_vcs": 2,
+            "injection_rate": 0.05,
+            "latency": 19.3159,
+            "is_deadlock": false
+        },
+        {
+            "packet_size": 1,
+            "buffer_size": 4,
+            "num_vcs": 2,
+            "injection_rate": 0.2,
+            "latency": 21.1102,
+            "is_deadlock": false
+        },
+        {
+            "packet_size": 4,
+            "buffer_size": 4,
+            "num_vcs": 1,
+            "injection_rate": 0.05,
+            "latency": Infinity,
+            "is_deadlock": false
+        },
+        {
+            "packet_size": 4,
+            "buffer_size": 4,
+            "num_vcs": 1,
+            "injection_rate": 0.2,
+            "latency": Infinity,
+            "is_deadlock": false
+        },
+        {
+            "packet_size": 1,
+            "buffer_size": 8,
+            "num_vcs": 2,
+            "injection_rate": 0.2,
+            "latency": 20.9994,
+            "is_deadlock": false
+        },
+        {
+            "packet_size": 4,
+            "buffer_size": 8,
+            "num_vcs": 1,
+            "injection_rate": 0.05,
+            "latency": Infinity,
+            "is_deadlock": false
+        },
+        {
+            "packet_size": 4,
+            "buffer_size": 4,
+            "num_vcs": 2,
+            "injection_rate": 0.2,
+            "latency": 776.633,
+            "is_deadlock": false
+        },
+        {
+            "packet_size": 4,
+            "buffer_size": 8,
+            "num_vcs": 1,
+            "injection_rate": 0.2,
+            "latency": Infinity,
+            "is_deadlock": false
+        },
+        {
+            "packet_size": 4,
+            "buffer_size": 4,
+            "num_vcs": 2,
+            "injection_rate": 0.05,
+            "latency": 30.2507,
+            "is_deadlock": false
+        },
+        {
+            "packet_size": 4,
+            "buffer_size": 8,
+            "num_vcs": 2,
+            "injection_rate": 0.05,
+            "latency": 24.6214,
+            "is_deadlock": false
+        },
+        {
+            "packet_size": 4,
+            "buffer_size": 8,
+            "num_vcs": 2,
+            "injection_rate": 0.2,
+            "latency": 537.923,
+            "is_deadlock": false
+        }
+    ],
+    "Ring_16": [
+        {
+            "packet_size": 1,
+            "buffer_size": 4,
+            "num_vcs": 1,
+            "injection_rate": 0.05,
+            "latency": Infinity,
+            "is_deadlock": false
+        },
+        {
+            "packet_size": 1,
+            "buffer_size": 4,
+            "num_vcs": 1,
+            "injection_rate": 0.2,
+            "latency": Infinity,
+            "is_deadlock": false
+        },
+        {
+            "packet_size": 1,
+            "buffer_size": 8,
+            "num_vcs": 1,
+            "injection_rate": 0.05,
+            "latency": Infinity,
+            "is_deadlock": false
+        },
+        {
+            "packet_size": 1,
+            "buffer_size": 8,
+            "num_vcs": 1,
+            "injection_rate": 0.2,
+            "latency": Infinity,
+            "is_deadlock": false
+        },
+        {
+            "packet_size": 1,
+            "buffer_size": 4,
+            "num_vcs": 2,
+            "injection_rate": 0.05,
+            "latency": 32.2398,
+            "is_deadlock": false
+        },
+        {
+            "packet_size": 1,
+            "buffer_size": 4,
+            "num_vcs": 2,
+            "injection_rate": 0.2,
+            "latency": 255.549,
+            "is_deadlock": false
+        },
+        {
+            "packet_size": 1,
+            "buffer_size": 8,
+            "num_vcs": 2,
+            "injection_rate": 0.05,
+            "latency": 32.2398,
+            "is_deadlock": false
+        },
+        {
+            "packet_size": 4,
+            "buffer_size": 4,
+            "num_vcs": 1,
+            "injection_rate": 0.05,
+            "latency": Infinity,
+            "is_deadlock": false
+        },
+        {
+            "packet_size": 4,
+            "buffer_size": 4,
+            "num_vcs": 1,
+            "injection_rate": 0.2,
+            "latency": Infinity,
+            "is_deadlock": false
+        },
+        {
+            "packet_size": 1,
+            "buffer_size": 8,
+            "num_vcs": 2,
+            "injection_rate": 0.2,
+            "latency": 219.311,
+            "is_deadlock": false
+        },
+        {
+            "packet_size": 4,
+            "buffer_size": 8,
+            "num_vcs": 1,
+            "injection_rate": 0.05,
+            "latency": Infinity,
+            "is_deadlock": false
+        },
+        {
+            "packet_size": 4,
+            "buffer_size": 8,
+            "num_vcs": 1,
+            "injection_rate": 0.2,
+            "latency": Infinity,
+            "is_deadlock": false
+        },
+        {
+            "packet_size": 4,
+            "buffer_size": 4,
+            "num_vcs": 2,
+            "injection_rate": 0.2,
+            "latency": 338.101,
+            "is_deadlock": false
+        },
+        {
+            "packet_size": 4,
+            "buffer_size": 4,
+            "num_vcs": 2,
+            "injection_rate": 0.05,
+            "latency": 336.445,
+            "is_deadlock": false
+        },
+        {
+            "packet_size": 4,
+            "buffer_size": 8,
+            "num_vcs": 2,
+            "injection_rate": 0.2,
+            "latency": 304.232,
+            "is_deadlock": false
+        },
+        {
+            "packet_size": 4,
+            "buffer_size": 8,
+            "num_vcs": 2,
+            "injection_rate": 0.05,
+            "latency": 47.7139,
+            "is_deadlock": false
+        }
+    ]
+}

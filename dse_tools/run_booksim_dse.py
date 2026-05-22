@@ -85,7 +85,7 @@ def main():
     plt.grid(True)
     plt.legend()
 
-    plot_filename = "booksim_latency_vs_load.png"
+    plot_filename = "report/booksim_latency_vs_load.png"
     plt.savefig(plot_filename)
     print(f"圖表已儲存至 {plot_filename}")
 

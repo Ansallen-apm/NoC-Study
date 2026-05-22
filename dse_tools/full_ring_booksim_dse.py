@@ -5,7 +5,7 @@ import multiprocessing
 import re
 
 BOOKSIM_EXEC = "../third_party/booksim/src/booksim"
-REPORT_FILE = "report_full_booksim_ring.json"
+REPORT_FILE = "report/report_full_booksim_ring.json"
 
 def generate_config_string(width, packet_size, buffer_size, num_vcs, injection_rate):
     return f"""
