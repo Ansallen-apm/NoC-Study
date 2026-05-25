@@ -9,11 +9,11 @@ This document tracks immediate and upcoming tasks for the NoC DSE framework proj
         **(建立 Python 拓撲產生器)**：撰寫基礎腳本，將 Mesh 和 Torus 網路建構為抽象圖形。
 *   [x] **Implement Analytical Formulas**: Code the calculations for Bisection Bandwidth and Average Hop Count in Python.
         **(實作分析公式)**：在 Python 中撰寫二分頻寬和平均跳數的計算程式。
-*   [ ] **Fix Python DSE Topology & Routing Logic**:
+*   [x] **Fix Python DSE Topology & Routing Logic**:
         - Add explicit Ring topology generation in `topology.py`.
         - Fix XY routing wrap-around calculation for Torus in `metrics.py` to ensure accurate hot-spot analysis.
         **(修正 Python DSE 拓撲與路由邏輯)**：在 `topology.py` 中補齊 Ring 拓撲；修正 `metrics.py` 中 Torus 的 XY 路由 wrap-around 計算，以確保熱點分析準確。
-*   [ ] **Update DSE Main Script Integration**: Make `main.py` parse and utilize `NoC_config.yaml` instead of hardcoding a 4x4 configuration.
+*   [x] **Update DSE Main Script Integration**: Make `main.py` parse and utilize `NoC_config.yaml` instead of hardcoding a 4x4 configuration.
         **(更新 DSE 主程式整合)**：讓 `main.py` 讀取並使用 `NoC_config.yaml`，取代寫死的 4x4 配置。
 
 ## Medium Priority / Phase 2 (中優先級 / 階段 2)

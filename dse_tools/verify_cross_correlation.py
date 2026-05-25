@@ -1,0 +1,235 @@
+import yaml
+import os
+import subprocess
+import multiprocessing
+import re
+import json
+import numpy as np
+import matplotlib.pyplot as plt
+
+from topology import generate_mesh_topology, generate_torus_topology, generate_ring_topology
+from metrics import calculate_average_hop_count, analyze_channel_load, calculate_channel_count, calculate_bisection_bandwidth
+
+BOOKSIM_EXEC = "../third_party/booksim/src/booksim"
+
+def get_theoretical_metrics(topo_type, dim):
+    """取得 Python 計算的理論指標"""
+    if topo_type == 'mesh':
+        graph = generate_mesh_topology(dim, dim)
+    elif topo_type == 'torus':
+        graph = generate_torus_topology(dim, dim)
+    elif topo_type == 'ring':
+        graph = generate_ring_topology(dim)
+    else:
+        return None, None, None, None, None
+
+    channel_count = calculate_channel_count(graph)
+    bisection_bw = calculate_bisection_bandwidth(graph, channel_bandwidth_bits=32)
+    avg_hops = calculate_average_hop_count(graph)
+
+    # 預設 xy/dim_order
+    load_analysis = analyze_channel_load(graph, routing_algorithm='xy')
+    max_load = load_analysis['max_load']
+
+    # 對於單向計數的最大負載，理論極限的推演：
+    # 如果最擁擠的通道平均每個週期要承載 max_load 個封包，
+    # 則節點的注入率上限為 1.0 / max_load (假設單位為 1 flit)
+    theo_max_rate = 1.0 / max_load if max_load > 0 else 1.0
+
+    return channel_count, bisection_bw, max_load, avg_hops, theo_max_rate
+
+def generate_bs_config(topo_type, dim, vcs, p_size, b_size, rate):
+    """產生單次 BookSim 設定字串"""
+    # 根據不同拓撲設定參數
+    if topo_type == 'mesh':
+        topo_str = f"topology = mesh;\nk = {dim};\nn = 2;"
+    elif topo_type == 'torus':
+        topo_str = f"topology = torus;\nk = {dim};\nn = 2;"
+    elif topo_type == 'ring':
+        topo_str = f"topology = torus;\nk = {dim};\nn = 1;"
+    else:
+        topo_str = ""
+
+    return f"""
+{topo_str}
+routing_function = dim_order;
+num_vcs = {vcs};
+vc_buf_size = {b_size};
+traffic = uniform;
+injection_rate = {rate};
+packet_size = {p_size};
+sim_type = latency;
+warmup_periods = 3;
+max_samples = 5;
+sample_period = 500;
+vc_allocator = islip;
+sw_allocator = islip;
+alloc_iters = 1;
+credit_delay = 1;
+routing_delay = 1;
+"""
+
+def run_booksim_single(config_str, filename):
+    with open(filename, 'w') as f:
+        f.write(config_str)
+
+    latency = float('inf')
+    try:
+        result = subprocess.run([BOOKSIM_EXEC, filename], capture_output=True, text=True, check=False)
+        for line in result.stdout.split('\n'):
+            match = re.search(r'Packet latency average = ([\d\.]+)', line)
+            if match:
+                latency = float(match.group(1))
+
+        # Check for saturation/deadlock
+        if "DEADLOCK" in result.stdout or "Error" in result.stderr:
+            latency = float('inf')
+
+    except Exception as e:
+        latency = float('inf')
+    finally:
+        if os.path.exists(filename):
+            os.remove(filename)
+
+    return latency
+
+def run_task(task):
+    """在子行程執行的單一驗證任務"""
+    task_id, topo_type, dim, vcs, p_size, b_size = task
+
+    # 1. 計算理論值
+    channel_count, bisection_bw, max_load, avg_hops, theo_max_rate = get_theoretical_metrics(topo_type, dim)
+
+    # 2. 測量 Zero-load Latency (rate = 0.01)
+    cfg_zero = generate_bs_config(topo_type, dim, vcs, p_size, b_size, 0.01)
+    zero_lat = run_booksim_single(cfg_zero, f"temp_zero_{task_id}.txt")
+
+    # 3. 用 Binary Search 尋找實際飽和點 (Saturation Rate)
+    # 定義飽和：Latency 大於基準的 3 倍，或無限大
+    low = 0.01
+    high = 1.0
+    actual_sat_rate = 0.0
+
+    for _ in range(7): # 7 iterations gives roughly ~0.01 precision
+        mid = (low + high) / 2.0
+        cfg_mid = generate_bs_config(topo_type, dim, vcs, p_size, b_size, mid)
+        lat = run_booksim_single(cfg_mid, f"temp_sat_{task_id}.txt")
+
+        if lat == float('inf') or lat > (zero_lat * 5): # 飆升視為飽和
+            high = mid
+        else:
+            actual_sat_rate = mid # 紀錄最後一個未飽和的點
+            low = mid
+
+    return {
+        "topology": topo_type,
+        "dim": dim,
+        "theory_channel_count": channel_count,
+        "theory_bisection_bw": bisection_bw,
+        "theory_max_load": max_load,
+        "theory_avg_hops": avg_hops,
+        "booksim_zero_load_lat": zero_lat,
+        "theory_max_rate": theo_max_rate,
+        "booksim_actual_sat_rate": actual_sat_rate
+    }
+
+def main():
+    print("啟動 BookSim vs Python 理論 交叉驗證與相關性分析...")
+
+    if not os.path.exists(BOOKSIM_EXEC):
+        print(f"錯誤：找不到 BookSim 執行檔 {BOOKSIM_EXEC}")
+        return
+
+    # 讀取 Sweep Config
+    with open('verification_sweep.yaml', 'r') as f:
+        sweep_cfg = yaml.safe_load(f)
+
+    common = sweep_cfg.get('common', {})
+    p_size = common.get('packet_size', 1)
+    b_size = common.get('buffer_size', 8)
+
+    tasks = []
+    task_id = 0
+    for group in sweep_cfg.get('sweep', []):
+        topo = group['topology']
+        vcs = group['vcs']
+        for dim in group['dimensions']:
+            tasks.append((task_id, topo, dim, vcs, p_size, b_size))
+            task_id += 1
+
+    print(f"產生了 {len(tasks)} 組拓撲設定，開始平行驗證...")
+
+    results = []
+    num_cores = max(1, multiprocessing.cpu_count())
+    with multiprocessing.Pool(processes=num_cores) as pool:
+        for i, res in enumerate(pool.imap_unordered(run_task, tasks)):
+            results.append(res)
+            print(f"進度: {i+1}/{len(tasks)} 完成.")
+
+    # 儲存 JSON
+    os.makedirs('report', exist_ok=True)
+    with open('report/verification_results.json', 'w') as f:
+        json.dump(results, f, indent=4)
+
+    # 數據分析與畫圖 (Correlation)
+    calc_and_plot(results)
+
+def calc_and_plot(results):
+    theory_hops = []
+    bs_zlat = []
+    theory_rate = []
+    bs_sat = []
+
+    for r in results:
+        # 過濾掉失敗的點
+        if r['booksim_zero_load_lat'] != float('inf') and r['theory_avg_hops'] is not None:
+            theory_hops.append(r['theory_avg_hops'])
+            bs_zlat.append(r['booksim_zero_load_lat'])
+            theory_rate.append(r['theory_max_rate'])
+            bs_sat.append(r['booksim_actual_sat_rate'])
+
+    # 1. 繪製 Zero-Load Correlation
+    plt.figure(figsize=(8, 6))
+    plt.scatter(theory_hops, bs_zlat, color='blue', s=100, alpha=0.7)
+
+    # 計算相關係數 (Pearson)
+    if len(theory_hops) > 1:
+        corr_hops = np.corrcoef(theory_hops, bs_zlat)[0, 1]
+    else:
+        corr_hops = 0.0
+
+    # Fit line
+    m, b = np.polyfit(theory_hops, bs_zlat, 1)
+    plt.plot(np.array(theory_hops), m*np.array(theory_hops) + b, color='red', linestyle='--')
+
+    plt.title(f'Zero-load Latency vs. Theory Avg Hops\nCorrelation: {corr_hops:.4f}')
+    plt.xlabel('Python Theory Average Hops')
+    plt.ylabel('BookSim Zero-Load Latency (cycles)')
+    plt.grid(True)
+    plt.savefig('report/zero_load_correlation.png')
+
+    # 2. 繪製 Saturation Correlation
+    plt.figure(figsize=(8, 6))
+    plt.scatter(theory_rate, bs_sat, color='green', s=100, alpha=0.7)
+
+    if len(theory_rate) > 1:
+        corr_rate = np.corrcoef(theory_rate, bs_sat)[0, 1]
+    else:
+        corr_rate = 0.0
+
+    m2, b2 = np.polyfit(theory_rate, bs_sat, 1)
+    plt.plot(np.array(theory_rate), m2*np.array(theory_rate) + b2, color='red', linestyle='--')
+
+    plt.title(f'BookSim Saturation vs. Theory Max Injection Rate\nCorrelation: {corr_rate:.4f}')
+    plt.xlabel('Python Theory Max Injection Rate (proxy)')
+    plt.ylabel('BookSim Actual Saturation Rate')
+    plt.grid(True)
+    plt.savefig('report/saturation_correlation.png')
+
+    print("\n=== 交叉驗證總結 ===")
+    print(f"Zero-Load 延遲相關係數 (Hops vs Latency) = {corr_hops:.4f} (預期接近 1.0)")
+    print(f"網路飽和度相關係數 (Theory Max vs Actual Sat) = {corr_rate:.4f} (預期接近 1.0)")
+    print("圖表已匯出至 report/ 目錄下。")
+
+if __name__ == "__main__":
+    main()
