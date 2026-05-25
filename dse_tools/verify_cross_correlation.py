@@ -8,7 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from topology import generate_mesh_topology, generate_torus_topology, generate_ring_topology
-from metrics import calculate_average_hop_count, analyze_channel_load
+from metrics import calculate_average_hop_count, analyze_channel_load, calculate_channel_count, calculate_bisection_bandwidth
 
 BOOKSIM_EXEC = "../third_party/booksim/src/booksim"
 
@@ -21,9 +21,12 @@ def get_theoretical_metrics(topo_type, dim):
     elif topo_type == 'ring':
         graph = generate_ring_topology(dim)
     else:
-        return None, None
+        return None, None, None, None, None
 
+    channel_count = calculate_channel_count(graph)
+    bisection_bw = calculate_bisection_bandwidth(graph, channel_bandwidth_bits=32)
     avg_hops = calculate_average_hop_count(graph)
+
     # 預設 xy/dim_order
     load_analysis = analyze_channel_load(graph, routing_algorithm='xy')
     max_load = load_analysis['max_load']
@@ -33,8 +36,7 @@ def get_theoretical_metrics(topo_type, dim):
     # 則節點的注入率上限為 1.0 / max_load (假設單位為 1 flit)
     theo_max_rate = 1.0 / max_load if max_load > 0 else 1.0
 
-    # 為了補償演算法計數方式(有向/無向雙倍)的縮放，這只是一個線性比例值
-    return avg_hops, theo_max_rate
+    return channel_count, bisection_bw, max_load, avg_hops, theo_max_rate
 
 def generate_bs_config(topo_type, dim, vcs, p_size, b_size, rate):
     """產生單次 BookSim 設定字串"""
@@ -96,7 +98,7 @@ def run_task(task):
     task_id, topo_type, dim, vcs, p_size, b_size = task
 
     # 1. 計算理論值
-    avg_hops, theo_max_rate = get_theoretical_metrics(topo_type, dim)
+    channel_count, bisection_bw, max_load, avg_hops, theo_max_rate = get_theoretical_metrics(topo_type, dim)
 
     # 2. 測量 Zero-load Latency (rate = 0.01)
     cfg_zero = generate_bs_config(topo_type, dim, vcs, p_size, b_size, 0.01)
@@ -122,6 +124,9 @@ def run_task(task):
     return {
         "topology": topo_type,
         "dim": dim,
+        "theory_channel_count": channel_count,
+        "theory_bisection_bw": bisection_bw,
+        "theory_max_load": max_load,
         "theory_avg_hops": avg_hops,
         "booksim_zero_load_lat": zero_lat,
         "theory_max_rate": theo_max_rate,

@@ -1,5 +1,17 @@
 import networkx as nx
 
+def calculate_channel_count(G):
+    """
+    計算網路中的實體連線數量 (即圖形的無向邊總數)。
+
+    參數:
+        G (nx.Graph): 代表網路拓撲的 NetworkX 圖形物件。
+
+    回傳:
+        int: 實體連線數 (Channels)。
+    """
+    return G.number_of_edges()
+
 def calculate_average_hop_count(G):
     """
     計算在均勻隨機 (Uniform Random) 流量模式下，整個網路的平均跳數 (Average Hop Count)。
