@@ -70,6 +70,10 @@ def calculate_bisection_bandwidth(G, channel_bandwidth_bits=32):
         min_dim = min(width, height)
         return 4 * min_dim * channel_bandwidth_bits
 
+    elif topo_type == 'ring':
+        # 雙向 Ring 切割必定切斷兩條雙向連線 (共 4 個單向通道)
+        return 4 * channel_bandwidth_bits
+
     else:
         # 如果是未知的拓撲，使用 networkx 的 nx.minimum_edge_cut 的近似方法
         # (這裡只取任意兩點間的最小割集，並非嚴格的二等分，僅供參考)

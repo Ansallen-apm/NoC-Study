@@ -2,166 +2,196 @@
     {
         "topology": "mesh",
         "dim": 2,
+        "nodes": 4,
         "theory_channel_count": 4,
         "theory_bisection_bw": 128,
         "theory_max_load": 4,
         "theory_avg_hops": 1.3333333333333333,
         "booksim_zero_load_lat": 11.9574,
         "theory_max_rate": 0.25,
-        "booksim_actual_sat_rate": 0.311640625
+        "booksim_actual_sat_rate": 0.311640625,
+        "booksim_total_throughput": 1.2465625
     },
     {
         "topology": "mesh",
         "dim": 3,
+        "nodes": 9,
         "theory_channel_count": 12,
         "theory_bisection_bw": 192,
         "theory_max_load": 12,
         "theory_avg_hops": 2.0,
         "booksim_zero_load_lat": 17.2941,
         "theory_max_rate": 0.08333333333333333,
-        "booksim_actual_sat_rate": 0.311640625
+        "booksim_actual_sat_rate": 0.311640625,
+        "booksim_total_throughput": 2.804765625
     },
     {
         "topology": "torus",
         "dim": 2,
+        "nodes": 4,
         "theory_channel_count": 4,
         "theory_bisection_bw": 256,
         "theory_max_load": 4,
         "theory_avg_hops": 1.3333333333333333,
         "booksim_zero_load_lat": 12.766,
         "theory_max_rate": 0.25,
-        "booksim_actual_sat_rate": 0.621015625
+        "booksim_actual_sat_rate": 0.621015625,
+        "booksim_total_throughput": 2.4840625
     },
     {
         "topology": "mesh",
         "dim": 4,
+        "nodes": 16,
         "theory_channel_count": 24,
         "theory_bisection_bw": 256,
         "theory_max_load": 32,
         "theory_avg_hops": 2.6666666666666665,
         "booksim_zero_load_lat": 19.1613,
         "theory_max_rate": 0.03125,
-        "booksim_actual_sat_rate": 0.280703125
+        "booksim_actual_sat_rate": 0.280703125,
+        "booksim_total_throughput": 4.49125
     },
     {
         "topology": "mesh",
         "dim": 5,
+        "nodes": 25,
         "theory_channel_count": 40,
         "theory_bisection_bw": 320,
         "theory_max_load": 60,
         "theory_avg_hops": 3.3333333333333335,
         "booksim_zero_load_lat": 23.2521,
         "theory_max_rate": 0.016666666666666666,
-        "booksim_actual_sat_rate": 0.2265625
+        "booksim_actual_sat_rate": 0.2265625,
+        "booksim_total_throughput": 5.6640625
     },
     {
         "topology": "torus",
         "dim": 3,
+        "nodes": 9,
         "theory_channel_count": 18,
         "theory_bisection_bw": 384,
         "theory_max_load": 6,
         "theory_avg_hops": 1.5,
         "booksim_zero_load_lat": 15.8382,
         "theory_max_rate": 0.16666666666666666,
-        "booksim_actual_sat_rate": 0.61328125
+        "booksim_actual_sat_rate": 0.61328125,
+        "booksim_total_throughput": 5.51953125
     },
     {
         "topology": "mesh",
         "dim": 6,
+        "nodes": 36,
         "theory_channel_count": 60,
         "theory_bisection_bw": 384,
         "theory_max_load": 108,
         "theory_avg_hops": 4.0,
         "booksim_zero_load_lat": 26.6006,
         "theory_max_rate": 0.009259259259259259,
-        "booksim_actual_sat_rate": 0.195625
+        "booksim_actual_sat_rate": 0.195625,
+        "booksim_total_throughput": 7.0424999999999995
     },
     {
         "topology": "torus",
         "dim": 4,
+        "nodes": 16,
         "theory_channel_count": 32,
         "theory_bisection_bw": 512,
         "theory_max_load": 24,
         "theory_avg_hops": 2.1333333333333333,
         "booksim_zero_load_lat": 18.7097,
         "theory_max_rate": 0.041666666666666664,
-        "booksim_actual_sat_rate": 0.5359375
+        "booksim_actual_sat_rate": 0.5359375,
+        "booksim_total_throughput": 8.575
     },
     {
         "topology": "ring",
         "dim": 4,
+        "nodes": 4,
         "theory_channel_count": 4,
-        "theory_bisection_bw": 0,
+        "theory_bisection_bw": 128,
         "theory_max_load": 5,
         "theory_avg_hops": 1.3333333333333333,
         "booksim_zero_load_lat": 12.4894,
         "theory_max_rate": 0.2,
-        "booksim_actual_sat_rate": 0.574609375
+        "booksim_actual_sat_rate": 0.574609375,
+        "booksim_total_throughput": 2.2984375
     },
     {
         "topology": "ring",
         "dim": 8,
+        "nodes": 8,
         "theory_channel_count": 8,
-        "theory_bisection_bw": 0,
+        "theory_bisection_bw": 128,
         "theory_max_load": 17,
         "theory_avg_hops": 2.2857142857142856,
         "booksim_zero_load_lat": 19.7903,
         "theory_max_rate": 0.058823529411764705,
-        "booksim_actual_sat_rate": 0.2884375
+        "booksim_actual_sat_rate": 0.2884375,
+        "booksim_total_throughput": 2.3075
     },
     {
         "topology": "ring",
         "dim": 12,
+        "nodes": 12,
         "theory_channel_count": 12,
-        "theory_bisection_bw": 0,
+        "theory_bisection_bw": 128,
         "theory_max_load": 37,
         "theory_avg_hops": 3.272727272727273,
         "booksim_zero_load_lat": 25.5726,
         "theory_max_rate": 0.02702702702702703,
-        "booksim_actual_sat_rate": 0.195625
+        "booksim_actual_sat_rate": 0.195625,
+        "booksim_total_throughput": 2.3475
     },
     {
         "topology": "torus",
         "dim": 5,
+        "nodes": 25,
         "theory_channel_count": 50,
         "theory_bisection_bw": 640,
         "theory_max_load": 30,
         "theory_avg_hops": 2.5,
         "booksim_zero_load_lat": 21.7149,
         "theory_max_rate": 0.03333333333333333,
-        "booksim_actual_sat_rate": 0.435390625
+        "booksim_actual_sat_rate": 0.435390625,
+        "booksim_total_throughput": 10.884765625
     },
     {
         "topology": "ring",
         "dim": 16,
+        "nodes": 16,
         "theory_channel_count": 16,
-        "theory_bisection_bw": 0,
+        "theory_bisection_bw": 128,
         "theory_max_load": 65,
         "theory_avg_hops": 4.266666666666667,
         "booksim_zero_load_lat": 32.3613,
         "theory_max_rate": 0.015384615384615385,
-        "booksim_actual_sat_rate": 0.172421875
+        "booksim_actual_sat_rate": 0.172421875,
+        "booksim_total_throughput": 2.75875
     },
     {
         "topology": "ring",
         "dim": 24,
+        "nodes": 24,
         "theory_channel_count": 24,
-        "theory_bisection_bw": 0,
+        "theory_bisection_bw": 128,
         "theory_max_load": 145,
         "theory_avg_hops": 6.260869565217392,
         "booksim_zero_load_lat": 43.4573,
         "theory_max_rate": 0.006896551724137931,
-        "booksim_actual_sat_rate": 0.13375
+        "booksim_actual_sat_rate": 0.13375,
+        "booksim_total_throughput": 3.21
     },
     {
         "topology": "torus",
         "dim": 6,
+        "nodes": 36,
         "theory_channel_count": 72,
         "theory_bisection_bw": 768,
         "theory_max_load": 72,
         "theory_avg_hops": 3.085714285714286,
         "booksim_zero_load_lat": 25.5823,
         "theory_max_rate": 0.013888888888888888,
-        "booksim_actual_sat_rate": 0.36578124999999995
+        "booksim_actual_sat_rate": 0.36578124999999995,
+        "booksim_total_throughput": 13.168124999999998
     }
 ]
