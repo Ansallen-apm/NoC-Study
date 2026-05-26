@@ -1,38 +1,60 @@
 import json
+import os
 
 def generate_interactive_html():
-    with open('report/verification_results.json', 'r', encoding='utf-8') as f:
-        results = json.load(f)
+    unified_data = []
 
-    # 準備給 Chart.js 的資料集
-    chart_data = {
-        "mesh": [],
-        "torus": [],
-        "ring": []
-    }
+    # 1. 讀取 verification_results.json (主要是 Mesh/Torus/Ring 固定參數的掃描)
+    if os.path.exists('report/verification_results.json'):
+        with open('report/verification_results.json', 'r', encoding='utf-8') as f:
+            v_results = json.load(f)
+            for r in v_results:
+                # 這裡的預設參數對應 verify_cross_correlation.py 的設定
+                vcs = 1 if r['topology'] == 'mesh' else 2
+                record = {
+                    "topology": r['topology'],
+                    "dim": r['dim'],
+                    "nodes": r['nodes'],
+                    "packet_size": 1,
+                    "buffer_size": 8,
+                    "vcs": vcs,
+                    "curve": [ {"x": pt['rate'], "y": pt['latency']} for pt in r.get('latency_curve', []) if pt['latency'] != float('inf') ]
+                }
+                if record["curve"]:
+                    unified_data.append(record)
 
-    for r in results:
-        topo = r['topology']
-        dim = r['dim']
-        nodes = r['nodes']
-        label = f"{topo.capitalize()} (Dim: {dim}, Nodes: {nodes})"
+    # 2. 讀取 report_full_booksim_ring.json (Ring 拓撲的龐大參數矩陣掃描)
+    if os.path.exists('report/report_full_booksim_ring.json'):
+        with open('report/report_full_booksim_ring.json', 'r', encoding='utf-8') as f:
+            r_results = json.load(f)
+            for key, runs in r_results.items():
+                dim = int(key.split('_')[1])
+                # 因為這份資料是離散點，我們需要把它依照相同的 (p, b, v) 組合聚集成曲線
+                grouped_runs = {}
+                for run in runs:
+                    if run['latency'] == float('inf'):
+                        continue
+                    group_key = (run['packet_size'], run['buffer_size'], run['num_vcs'])
+                    if group_key not in grouped_runs:
+                        grouped_runs[group_key] = []
+                    grouped_runs[group_key].append({"x": run['injection_rate'], "y": run['latency']})
 
-        curve = r.get('latency_curve', [])
-
-        # 過濾 inf，並將資料轉為 {x: rate, y: latency} 格式
-        data_points = []
-        for point in curve:
-            if point['latency'] != float('inf'):
-                data_points.append({"x": point['rate'], "y": point['latency']})
-
-        if data_points:
-            chart_data[topo].append({
-                "label": label,
-                "data": data_points
-            })
+                for (p, b, v), points in grouped_runs.items():
+                    # 排序點位，確保畫線正確
+                    points.sort(key=lambda pt: pt['x'])
+                    record = {
+                        "topology": "ring",
+                        "dim": dim,
+                        "nodes": dim, # 對 Ring 來說 dim 即為 nodes
+                        "packet_size": p,
+                        "buffer_size": b,
+                        "vcs": v,
+                        "curve": points
+                    }
+                    unified_data.append(record)
 
     # 將 Python dict 轉為 JSON string 嵌入 HTML
-    chart_data_json = json.dumps(chart_data)
+    chart_data_json = json.dumps(unified_data)
 
     html_content = f"""
     <!DOCTYPE html>
@@ -56,12 +78,58 @@ def generate_interactive_html():
         <h1>互動式 NoC DSE 效能趨勢 (Latency vs. Load)</h1>
 
         <div class="controls">
-            <label for="topoSelect"><strong>選擇拓撲 (Select Topology): </strong></label>
-            <select id="topoSelect" onchange="updateChart()">
-                <option value="mesh">Mesh (網格)</option>
-                <option value="torus">Torus (環面網格)</option>
-                <option value="ring">Ring (環狀)</option>
-            </select>
+            <fieldset style="border: 1px solid #ddd; padding: 15px; border-radius: 5px; text-align: left; display: inline-block;">
+                <legend><strong>過濾器 (Filters)</strong></legend>
+
+                <label>拓撲 (Topology): </label>
+                <select id="topoSelect" onchange="updateChart()">
+                    <option value="mesh">Mesh</option>
+                    <option value="torus">Torus</option>
+                    <option value="ring" selected>Ring</option>
+                </select>
+                &nbsp;&nbsp;
+
+                <label>封包長度 (Packet Size): </label>
+                <select id="pSelect" onchange="updateChart()">
+                    <option value="all">全部 (All)</option>
+                    <option value="1" selected>1 flit</option>
+                    <option value="2">2 flits</option>
+                    <option value="4">4 flits</option>
+                    <option value="8">8 flits</option>
+                </select>
+                &nbsp;&nbsp;
+
+                <label>緩衝區 (Buffer Size): </label>
+                <select id="bSelect" onchange="updateChart()">
+                    <option value="all">全部 (All)</option>
+                    <option value="2">2 flits</option>
+                    <option value="4">4 flits</option>
+                    <option value="8" selected>8 flits</option>
+                    <option value="16">16 flits</option>
+                </select>
+                &nbsp;&nbsp;
+
+                <label>虛擬通道 (VCs): </label>
+                <select id="vSelect" onchange="updateChart()">
+                    <option value="all">全部 (All)</option>
+                    <option value="1">1 VC</option>
+                    <option value="2" selected>2 VCs</option>
+                    <option value="4">4 VCs</option>
+                </select>
+            </fieldset>
+
+            <br><br>
+
+            <fieldset style="border: 1px solid #3cb44b; padding: 15px; border-radius: 5px; text-align: left; display: inline-block;">
+                <legend><strong>比較維度 (Compare By)</strong></legend>
+                <label>將以下維度展開為不同的曲線: </label>
+                <select id="compareSelect" onchange="updateChart()">
+                    <option value="dim" selected>節點數量 (Dimension/Nodes)</option>
+                    <option value="packet_size">封包長度 (Packet Size)</option>
+                    <option value="buffer_size">緩衝區大小 (Buffer Size)</option>
+                    <option value="vcs">虛擬通道數 (VCs)</option>
+                </select>
+            </fieldset>
         </div>
 
         <div class="chart-container">
@@ -82,23 +150,65 @@ def generate_interactive_html():
         let myChart = null;
 
         function updateChart() {{
-            const selectedTopo = document.getElementById('topoSelect').value;
-            const datasets = allData[selectedTopo];
+            const topo = document.getElementById('topoSelect').value;
+            const pSize = document.getElementById('pSelect').value;
+            const bSize = document.getElementById('bSelect').value;
+            const vcs = document.getElementById('vSelect').value;
+            const compareBy = document.getElementById('compareSelect').value;
 
-            // 替每個 dataset 上色
-            datasets.forEach((ds, index) => {{
-                ds.borderColor = colors[index % colors.length];
-                ds.backgroundColor = colors[index % colors.length];
-                ds.fill = false;
-                ds.tension = 0.1;
-                ds.pointRadius = 5;
-                ds.pointHoverRadius = 8;
+            // 1. 過濾資料
+            let filteredData = allData.filter(d => d.topology === topo);
+
+            if (compareBy !== 'packet_size' && pSize !== 'all') {{
+                filteredData = filteredData.filter(d => d.packet_size == parseInt(pSize));
+            }}
+            if (compareBy !== 'buffer_size' && bSize !== 'all') {{
+                filteredData = filteredData.filter(d => d.buffer_size == parseInt(bSize));
+            }}
+            if (compareBy !== 'vcs' && vcs !== 'all') {{
+                filteredData = filteredData.filter(d => d.vcs == parseInt(vcs));
+            }}
+            // 對於 dim，我們預設如果是 compareBy == dim 就全抓，
+            // 若不是 compareBy == dim，我們應該只抓一個代表性的 dim 避免畫面太亂，
+            // 為了簡單起見，如果 compare_by 不是 dim，我們預設只挑 nodes 最大的來看
+            if (compareBy !== 'dim') {{
+                if (filteredData.length > 0) {{
+                    const maxNodes = Math.max(...filteredData.map(d => d.nodes));
+                    filteredData = filteredData.filter(d => d.nodes === maxNodes);
+                }}
+            }}
+
+            // 2. 轉換為 Chart.js 的 Dataset 格式
+            let datasets = [];
+            filteredData.forEach((d, index) => {{
+                // 決定 Label 名稱
+                let label = `Nodes: ${{d.nodes}}`;
+                if (compareBy === 'packet_size') label = `Packet: ${{d.packet_size}} flits (Nodes: ${{d.nodes}})`;
+                if (compareBy === 'buffer_size') label = `Buffer: ${{d.buffer_size}} flits (Nodes: ${{d.nodes}})`;
+                if (compareBy === 'vcs') label = `VCs: ${{d.vcs}} (Nodes: ${{d.nodes}})`;
+                if (compareBy === 'dim') label = `Nodes: ${{d.nodes}} (P:${{d.packet_size}}, B:${{d.buffer_size}}, V:${{d.vcs}})`;
+
+                datasets.push({{
+                    label: label,
+                    data: d.curve,
+                    borderColor: colors[index % colors.length],
+                    backgroundColor: colors[index % colors.length],
+                    fill: false,
+                    tension: 0.1,
+                    pointRadius: 5,
+                    pointHoverRadius: 8
+                }});
             }});
 
             const ctx = document.getElementById('dseChart').getContext('2d');
 
             if (myChart) {{
                 myChart.destroy();
+            }}
+
+            if (datasets.length === 0) {{
+                /* 若沒有符合條件的資料，畫一個空的以防報錯 */
+                datasets = [{{ label: '無符合資料 (No Data)', data: [] }}];
             }}
 
             myChart = new Chart(ctx, {{
