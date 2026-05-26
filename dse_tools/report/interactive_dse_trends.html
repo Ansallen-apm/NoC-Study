@@ -1,0 +1,116 @@
+
+    <!DOCTYPE html>
+    <html lang="zh-TW">
+    <head>
+        <meta charset="UTF-8">
+        <title>互動式 DSE 效能趨勢報告</title>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <style>
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; }
+            .container { max-width: 1000px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+            h1 { color: #2c3e50; text-align: center; }
+            .controls { text-align: center; margin: 20px 0; }
+            select { padding: 10px; font-size: 16px; border-radius: 5px; border: 1px solid #ccc; }
+            .chart-container { position: relative; height: 60vh; width: 100%; }
+        </style>
+    </head>
+    <body>
+
+    <div class="container">
+        <h1>互動式 NoC DSE 效能趨勢 (Latency vs. Load)</h1>
+
+        <div class="controls">
+            <label for="topoSelect"><strong>選擇拓撲 (Select Topology): </strong></label>
+            <select id="topoSelect" onchange="updateChart()">
+                <option value="mesh">Mesh (網格)</option>
+                <option value="torus">Torus (環面網格)</option>
+                <option value="ring">Ring (環狀)</option>
+            </select>
+        </div>
+
+        <div class="chart-container">
+            <canvas id="dseChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // 來自 Python 的完整 DSE 曲線資料
+        const allData = {"mesh": [{"label": "Mesh (Dim: 2, Nodes: 4)", "data": [{"x": 0.01, "y": 11.9574}, {"x": 0.05, "y": 11.9192}, {"x": 0.1, "y": 12.5949}, {"x": 0.15, "y": 13.202}, {"x": 0.2, "y": 14.1646}, {"x": 0.25, "y": 17.8589}, {"x": 0.3, "y": 32.2339}, {"x": 0.35, "y": 225.184}]}, {"label": "Mesh (Dim: 3, Nodes: 9)", "data": [{"x": 0.01, "y": 17.2941}, {"x": 0.05, "y": 16.1121}, {"x": 0.1, "y": 16.9466}, {"x": 0.15, "y": 17.2404}, {"x": 0.2, "y": 19.059}, {"x": 0.25, "y": 21.9908}, {"x": 0.3, "y": 48.2298}, {"x": 0.35, "y": 267.982}]}, {"label": "Mesh (Dim: 4, Nodes: 16)", "data": [{"x": 0.01, "y": 19.1613}, {"x": 0.05, "y": 19.8195}, {"x": 0.1, "y": 20.608}, {"x": 0.15, "y": 22.1939}, {"x": 0.2, "y": 25.0048}, {"x": 0.25, "y": 33.9927}, {"x": 0.3, "y": 252.588}]}, {"label": "Mesh (Dim: 5, Nodes: 25)", "data": [{"x": 0.01, "y": 23.2521}, {"x": 0.05, "y": 23.9751}, {"x": 0.1, "y": 25.0072}, {"x": 0.15, "y": 27.4199}, {"x": 0.2, "y": 33.7834}, {"x": 0.25, "y": 249.63}]}, {"label": "Mesh (Dim: 6, Nodes: 36)", "data": [{"x": 0.01, "y": 26.6006}, {"x": 0.05, "y": 27.4262}, {"x": 0.1, "y": 29.1403}, {"x": 0.15, "y": 33.1667}, {"x": 0.2, "y": 149.635}]}], "torus": [{"label": "Torus (Dim: 2, Nodes: 4)", "data": [{"x": 0.01, "y": 12.766}, {"x": 0.05, "y": 13.4293}, {"x": 0.1, "y": 12.9038}, {"x": 0.15, "y": 13.4156}, {"x": 0.2, "y": 13.3543}, {"x": 0.25, "y": 13.7543}, {"x": 0.3, "y": 13.7529}, {"x": 0.35, "y": 13.8797}, {"x": 0.4, "y": 13.9774}, {"x": 0.45, "y": 14.521}, {"x": 0.5, "y": 15.3997}, {"x": 0.6, "y": 29.0946}, {"x": 0.7, "y": 285.735}]}, {"label": "Torus (Dim: 3, Nodes: 9)", "data": [{"x": 0.01, "y": 15.8382}, {"x": 0.05, "y": 14.9731}, {"x": 0.1, "y": 15.3551}, {"x": 0.15, "y": 15.1245}, {"x": 0.2, "y": 15.6884}, {"x": 0.25, "y": 15.7703}, {"x": 0.3, "y": 15.8581}, {"x": 0.35, "y": 16.3177}, {"x": 0.4, "y": 16.8521}, {"x": 0.45, "y": 17.6918}, {"x": 0.5, "y": 18.5768}, {"x": 0.6, "y": 39.2129}, {"x": 0.7, "y": 315.037}]}, {"label": "Torus (Dim: 4, Nodes: 16)", "data": [{"x": 0.01, "y": 18.7097}, {"x": 0.05, "y": 19.5303}, {"x": 0.1, "y": 19.3719}, {"x": 0.15, "y": 19.4487}, {"x": 0.2, "y": 20.0513}, {"x": 0.25, "y": 20.3661}, {"x": 0.3, "y": 21.1047}, {"x": 0.35, "y": 21.6854}, {"x": 0.4, "y": 23.5238}, {"x": 0.45, "y": 25.351}, {"x": 0.5, "y": 36.4431}, {"x": 0.6, "y": 283.888}]}, {"label": "Torus (Dim: 5, Nodes: 25)", "data": [{"x": 0.01, "y": 21.7149}, {"x": 0.05, "y": 21.8538}, {"x": 0.1, "y": 22.1427}, {"x": 0.15, "y": 22.3191}, {"x": 0.2, "y": 22.9023}, {"x": 0.25, "y": 23.7628}, {"x": 0.3, "y": 24.8401}, {"x": 0.35, "y": 26.8341}, {"x": 0.4, "y": 30.3635}, {"x": 0.45, "y": 138.748}]}, {"label": "Torus (Dim: 6, Nodes: 36)", "data": [{"x": 0.01, "y": 25.5823}, {"x": 0.05, "y": 25.4599}, {"x": 0.1, "y": 25.6197}, {"x": 0.15, "y": 26.4397}, {"x": 0.2, "y": 27.1041}, {"x": 0.25, "y": 29.102}, {"x": 0.3, "y": 32.3896}, {"x": 0.35, "y": 55.8284}, {"x": 0.4, "y": 306.901}]}], "ring": [{"label": "Ring (Dim: 4, Nodes: 4)", "data": [{"x": 0.01, "y": 12.4894}, {"x": 0.05, "y": 12.798}, {"x": 0.1, "y": 13.2203}, {"x": 0.15, "y": 13.356}, {"x": 0.2, "y": 13.5653}, {"x": 0.25, "y": 13.6}, {"x": 0.3, "y": 14.2655}, {"x": 0.35, "y": 14.4262}, {"x": 0.4, "y": 15.2878}, {"x": 0.45, "y": 16.2499}, {"x": 0.5, "y": 18.0369}, {"x": 0.6, "y": 145.211}]}, {"label": "Ring (Dim: 8, Nodes: 8)", "data": [{"x": 0.01, "y": 19.7903}, {"x": 0.05, "y": 19.3159}, {"x": 0.1, "y": 19.747}, {"x": 0.15, "y": 20.3691}, {"x": 0.2, "y": 20.9994}, {"x": 0.25, "y": 23.1729}, {"x": 0.3, "y": 133.73}]}, {"label": "Ring (Dim: 12, Nodes: 12)", "data": [{"x": 0.01, "y": 25.5726}, {"x": 0.05, "y": 25.0218}, {"x": 0.1, "y": 26.6285}, {"x": 0.15, "y": 27.6961}, {"x": 0.2, "y": 223.194}]}, {"label": "Ring (Dim: 16, Nodes: 16)", "data": [{"x": 0.01, "y": 32.3613}, {"x": 0.05, "y": 32.2398}, {"x": 0.1, "y": 34.0225}, {"x": 0.15, "y": 64.4269}, {"x": 0.2, "y": 219.311}]}, {"label": "Ring (Dim: 24, Nodes: 24)", "data": [{"x": 0.01, "y": 43.4573}, {"x": 0.05, "y": 44.2786}, {"x": 0.1, "y": 78.6394}, {"x": 0.15, "y": 279.762}]}]};
+
+        // 預設顏色庫
+        const colors = [
+            '#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231',
+            '#911eb4', '#46f0f0', '#f032e6', '#bcf60c', '#fabebe'
+        ];
+
+        let myChart = null;
+
+        function updateChart() {
+            const selectedTopo = document.getElementById('topoSelect').value;
+            const datasets = allData[selectedTopo];
+
+            // 替每個 dataset 上色
+            datasets.forEach((ds, index) => {
+                ds.borderColor = colors[index % colors.length];
+                ds.backgroundColor = colors[index % colors.length];
+                ds.fill = false;
+                ds.tension = 0.1;
+                ds.pointRadius = 5;
+                ds.pointHoverRadius = 8;
+            });
+
+            const ctx = document.getElementById('dseChart').getContext('2d');
+
+            if (myChart) {
+                myChart.destroy();
+            }
+
+            myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            title: {
+                                display: true,
+                                text: '注入率 (Injection Rate) [flits/node/cycle]',
+                                font: { size: 14, weight: 'bold' }
+                            },
+                            min: 0
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: '平均延遲 (Average Latency) [cycles]',
+                                font: { size: 14, weight: 'bold' }
+                            },
+                            min: 0,
+                            suggestedMax: 100 // 可避免 Y 軸被單一飆高的點拉得太誇張
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': Rate ' + context.parsed.x + ' -> Latency ' + context.parsed.y + ' cycles';
+                                }
+                            }
+                        },
+                        legend: {
+                            position: 'right'
+                        }
+                    }
+                }
+            });
+        }
+
+        // 初始化
+        window.onload = updateChart;
+    </script>
+    </body>
+    </html>

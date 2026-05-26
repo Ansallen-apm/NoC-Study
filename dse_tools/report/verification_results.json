@@ -9,8 +9,42 @@
         "theory_avg_hops": 1.3333333333333333,
         "booksim_zero_load_lat": 11.9574,
         "theory_max_rate": 0.25,
-        "booksim_actual_sat_rate": 0.311640625,
-        "booksim_total_throughput": 1.2465625
+        "booksim_actual_sat_rate": 0.3,
+        "booksim_total_throughput": 1.2,
+        "latency_curve": [
+            {
+                "rate": 0.01,
+                "latency": 11.9574
+            },
+            {
+                "rate": 0.05,
+                "latency": 11.9192
+            },
+            {
+                "rate": 0.1,
+                "latency": 12.5949
+            },
+            {
+                "rate": 0.15,
+                "latency": 13.202
+            },
+            {
+                "rate": 0.2,
+                "latency": 14.1646
+            },
+            {
+                "rate": 0.25,
+                "latency": 17.8589
+            },
+            {
+                "rate": 0.3,
+                "latency": 32.2339
+            },
+            {
+                "rate": 0.35,
+                "latency": 225.184
+            }
+        ]
     },
     {
         "topology": "mesh",
@@ -22,21 +56,42 @@
         "theory_avg_hops": 2.0,
         "booksim_zero_load_lat": 17.2941,
         "theory_max_rate": 0.08333333333333333,
-        "booksim_actual_sat_rate": 0.311640625,
-        "booksim_total_throughput": 2.804765625
-    },
-    {
-        "topology": "torus",
-        "dim": 2,
-        "nodes": 4,
-        "theory_channel_count": 4,
-        "theory_bisection_bw": 256,
-        "theory_max_load": 4,
-        "theory_avg_hops": 1.3333333333333333,
-        "booksim_zero_load_lat": 12.766,
-        "theory_max_rate": 0.25,
-        "booksim_actual_sat_rate": 0.621015625,
-        "booksim_total_throughput": 2.4840625
+        "booksim_actual_sat_rate": 0.3,
+        "booksim_total_throughput": 2.6999999999999997,
+        "latency_curve": [
+            {
+                "rate": 0.01,
+                "latency": 17.2941
+            },
+            {
+                "rate": 0.05,
+                "latency": 16.1121
+            },
+            {
+                "rate": 0.1,
+                "latency": 16.9466
+            },
+            {
+                "rate": 0.15,
+                "latency": 17.2404
+            },
+            {
+                "rate": 0.2,
+                "latency": 19.059
+            },
+            {
+                "rate": 0.25,
+                "latency": 21.9908
+            },
+            {
+                "rate": 0.3,
+                "latency": 48.2298
+            },
+            {
+                "rate": 0.35,
+                "latency": 267.982
+            }
+        ]
     },
     {
         "topology": "mesh",
@@ -48,8 +103,105 @@
         "theory_avg_hops": 2.6666666666666665,
         "booksim_zero_load_lat": 19.1613,
         "theory_max_rate": 0.03125,
-        "booksim_actual_sat_rate": 0.280703125,
-        "booksim_total_throughput": 4.49125
+        "booksim_actual_sat_rate": 0.25,
+        "booksim_total_throughput": 4.0,
+        "latency_curve": [
+            {
+                "rate": 0.01,
+                "latency": 19.1613
+            },
+            {
+                "rate": 0.05,
+                "latency": 19.8195
+            },
+            {
+                "rate": 0.1,
+                "latency": 20.608
+            },
+            {
+                "rate": 0.15,
+                "latency": 22.1939
+            },
+            {
+                "rate": 0.2,
+                "latency": 25.0048
+            },
+            {
+                "rate": 0.25,
+                "latency": 33.9927
+            },
+            {
+                "rate": 0.3,
+                "latency": 252.588
+            }
+        ]
+    },
+    {
+        "topology": "torus",
+        "dim": 2,
+        "nodes": 4,
+        "theory_channel_count": 4,
+        "theory_bisection_bw": 256,
+        "theory_max_load": 4,
+        "theory_avg_hops": 1.3333333333333333,
+        "booksim_zero_load_lat": 12.766,
+        "theory_max_rate": 0.25,
+        "booksim_actual_sat_rate": 0.6,
+        "booksim_total_throughput": 2.4,
+        "latency_curve": [
+            {
+                "rate": 0.01,
+                "latency": 12.766
+            },
+            {
+                "rate": 0.05,
+                "latency": 13.4293
+            },
+            {
+                "rate": 0.1,
+                "latency": 12.9038
+            },
+            {
+                "rate": 0.15,
+                "latency": 13.4156
+            },
+            {
+                "rate": 0.2,
+                "latency": 13.3543
+            },
+            {
+                "rate": 0.25,
+                "latency": 13.7543
+            },
+            {
+                "rate": 0.3,
+                "latency": 13.7529
+            },
+            {
+                "rate": 0.35,
+                "latency": 13.8797
+            },
+            {
+                "rate": 0.4,
+                "latency": 13.9774
+            },
+            {
+                "rate": 0.45,
+                "latency": 14.521
+            },
+            {
+                "rate": 0.5,
+                "latency": 15.3997
+            },
+            {
+                "rate": 0.6,
+                "latency": 29.0946
+            },
+            {
+                "rate": 0.7,
+                "latency": 285.735
+            }
+        ]
     },
     {
         "topology": "mesh",
@@ -61,21 +213,34 @@
         "theory_avg_hops": 3.3333333333333335,
         "booksim_zero_load_lat": 23.2521,
         "theory_max_rate": 0.016666666666666666,
-        "booksim_actual_sat_rate": 0.2265625,
-        "booksim_total_throughput": 5.6640625
-    },
-    {
-        "topology": "torus",
-        "dim": 3,
-        "nodes": 9,
-        "theory_channel_count": 18,
-        "theory_bisection_bw": 384,
-        "theory_max_load": 6,
-        "theory_avg_hops": 1.5,
-        "booksim_zero_load_lat": 15.8382,
-        "theory_max_rate": 0.16666666666666666,
-        "booksim_actual_sat_rate": 0.61328125,
-        "booksim_total_throughput": 5.51953125
+        "booksim_actual_sat_rate": 0.2,
+        "booksim_total_throughput": 5.0,
+        "latency_curve": [
+            {
+                "rate": 0.01,
+                "latency": 23.2521
+            },
+            {
+                "rate": 0.05,
+                "latency": 23.9751
+            },
+            {
+                "rate": 0.1,
+                "latency": 25.0072
+            },
+            {
+                "rate": 0.15,
+                "latency": 27.4199
+            },
+            {
+                "rate": 0.2,
+                "latency": 33.7834
+            },
+            {
+                "rate": 0.25,
+                "latency": 249.63
+            }
+        ]
     },
     {
         "topology": "mesh",
@@ -87,21 +252,97 @@
         "theory_avg_hops": 4.0,
         "booksim_zero_load_lat": 26.6006,
         "theory_max_rate": 0.009259259259259259,
-        "booksim_actual_sat_rate": 0.195625,
-        "booksim_total_throughput": 7.0424999999999995
+        "booksim_actual_sat_rate": 0.15,
+        "booksim_total_throughput": 5.3999999999999995,
+        "latency_curve": [
+            {
+                "rate": 0.01,
+                "latency": 26.6006
+            },
+            {
+                "rate": 0.05,
+                "latency": 27.4262
+            },
+            {
+                "rate": 0.1,
+                "latency": 29.1403
+            },
+            {
+                "rate": 0.15,
+                "latency": 33.1667
+            },
+            {
+                "rate": 0.2,
+                "latency": 149.635
+            }
+        ]
     },
     {
         "topology": "torus",
-        "dim": 4,
-        "nodes": 16,
-        "theory_channel_count": 32,
-        "theory_bisection_bw": 512,
-        "theory_max_load": 24,
-        "theory_avg_hops": 2.1333333333333333,
-        "booksim_zero_load_lat": 18.7097,
-        "theory_max_rate": 0.041666666666666664,
-        "booksim_actual_sat_rate": 0.5359375,
-        "booksim_total_throughput": 8.575
+        "dim": 3,
+        "nodes": 9,
+        "theory_channel_count": 18,
+        "theory_bisection_bw": 384,
+        "theory_max_load": 6,
+        "theory_avg_hops": 1.5,
+        "booksim_zero_load_lat": 15.8382,
+        "theory_max_rate": 0.16666666666666666,
+        "booksim_actual_sat_rate": 0.6,
+        "booksim_total_throughput": 5.3999999999999995,
+        "latency_curve": [
+            {
+                "rate": 0.01,
+                "latency": 15.8382
+            },
+            {
+                "rate": 0.05,
+                "latency": 14.9731
+            },
+            {
+                "rate": 0.1,
+                "latency": 15.3551
+            },
+            {
+                "rate": 0.15,
+                "latency": 15.1245
+            },
+            {
+                "rate": 0.2,
+                "latency": 15.6884
+            },
+            {
+                "rate": 0.25,
+                "latency": 15.7703
+            },
+            {
+                "rate": 0.3,
+                "latency": 15.8581
+            },
+            {
+                "rate": 0.35,
+                "latency": 16.3177
+            },
+            {
+                "rate": 0.4,
+                "latency": 16.8521
+            },
+            {
+                "rate": 0.45,
+                "latency": 17.6918
+            },
+            {
+                "rate": 0.5,
+                "latency": 18.5768
+            },
+            {
+                "rate": 0.6,
+                "latency": 39.2129
+            },
+            {
+                "rate": 0.7,
+                "latency": 315.037
+            }
+        ]
     },
     {
         "topology": "ring",
@@ -113,8 +354,58 @@
         "theory_avg_hops": 1.3333333333333333,
         "booksim_zero_load_lat": 12.4894,
         "theory_max_rate": 0.2,
-        "booksim_actual_sat_rate": 0.574609375,
-        "booksim_total_throughput": 2.2984375
+        "booksim_actual_sat_rate": 0.5,
+        "booksim_total_throughput": 2.0,
+        "latency_curve": [
+            {
+                "rate": 0.01,
+                "latency": 12.4894
+            },
+            {
+                "rate": 0.05,
+                "latency": 12.798
+            },
+            {
+                "rate": 0.1,
+                "latency": 13.2203
+            },
+            {
+                "rate": 0.15,
+                "latency": 13.356
+            },
+            {
+                "rate": 0.2,
+                "latency": 13.5653
+            },
+            {
+                "rate": 0.25,
+                "latency": 13.6
+            },
+            {
+                "rate": 0.3,
+                "latency": 14.2655
+            },
+            {
+                "rate": 0.35,
+                "latency": 14.4262
+            },
+            {
+                "rate": 0.4,
+                "latency": 15.2878
+            },
+            {
+                "rate": 0.45,
+                "latency": 16.2499
+            },
+            {
+                "rate": 0.5,
+                "latency": 18.0369
+            },
+            {
+                "rate": 0.6,
+                "latency": 145.211
+            }
+        ]
     },
     {
         "topology": "ring",
@@ -126,8 +417,38 @@
         "theory_avg_hops": 2.2857142857142856,
         "booksim_zero_load_lat": 19.7903,
         "theory_max_rate": 0.058823529411764705,
-        "booksim_actual_sat_rate": 0.2884375,
-        "booksim_total_throughput": 2.3075
+        "booksim_actual_sat_rate": 0.25,
+        "booksim_total_throughput": 2.0,
+        "latency_curve": [
+            {
+                "rate": 0.01,
+                "latency": 19.7903
+            },
+            {
+                "rate": 0.05,
+                "latency": 19.3159
+            },
+            {
+                "rate": 0.1,
+                "latency": 19.747
+            },
+            {
+                "rate": 0.15,
+                "latency": 20.3691
+            },
+            {
+                "rate": 0.2,
+                "latency": 20.9994
+            },
+            {
+                "rate": 0.25,
+                "latency": 23.1729
+            },
+            {
+                "rate": 0.3,
+                "latency": 133.73
+            }
+        ]
     },
     {
         "topology": "ring",
@@ -139,21 +460,93 @@
         "theory_avg_hops": 3.272727272727273,
         "booksim_zero_load_lat": 25.5726,
         "theory_max_rate": 0.02702702702702703,
-        "booksim_actual_sat_rate": 0.195625,
-        "booksim_total_throughput": 2.3475
+        "booksim_actual_sat_rate": 0.15,
+        "booksim_total_throughput": 1.7999999999999998,
+        "latency_curve": [
+            {
+                "rate": 0.01,
+                "latency": 25.5726
+            },
+            {
+                "rate": 0.05,
+                "latency": 25.0218
+            },
+            {
+                "rate": 0.1,
+                "latency": 26.6285
+            },
+            {
+                "rate": 0.15,
+                "latency": 27.6961
+            },
+            {
+                "rate": 0.2,
+                "latency": 223.194
+            }
+        ]
     },
     {
         "topology": "torus",
-        "dim": 5,
-        "nodes": 25,
-        "theory_channel_count": 50,
-        "theory_bisection_bw": 640,
-        "theory_max_load": 30,
-        "theory_avg_hops": 2.5,
-        "booksim_zero_load_lat": 21.7149,
-        "theory_max_rate": 0.03333333333333333,
-        "booksim_actual_sat_rate": 0.435390625,
-        "booksim_total_throughput": 10.884765625
+        "dim": 4,
+        "nodes": 16,
+        "theory_channel_count": 32,
+        "theory_bisection_bw": 512,
+        "theory_max_load": 24,
+        "theory_avg_hops": 2.1333333333333333,
+        "booksim_zero_load_lat": 18.7097,
+        "theory_max_rate": 0.041666666666666664,
+        "booksim_actual_sat_rate": 0.5,
+        "booksim_total_throughput": 8.0,
+        "latency_curve": [
+            {
+                "rate": 0.01,
+                "latency": 18.7097
+            },
+            {
+                "rate": 0.05,
+                "latency": 19.5303
+            },
+            {
+                "rate": 0.1,
+                "latency": 19.3719
+            },
+            {
+                "rate": 0.15,
+                "latency": 19.4487
+            },
+            {
+                "rate": 0.2,
+                "latency": 20.0513
+            },
+            {
+                "rate": 0.25,
+                "latency": 20.3661
+            },
+            {
+                "rate": 0.3,
+                "latency": 21.1047
+            },
+            {
+                "rate": 0.35,
+                "latency": 21.6854
+            },
+            {
+                "rate": 0.4,
+                "latency": 23.5238
+            },
+            {
+                "rate": 0.45,
+                "latency": 25.351
+            },
+            {
+                "rate": 0.5,
+                "latency": 36.4431
+            },
+            {
+                "rate": 0.6,
+                "latency": 283.888
+            }
+        ]
     },
     {
         "topology": "ring",
@@ -165,8 +558,85 @@
         "theory_avg_hops": 4.266666666666667,
         "booksim_zero_load_lat": 32.3613,
         "theory_max_rate": 0.015384615384615385,
-        "booksim_actual_sat_rate": 0.172421875,
-        "booksim_total_throughput": 2.75875
+        "booksim_actual_sat_rate": 0.15,
+        "booksim_total_throughput": 2.4,
+        "latency_curve": [
+            {
+                "rate": 0.01,
+                "latency": 32.3613
+            },
+            {
+                "rate": 0.05,
+                "latency": 32.2398
+            },
+            {
+                "rate": 0.1,
+                "latency": 34.0225
+            },
+            {
+                "rate": 0.15,
+                "latency": 64.4269
+            },
+            {
+                "rate": 0.2,
+                "latency": 219.311
+            }
+        ]
+    },
+    {
+        "topology": "torus",
+        "dim": 5,
+        "nodes": 25,
+        "theory_channel_count": 50,
+        "theory_bisection_bw": 640,
+        "theory_max_load": 30,
+        "theory_avg_hops": 2.5,
+        "booksim_zero_load_lat": 21.7149,
+        "theory_max_rate": 0.03333333333333333,
+        "booksim_actual_sat_rate": 0.4,
+        "booksim_total_throughput": 10.0,
+        "latency_curve": [
+            {
+                "rate": 0.01,
+                "latency": 21.7149
+            },
+            {
+                "rate": 0.05,
+                "latency": 21.8538
+            },
+            {
+                "rate": 0.1,
+                "latency": 22.1427
+            },
+            {
+                "rate": 0.15,
+                "latency": 22.3191
+            },
+            {
+                "rate": 0.2,
+                "latency": 22.9023
+            },
+            {
+                "rate": 0.25,
+                "latency": 23.7628
+            },
+            {
+                "rate": 0.3,
+                "latency": 24.8401
+            },
+            {
+                "rate": 0.35,
+                "latency": 26.8341
+            },
+            {
+                "rate": 0.4,
+                "latency": 30.3635
+            },
+            {
+                "rate": 0.45,
+                "latency": 138.748
+            }
+        ]
     },
     {
         "topology": "ring",
@@ -178,8 +648,26 @@
         "theory_avg_hops": 6.260869565217392,
         "booksim_zero_load_lat": 43.4573,
         "theory_max_rate": 0.006896551724137931,
-        "booksim_actual_sat_rate": 0.13375,
-        "booksim_total_throughput": 3.21
+        "booksim_actual_sat_rate": 0.1,
+        "booksim_total_throughput": 2.4000000000000004,
+        "latency_curve": [
+            {
+                "rate": 0.01,
+                "latency": 43.4573
+            },
+            {
+                "rate": 0.05,
+                "latency": 44.2786
+            },
+            {
+                "rate": 0.1,
+                "latency": 78.6394
+            },
+            {
+                "rate": 0.15,
+                "latency": 279.762
+            }
+        ]
     },
     {
         "topology": "torus",
@@ -191,7 +679,45 @@
         "theory_avg_hops": 3.085714285714286,
         "booksim_zero_load_lat": 25.5823,
         "theory_max_rate": 0.013888888888888888,
-        "booksim_actual_sat_rate": 0.36578124999999995,
-        "booksim_total_throughput": 13.168124999999998
+        "booksim_actual_sat_rate": 0.35,
+        "booksim_total_throughput": 12.6,
+        "latency_curve": [
+            {
+                "rate": 0.01,
+                "latency": 25.5823
+            },
+            {
+                "rate": 0.05,
+                "latency": 25.4599
+            },
+            {
+                "rate": 0.1,
+                "latency": 25.6197
+            },
+            {
+                "rate": 0.15,
+                "latency": 26.4397
+            },
+            {
+                "rate": 0.2,
+                "latency": 27.1041
+            },
+            {
+                "rate": 0.25,
+                "latency": 29.102
+            },
+            {
+                "rate": 0.3,
+                "latency": 32.3896
+            },
+            {
+                "rate": 0.35,
+                "latency": 55.8284
+            },
+            {
+                "rate": 0.4,
+                "latency": 306.901
+            }
+        ]
     }
 ]

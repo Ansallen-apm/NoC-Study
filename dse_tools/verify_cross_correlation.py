@@ -100,29 +100,33 @@ def run_task(task):
     # 1. 計算理論值
     channel_count, bisection_bw, max_load, avg_hops, theo_max_rate = get_theoretical_metrics(topo_type, dim)
 
-    # 2. 測量 Zero-load Latency (rate = 0.01)
-    cfg_zero = generate_bs_config(topo_type, dim, vcs, p_size, b_size, 0.01)
-    zero_lat = run_booksim_single(cfg_zero, f"temp_zero_{task_id}.txt")
+    # 2. 密集掃描所有的注入率 (Injection Rates)
+    # 不再只找飽和點，而是收集一整條 Latency 曲線
+    rates_to_test = [0.01, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 
-    # 3. 用 Binary Search 尋找實際飽和點 (Saturation Rate)
-    # 定義飽和：Latency 大於基準的 3 倍，或無限大
-    low = 0.01
-    high = 1.0
+    latency_curve = []
+    zero_lat = None
     actual_sat_rate = 0.0
+    is_saturated = False
 
-    for _ in range(7): # 7 iterations gives roughly ~0.01 precision
-        mid = (low + high) / 2.0
-        cfg_mid = generate_bs_config(topo_type, dim, vcs, p_size, b_size, mid)
-        lat = run_booksim_single(cfg_mid, f"temp_sat_{task_id}.txt")
+    for r in rates_to_test:
+        if is_saturated:
+            break # 已經飽和了，後面的高負載不需要再跑
 
-        if lat == float('inf') or lat > (zero_lat * 5): # 飆升視為飽和
-            high = mid
+        cfg_str = generate_bs_config(topo_type, dim, vcs, p_size, b_size, r)
+        lat = run_booksim_single(cfg_str, f"temp_run_{task_id}.txt")
+
+        if r == 0.01:
+            zero_lat = lat
+
+        latency_curve.append({"rate": r, "latency": lat})
+
+        # 判斷飽和
+        if lat == float('inf') or (zero_lat and lat > (zero_lat * 5)):
+            is_saturated = True
         else:
-            actual_sat_rate = mid # 紀錄最後一個未飽和的點
-            low = mid
+            actual_sat_rate = r
 
-    # 對應全網路總吞吐量計算: 在 uniform random 下，每個節點的注入率即為其吞吐量
-    # 總吞吐量 = 總節點數 * 實際飽和注入率 (單位: 封包/週期)
     nodes = dim * dim if topo_type in ['mesh', 'torus'] else dim
     total_throughput = nodes * actual_sat_rate
 
@@ -134,10 +138,11 @@ def run_task(task):
         "theory_bisection_bw": bisection_bw,
         "theory_max_load": max_load,
         "theory_avg_hops": avg_hops,
-        "booksim_zero_load_lat": zero_lat,
+        "booksim_zero_load_lat": zero_lat if zero_lat else float('inf'),
         "theory_max_rate": theo_max_rate,
         "booksim_actual_sat_rate": actual_sat_rate,
-        "booksim_total_throughput": total_throughput
+        "booksim_total_throughput": total_throughput,
+        "latency_curve": latency_curve
     }
 
 def main():
