@@ -10,11 +10,15 @@ def generate_interactive_html():
             v_results = json.load(f)
             for r in v_results:
                 # 這裡的預設參數對應 verify_cross_correlation.py 的設定
-                vcs = 1 if r['topology'] == 'mesh' else 2
+                vcs = r.get('vcs') if 'vcs' in r else (1 if r['topology'] == 'mesh' else 2)
+                routing = r.get('routing', 'xy' if r['topology'] == 'mesh' else 'dim_order')
+                traffic = r.get('traffic', 'uniform')
                 record = {
                     "topology": r['topology'],
                     "dim": r['dim'],
                     "nodes": r['nodes'],
+                    "routing": routing,
+                    "traffic": traffic,
                     "packet_size": 1,
                     "buffer_size": 8,
                     "vcs": vcs,
@@ -29,23 +33,29 @@ def generate_interactive_html():
             r_results = json.load(f)
             for key, runs in r_results.items():
                 dim = int(key.split('_')[1])
-                # 因為這份資料是離散點，我們需要把它依照相同的 (p, b, v) 組合聚集成曲線
+                # 因為這份資料是離散點，我們需要把它依照相同的組合聚集成曲線
                 grouped_runs = {}
                 for run in runs:
-                    if run['latency'] == float('inf'):
+                    if run.get('latency', float('inf')) == float('inf'):
                         continue
-                    group_key = (run['packet_size'], run['buffer_size'], run['num_vcs'])
+
+                    routing = run.get('routing', 'dim_order')
+                    traffic = run.get('traffic', 'uniform')
+
+                    group_key = (routing, traffic, run['packet_size'], run['buffer_size'], run['num_vcs'])
                     if group_key not in grouped_runs:
                         grouped_runs[group_key] = []
                     grouped_runs[group_key].append({"x": run['injection_rate'], "y": run['latency']})
 
-                for (p, b, v), points in grouped_runs.items():
+                for (rt, tr, p, b, v), points in grouped_runs.items():
                     # 排序點位，確保畫線正確
                     points.sort(key=lambda pt: pt['x'])
                     record = {
                         "topology": "ring",
                         "dim": dim,
                         "nodes": dim, # 對 Ring 來說 dim 即為 nodes
+                        "routing": rt,
+                        "traffic": tr,
                         "packet_size": p,
                         "buffer_size": b,
                         "vcs": v,
@@ -53,8 +63,19 @@ def generate_interactive_html():
                     }
                     unified_data.append(record)
 
+    # 動態產生所有可選的參數列表
+    options = {
+        "topology": sorted(list(set(r['topology'] for r in unified_data))),
+        "routing": sorted(list(set(r['routing'] for r in unified_data))),
+        "traffic": sorted(list(set(r['traffic'] for r in unified_data))),
+        "packet_size": sorted(list(set(r['packet_size'] for r in unified_data))),
+        "buffer_size": sorted(list(set(r['buffer_size'] for r in unified_data))),
+        "vcs": sorted(list(set(r['vcs'] for r in unified_data)))
+    }
+
     # 將 Python dict 轉為 JSON string 嵌入 HTML
     chart_data_json = json.dumps(unified_data)
+    options_json = json.dumps(options)
 
     html_content = f"""
     <!DOCTYPE html>
@@ -82,40 +103,27 @@ def generate_interactive_html():
                 <legend><strong>過濾器 (Filters)</strong></legend>
 
                 <label>拓撲 (Topology): </label>
-                <select id="topoSelect" onchange="updateChart()">
-                    <option value="mesh">Mesh</option>
-                    <option value="torus">Torus</option>
-                    <option value="ring" selected>Ring</option>
-                </select>
+                <select id="topoSelect" onchange="updateChart()"></select>
+                &nbsp;&nbsp;
+
+                <label>路由 (Routing): </label>
+                <select id="rSelect" onchange="updateChart()"></select>
+                &nbsp;&nbsp;
+
+                <label>流量 (Traffic): </label>
+                <select id="tSelect" onchange="updateChart()"></select>
                 &nbsp;&nbsp;
 
                 <label>封包長度 (Packet Size): </label>
-                <select id="pSelect" onchange="updateChart()">
-                    <option value="all">全部 (All)</option>
-                    <option value="1" selected>1 flit</option>
-                    <option value="2">2 flits</option>
-                    <option value="4">4 flits</option>
-                    <option value="8">8 flits</option>
-                </select>
+                <select id="pSelect" onchange="updateChart()"></select>
                 &nbsp;&nbsp;
 
                 <label>緩衝區 (Buffer Size): </label>
-                <select id="bSelect" onchange="updateChart()">
-                    <option value="all">全部 (All)</option>
-                    <option value="2">2 flits</option>
-                    <option value="4">4 flits</option>
-                    <option value="8" selected>8 flits</option>
-                    <option value="16">16 flits</option>
-                </select>
+                <select id="bSelect" onchange="updateChart()"></select>
                 &nbsp;&nbsp;
 
                 <label>虛擬通道 (VCs): </label>
-                <select id="vSelect" onchange="updateChart()">
-                    <option value="all">全部 (All)</option>
-                    <option value="1">1 VC</option>
-                    <option value="2" selected>2 VCs</option>
-                    <option value="4">4 VCs</option>
-                </select>
+                <select id="vSelect" onchange="updateChart()"></select>
             </fieldset>
 
             <br><br>
@@ -125,6 +133,8 @@ def generate_interactive_html():
                 <label>將以下維度展開為不同的曲線: </label>
                 <select id="compareSelect" onchange="updateChart()">
                     <option value="dim" selected>節點數量 (Dimension/Nodes)</option>
+                    <option value="routing">路由演算法 (Routing Algorithm)</option>
+                    <option value="traffic">流量模式 (Traffic Pattern)</option>
                     <option value="packet_size">封包長度 (Packet Size)</option>
                     <option value="buffer_size">緩衝區大小 (Buffer Size)</option>
                     <option value="vcs">虛擬通道數 (VCs)</option>
@@ -138,8 +148,26 @@ def generate_interactive_html():
     </div>
 
     <script>
-        // 來自 Python 的完整 DSE 曲線資料
+        // 來自 Python 的完整 DSE 曲線資料與選項
         const allData = {chart_data_json};
+        const allOptions = {options_json};
+
+        // 初始化下拉選單
+        function populateSelect(id, optionsArray, addAllOption = true) {{
+            const select = document.getElementById(id);
+            if (addAllOption) {{
+                let opt = document.createElement('option');
+                opt.value = 'all';
+                opt.text = '全部 (All)';
+                select.add(opt);
+            }}
+            optionsArray.forEach(val => {{
+                let opt = document.createElement('option');
+                opt.value = val;
+                opt.text = val;
+                select.add(opt);
+            }});
+        }}
 
         // 預設顏色庫
         const colors = [
@@ -151,6 +179,8 @@ def generate_interactive_html():
 
         function updateChart() {{
             const topo = document.getElementById('topoSelect').value;
+            const routing = document.getElementById('rSelect').value;
+            const traffic = document.getElementById('tSelect').value;
             const pSize = document.getElementById('pSelect').value;
             const bSize = document.getElementById('bSelect').value;
             const vcs = document.getElementById('vSelect').value;
@@ -159,6 +189,12 @@ def generate_interactive_html():
             // 1. 過濾資料
             let filteredData = allData.filter(d => d.topology === topo);
 
+            if (compareBy !== 'routing' && routing !== 'all') {{
+                filteredData = filteredData.filter(d => d.routing === routing);
+            }}
+            if (compareBy !== 'traffic' && traffic !== 'all') {{
+                filteredData = filteredData.filter(d => d.traffic === traffic);
+            }}
             if (compareBy !== 'packet_size' && pSize !== 'all') {{
                 filteredData = filteredData.filter(d => d.packet_size == parseInt(pSize));
             }}
@@ -168,9 +204,9 @@ def generate_interactive_html():
             if (compareBy !== 'vcs' && vcs !== 'all') {{
                 filteredData = filteredData.filter(d => d.vcs == parseInt(vcs));
             }}
+
             // 對於 dim，我們預設如果是 compareBy == dim 就全抓，
-            // 若不是 compareBy == dim，我們應該只抓一個代表性的 dim 避免畫面太亂，
-            // 為了簡單起見，如果 compare_by 不是 dim，我們預設只挑 nodes 最大的來看
+            // 若不是 compareBy == dim，我們預設只挑 nodes 最大的來看
             if (compareBy !== 'dim') {{
                 if (filteredData.length > 0) {{
                     const maxNodes = Math.max(...filteredData.map(d => d.nodes));
@@ -183,10 +219,12 @@ def generate_interactive_html():
             filteredData.forEach((d, index) => {{
                 // 決定 Label 名稱
                 let label = `Nodes: ${{d.nodes}}`;
+                if (compareBy === 'routing') label = `Routing: ${{d.routing}} (Nodes: ${{d.nodes}})`;
+                if (compareBy === 'traffic') label = `Traffic: ${{d.traffic}} (Nodes: ${{d.nodes}})`;
                 if (compareBy === 'packet_size') label = `Packet: ${{d.packet_size}} flits (Nodes: ${{d.nodes}})`;
                 if (compareBy === 'buffer_size') label = `Buffer: ${{d.buffer_size}} flits (Nodes: ${{d.nodes}})`;
                 if (compareBy === 'vcs') label = `VCs: ${{d.vcs}} (Nodes: ${{d.nodes}})`;
-                if (compareBy === 'dim') label = `Nodes: ${{d.nodes}} (P:${{d.packet_size}}, B:${{d.buffer_size}}, V:${{d.vcs}})`;
+                if (compareBy === 'dim') label = `Nodes: ${{d.nodes}} (R:${{d.routing}}, P:${{d.packet_size}}, B:${{d.buffer_size}}, V:${{d.vcs}})`;
 
                 datasets.push({{
                     label: label,
@@ -256,7 +294,19 @@ def generate_interactive_html():
         }}
 
         // 初始化
-        window.onload = updateChart;
+        window.onload = function() {{
+            // 填入下拉選項 (Topology 不給 All)
+            populateSelect('topoSelect', allOptions.topology, false);
+            populateSelect('rSelect', allOptions.routing, true);
+            populateSelect('tSelect', allOptions.traffic, true);
+            populateSelect('pSelect', allOptions.packet_size, true);
+            populateSelect('bSelect', allOptions.buffer_size, true);
+            populateSelect('vSelect', allOptions.vcs, true);
+
+            // 設定預設選項並更新
+            if(allOptions.topology.includes('ring')) document.getElementById('topoSelect').value = 'ring';
+            updateChart();
+        }};
     </script>
     </body>
     </html>
