@@ -69,6 +69,8 @@ def run_simulation(task):
 
     return {
         "width": width,
+        "routing": "dim_order",
+        "traffic": "uniform",
         "packet_size": p_size,
         "buffer_size": b_size,
         "num_vcs": vcs,
@@ -147,6 +149,8 @@ def main():
                     sig = (nr['packet_size'], nr['buffer_size'], nr['num_vcs'], nr['injection_rate'])
                     if sig not in existing_sigs:
                         structured_results[k].append({
+                            "routing": nr["routing"],
+                            "traffic": nr["traffic"],
                             "packet_size": nr["packet_size"],
                             "buffer_size": nr["buffer_size"],
                             "num_vcs": nr["num_vcs"],

@@ -130,10 +130,14 @@ def run_task(task):
     nodes = dim * dim if topo_type in ['mesh', 'torus'] else dim
     total_throughput = nodes * actual_sat_rate
 
+    routing_algo = 'dim_order' if topo_type in ['torus', 'ring'] else 'xy'
+
     return {
         "topology": topo_type,
         "dim": dim,
         "nodes": nodes,
+        "routing": routing_algo,
+        "traffic": "uniform",
         "theory_channel_count": channel_count,
         "theory_bisection_bw": bisection_bw,
         "theory_max_load": max_load,
