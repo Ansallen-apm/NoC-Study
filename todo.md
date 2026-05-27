@@ -32,6 +32,7 @@
 
 ## 基礎建設與端到端驗證 (Infrastructure)
 
+*   [x] **專案目錄結構大掃除 (Directory Housekeeping)**：將 `dse_tools/` 內的龐雜腳本分類至 `core/`, `runners/`, `generators/`, `converters/`, `config/` 與 `examples/`，並更新所有相對路徑與 README 文件。
 *   [ ] **統一設定檔解析**：確保 C++, TLM, RTL 各階層模型與 Testbench 皆能動態讀取 `NoC_config.yaml` 進行初始化。
 *   [ ] **單元測試與 CI/CD**：為 Python 工具與 C++ 元件撰寫單元測試。整合 GitHub Actions 等 CI/CD 流程以自動編譯模型並執行測試。
 *   [ ] **端到端黃金驗證 (End-to-End Golden Verification)**：建立自動化管線，將相同的流量 Trace 注入所有模型中，並精確比對它們的週期級行為是否完全一致。

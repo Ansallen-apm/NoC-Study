@@ -1,3 +1,6 @@
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import yaml
 import os
 import subprocess
@@ -21,7 +24,7 @@ def main():
     print("啟動 NoC DSE 階段 3：BookSim 交叉驗證掃描...")
 
     # 讀取主設定檔
-    config_path = "NoC_config.yaml"
+    config_path = "config/NoC_config.yaml"
     with open(config_path, 'r', encoding='utf-8') as f:
         master_config = yaml.safe_load(f)
 

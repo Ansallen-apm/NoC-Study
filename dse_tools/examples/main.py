@@ -1,7 +1,10 @@
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import json
 import yaml
-from topology import generate_mesh_topology, generate_torus_topology, generate_ring_topology
-from metrics import calculate_average_hop_count, calculate_bisection_bandwidth, analyze_channel_load
+from core.topology import generate_mesh_topology, generate_torus_topology, generate_ring_topology
+from core.metrics import calculate_average_hop_count, calculate_bisection_bandwidth, analyze_channel_load
 
 def analyze_topology(name, graph, channel_bandwidth):
     """
@@ -33,7 +36,7 @@ def main():
     """
     print("啟動 NoC DSE 階段 1：理論指標分析...")
 
-    config_path = "NoC_config.yaml"
+    config_path = "config/NoC_config.yaml"
     try:
         with open(config_path, 'r', encoding='utf-8') as f:
             config = yaml.safe_load(f)

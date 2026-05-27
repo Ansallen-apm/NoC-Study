@@ -1,3 +1,6 @@
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import yaml
 import os
 import subprocess
@@ -7,8 +10,8 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 
-from topology import generate_mesh_topology, generate_torus_topology, generate_ring_topology
-from metrics import calculate_average_hop_count, analyze_channel_load, calculate_channel_count, calculate_bisection_bandwidth
+from core.topology import generate_mesh_topology, generate_torus_topology, generate_ring_topology
+from core.metrics import calculate_average_hop_count, analyze_channel_load, calculate_channel_count, calculate_bisection_bandwidth
 
 BOOKSIM_EXEC = "../third_party/booksim/src/booksim"
 
@@ -157,7 +160,7 @@ def main():
         return
 
     # 讀取 Sweep Config
-    with open('verification_sweep.yaml', 'r') as f:
+    with open('config/verification_sweep.yaml', 'r') as f:
         sweep_cfg = yaml.safe_load(f)
 
     common = sweep_cfg.get('common', {})

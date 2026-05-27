@@ -34,7 +34,13 @@ To understand the details of the project, please refer to the following document
 *   `noc_tlm_model/`: SystemC Transaction Level Modeling.
 *   `noc_rtl/`: Verilog implementation.
 *   `third_party/`: Contains integrated open-source standalone simulators for cross-verification (Currently includes: `booksim`, `noxim`, `pronoc`, `constellation`).
-*   `dse_tools/`: Python tools for theoretical analysis, universal configuration adapters, and automated orchestrators.
+*   `dse_tools/`: Python toolkit for NoC Design Space Exploration.
+    *   `core/`: Topology and mathematical metric calculators.
+    *   `converters/`: YAML to simulator-specific configuration adapters.
+    *   `runners/`: Orchestration scripts for parallel execution and cross-verification.
+    *   `generators/`: Scripts to build interactive HTML and Markdown reports.
+    *   `config/`: Master YAML configuration files (`NoC_config.yaml`, `verification_sweep.yaml`).
+    *   `report/`: Persistent storage for generated plots, JSON data, and interactive dashboards.
 
 <br>
 
@@ -70,4 +76,10 @@ To understand the details of the project, please refer to the following document
 *   `noc_tlm_model/`: SystemC 交易層級建模。
 *   `noc_rtl/`: Verilog 實作。
 *   `third_party/`: 包含用於交叉驗證的獨立開源模擬器（目前包含：`booksim`、`noxim`、`pronoc`、`constellation`）。
-*   `dse_tools/`: 用於理論分析、通用配置轉接器與自動化執行器的 Python 工具。
+*   `dse_tools/`: 用於片上網路架構探索的 Python 工具包。
+    *   `core/`: 拓撲產生器與數學指標計算器。
+    *   `converters/`: 負責將 YAML 轉接至各個第三方模擬器格式的轉接器。
+    *   `runners/`: 負責平行執行模擬與交叉驗證的自動化腳本。
+    *   `generators/`: 負責產生互動式 HTML 與 Markdown 報告的腳本。
+    *   `config/`: 主設定檔目錄 (`NoC_config.yaml`, `verification_sweep.yaml`)。
+    *   `report/`: 用於永久存放產生的圖表、JSON 數據與互動式儀表板。
