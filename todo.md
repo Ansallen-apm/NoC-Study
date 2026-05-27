@@ -25,6 +25,10 @@
 *   [x] **擴充驗證資料集 (Comprehensive Sweep)**：掃描涵蓋完整注入率 (Injection Rates) 陣列，以完整記錄 Latency 曲線資料。
 *   [x] **開發互動式 DSE 報告產生器 (Interactive HTML Report)**：利用 Chart.js 產生可切換拓撲與節點數、並能動態呈現效能趨勢與飽和點的互動式網頁報告。
 
+
+## 視覺化進階 (Future Visualizations)
+*   [ ] **動態互動式拓撲熱點圖 (Interactive JS Heatmaps)**：將目前產生的靜態 Topology Heatmap (.png) 升級為純 JavaScript (例如 D3.js 或 Cytoscape.js) 實作的動態可拖拉視窗，支援滑鼠懸停顯示具體 Edge Load 數值。
+
 ## 階段 4：硬體精確實作 (Phases 3 & 4)
 
 *   [ ] **重構 SystemC TLM 模型 (`noc_tlm_model`)**：移除寫死的 `MESH_WIDTH`；在 `b_transport` 中精確建模虛擬通道 (VC)、Switch Allocator 與管線級數 (Pipeline stages)；補齊統計數據輸出。
