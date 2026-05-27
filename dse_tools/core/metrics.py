@@ -170,13 +170,17 @@ def analyze_channel_load(G, routing_algorithm='xy'):
 
     # 找出最大負載
     if not edge_loads:
-        return {'max_load': 0, 'hot_spots': []}
+        return {'max_load': 0, 'hot_spots': [], 'all_edge_loads': {}}
 
     max_load = max(edge_loads.values())
     # 找出所有等於最大負載的邊 (熱點)
     hot_spots = [edge for edge, load in edge_loads.items() if load == max_load]
 
+    # 將所有邊的負載轉換為字串 key 方便 JSON 序列化
+    serializable_edge_loads = {f"{u}->{v}": load for (u, v), load in edge_loads.items()}
+
     return {
         'max_load': max_load,
-        'hot_spots': hot_spots
+        'hot_spots': hot_spots,
+        'all_edge_loads': serializable_edge_loads
     }

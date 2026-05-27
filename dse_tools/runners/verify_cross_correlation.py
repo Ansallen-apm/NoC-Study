@@ -33,13 +33,14 @@ def get_theoretical_metrics(topo_type, dim):
     # 預設 xy/dim_order
     load_analysis = analyze_channel_load(graph, routing_algorithm='xy')
     max_load = load_analysis['max_load']
+    edge_loads = load_analysis.get('all_edge_loads', {})
 
     # 對於單向計數的最大負載，理論極限的推演：
     # 如果最擁擠的通道平均每個週期要承載 max_load 個封包，
     # 則節點的注入率上限為 1.0 / max_load (假設單位為 1 flit)
     theo_max_rate = 1.0 / max_load if max_load > 0 else 1.0
 
-    return channel_count, bisection_bw, max_load, avg_hops, theo_max_rate
+    return channel_count, bisection_bw, max_load, edge_loads, avg_hops, theo_max_rate
 
 def generate_bs_config(topo_type, dim, vcs, p_size, b_size, rate):
     """產生單次 BookSim 設定字串"""
@@ -101,7 +102,7 @@ def run_task(task):
     task_id, topo_type, dim, vcs, p_size, b_size = task
 
     # 1. 計算理論值
-    channel_count, bisection_bw, max_load, avg_hops, theo_max_rate = get_theoretical_metrics(topo_type, dim)
+    channel_count, bisection_bw, max_load, edge_loads, avg_hops, theo_max_rate = get_theoretical_metrics(topo_type, dim)
 
     # 2. 密集掃描所有的注入率 (Injection Rates)
     # 不再只找飽和點，而是收集一整條 Latency 曲線
@@ -144,6 +145,7 @@ def run_task(task):
         "theory_channel_count": channel_count,
         "theory_bisection_bw": bisection_bw,
         "theory_max_load": max_load,
+        "theory_edge_loads": edge_loads,
         "theory_avg_hops": avg_hops,
         "booksim_zero_load_lat": zero_lat if zero_lat else float('inf'),
         "theory_max_rate": theo_max_rate,

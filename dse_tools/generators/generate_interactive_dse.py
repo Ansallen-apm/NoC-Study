@@ -111,6 +111,7 @@ def generate_interactive_html():
         <div class="controls" style="margin-bottom: 10px;">
             <button onclick="setMode('A')" id="btnModeA" style="padding: 10px 20px; font-weight: bold; background-color: #3cb44b; color: white; border: none; border-radius: 5px; cursor: pointer;">模式 A: 效能動態曲線 (Latency Curves)</button>
             <button onclick="setMode('B')" id="btnModeB" style="padding: 10px 20px; font-weight: bold; background-color: #ccc; color: white; border: none; border-radius: 5px; cursor: pointer;">模式 B: 架構交叉比對 (Scatter Plot)</button>
+            <button onclick="setMode('C')" id="btnModeC" style="padding: 10px 20px; font-weight: bold; background-color: #ccc; color: white; border: none; border-radius: 5px; cursor: pointer;">模式 C: 通道負載分佈 (Channel Load Bar)</button>
         </div>
 
         <div id="modeAControls" class="controls">
@@ -188,8 +189,24 @@ def generate_interactive_html():
             <span style="color: #666; font-size: 0.9em;">提示：在 Mode B 中，我們只繪製具有完整架構參數分析的資料點 (P=1, B=8)。</span>
         </div>
 
+        <div id="modeCControls" class="controls" style="display: none;">
+            <fieldset style="border: 1px solid #f58231; padding: 15px; border-radius: 5px; text-align: left; display: inline-block;">
+                <legend><strong>選擇觀察拓撲 (Select Topology to Inspect Hotspots)</strong></legend>
+
+                <label>拓撲 (Topology): </label>
+                <select id="topoSelectC" onchange="updateChart()"></select>
+                &nbsp;&nbsp;
+
+                <label>節點維度 (Dimension): </label>
+                <select id="dimSelectC" onchange="updateChart()"></select>
+            </fieldset>
+            <br><br>
+            <span style="color: #666; font-size: 0.9em;">提示：Mode C 會顯示該拓撲下所有通道的熱點分佈圖 (Heatmap)。紅色代表高負載，藍色代表低負載。</span>
+        </div>
+
         <div class="chart-container">
             <canvas id="dseChart"></canvas>
+            <img id="heatmapImg" src="" alt="Topology Heatmap" style="display: none; max-width: 100%; max-height: 100%; object-fit: contain; margin: 0 auto;">
         </div>
     </div>
 
@@ -202,16 +219,23 @@ def generate_interactive_html():
 
         function setMode(mode) {{
             currentMode = mode;
+
+            document.getElementById('modeAControls').style.display = 'none';
+            document.getElementById('modeBControls').style.display = 'none';
+            document.getElementById('modeCControls').style.display = 'none';
+            document.getElementById('btnModeA').style.backgroundColor = '#ccc';
+            document.getElementById('btnModeB').style.backgroundColor = '#ccc';
+            document.getElementById('btnModeC').style.backgroundColor = '#ccc';
+
             if (mode === 'A') {{
                 document.getElementById('modeAControls').style.display = 'block';
-                document.getElementById('modeBControls').style.display = 'none';
                 document.getElementById('btnModeA').style.backgroundColor = '#3cb44b';
-                document.getElementById('btnModeB').style.backgroundColor = '#ccc';
-            }} else {{
-                document.getElementById('modeAControls').style.display = 'none';
+            }} else if (mode === 'B') {{
                 document.getElementById('modeBControls').style.display = 'block';
-                document.getElementById('btnModeA').style.backgroundColor = '#ccc';
                 document.getElementById('btnModeB').style.backgroundColor = '#4363d8';
+            }} else if (mode === 'C') {{
+                document.getElementById('modeCControls').style.display = 'block';
+                document.getElementById('btnModeC').style.backgroundColor = '#f58231';
             }}
             updateChart();
         }}
@@ -246,6 +270,10 @@ def generate_interactive_html():
             if (myChart) {{
                 myChart.destroy();
             }}
+
+            // 預設隱藏 heatmap, 顯示 canvas
+            document.getElementById('heatmapImg').style.display = 'none';
+            document.getElementById('dseChart').style.display = 'block';
 
             if (currentMode === 'A') {{
                 // ===== MODE A: Latency Curves =====
@@ -379,11 +407,24 @@ def generate_interactive_html():
                         }}
                     }}
                 }});
+            }} else if (currentMode === 'C') {{
+                // ===== MODE C: Heatmap Image =====
+                const topo = document.getElementById('topoSelectC').value;
+                const dim = document.getElementById('dimSelectC').value;
+
+                document.getElementById('dseChart').style.display = 'none';
+
+                const img = document.getElementById('heatmapImg');
+                img.src = `heatmaps/${{topo}}_${{dim}}.png`;
+                img.style.display = 'block';
             }}
         }}
 
         // 初始化
         window.onload = function() {{
+            // Extract unique dimensions for Mode C
+            let dims = [...new Set(allData.map(item => item.dim))].sort((a,b) => a-b);
+
             // 填入下拉選項 (Topology 不給 All)
             populateSelect('topoSelect', allOptions.topology, false);
             populateSelect('rSelect', allOptions.routing, true);
@@ -392,8 +433,14 @@ def generate_interactive_html():
             populateSelect('bSelect', allOptions.buffer_size, true);
             populateSelect('vSelect', allOptions.vcs, true);
 
+            populateSelect('topoSelectC', allOptions.topology, false);
+            populateSelect('dimSelectC', dims, false);
+
             // 設定預設選項並更新
-            if(allOptions.topology.includes('ring')) document.getElementById('topoSelect').value = 'ring';
+            if(allOptions.topology.includes('ring')) {{
+                document.getElementById('topoSelect').value = 'ring';
+                document.getElementById('topoSelectC').value = 'ring';
+            }}
             updateChart();
         }};
     </script>
