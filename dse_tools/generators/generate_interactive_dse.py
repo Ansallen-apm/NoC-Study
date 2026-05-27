@@ -349,7 +349,7 @@ def generate_interactive_html():
                     }}
                 }});
 
-            }} else {{
+            }} else if (currentMode === 'B') {{
                 // ===== MODE B: Scatter Plot =====
                 const xKey = document.getElementById('scatterX').value;
                 const yKey = document.getElementById('scatterY').value;
