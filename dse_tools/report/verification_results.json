@@ -571,43 +571,6 @@
         ]
     },
     {
-        "topology": "ring",
-        "dim": 16,
-        "nodes": 16,
-        "routing": "dim_order",
-        "traffic": "uniform",
-        "theory_channel_count": 16,
-        "theory_bisection_bw": 128,
-        "theory_max_load": 65,
-        "theory_avg_hops": 4.266666666666667,
-        "booksim_zero_load_lat": 32.3613,
-        "theory_max_rate": 0.015384615384615385,
-        "booksim_actual_sat_rate": 0.15,
-        "booksim_total_throughput": 2.4,
-        "latency_curve": [
-            {
-                "rate": 0.01,
-                "latency": 32.3613
-            },
-            {
-                "rate": 0.05,
-                "latency": 32.2398
-            },
-            {
-                "rate": 0.1,
-                "latency": 34.0225
-            },
-            {
-                "rate": 0.15,
-                "latency": 64.4269
-            },
-            {
-                "rate": 0.2,
-                "latency": 219.311
-            }
-        ]
-    },
-    {
         "topology": "torus",
         "dim": 5,
         "nodes": 25,
@@ -661,6 +624,43 @@
             {
                 "rate": 0.45,
                 "latency": 138.748
+            }
+        ]
+    },
+    {
+        "topology": "ring",
+        "dim": 16,
+        "nodes": 16,
+        "routing": "dim_order",
+        "traffic": "uniform",
+        "theory_channel_count": 16,
+        "theory_bisection_bw": 128,
+        "theory_max_load": 65,
+        "theory_avg_hops": 4.266666666666667,
+        "booksim_zero_load_lat": 32.3613,
+        "theory_max_rate": 0.015384615384615385,
+        "booksim_actual_sat_rate": 0.15,
+        "booksim_total_throughput": 2.4,
+        "latency_curve": [
+            {
+                "rate": 0.01,
+                "latency": 32.3613
+            },
+            {
+                "rate": 0.05,
+                "latency": 32.2398
+            },
+            {
+                "rate": 0.1,
+                "latency": 34.0225
+            },
+            {
+                "rate": 0.15,
+                "latency": 64.4269
+            },
+            {
+                "rate": 0.2,
+                "latency": 219.311
             }
         ]
     },
