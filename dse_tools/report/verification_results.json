@@ -5,6 +5,9 @@
         "nodes": 4,
         "routing": "xy",
         "traffic": "uniform",
+        "packet_size": 1,
+        "buffer_size": 8,
+        "vcs": 1,
         "theory_channel_count": 4,
         "theory_bisection_bw": 128,
         "theory_max_load": 4,
@@ -60,6 +63,9 @@
         "nodes": 9,
         "routing": "xy",
         "traffic": "uniform",
+        "packet_size": 1,
+        "buffer_size": 8,
+        "vcs": 1,
         "theory_channel_count": 12,
         "theory_bisection_bw": 192,
         "theory_max_load": 12,
@@ -118,11 +124,320 @@
         ]
     },
     {
+        "topology": "torus",
+        "dim": 2,
+        "nodes": 4,
+        "routing": "dim_order",
+        "traffic": "uniform",
+        "packet_size": 1,
+        "buffer_size": 8,
+        "vcs": 1,
+        "theory_channel_count": 4,
+        "theory_bisection_bw": 256,
+        "theory_max_load": 4,
+        "theory_edge_loads": {
+            "0->1": 4,
+            "0->2": 4,
+            "2->3": 4,
+            "1->3": 4
+        },
+        "theory_avg_hops": 1.3333333333333333,
+        "booksim_zero_load_lat": Infinity,
+        "theory_max_rate": 0.25,
+        "booksim_actual_sat_rate": 0.0,
+        "booksim_total_throughput": 0.0,
+        "latency_curve": [
+            {
+                "rate": 0.01,
+                "latency": Infinity
+            }
+        ]
+    },
+    {
+        "topology": "torus",
+        "dim": 3,
+        "nodes": 9,
+        "routing": "dim_order",
+        "traffic": "uniform",
+        "packet_size": 1,
+        "buffer_size": 8,
+        "vcs": 1,
+        "theory_channel_count": 18,
+        "theory_bisection_bw": 384,
+        "theory_max_load": 6,
+        "theory_edge_loads": {
+            "0->1": 6,
+            "0->3": 6,
+            "0->2": 6,
+            "0->6": 6,
+            "3->4": 6,
+            "3->6": 6,
+            "3->5": 6,
+            "6->7": 6,
+            "6->8": 6,
+            "1->2": 6,
+            "1->4": 6,
+            "1->7": 6,
+            "4->5": 6,
+            "4->7": 6,
+            "7->8": 6,
+            "2->5": 6,
+            "2->8": 6,
+            "5->8": 6
+        },
+        "theory_avg_hops": 1.5,
+        "booksim_zero_load_lat": Infinity,
+        "theory_max_rate": 0.16666666666666666,
+        "booksim_actual_sat_rate": 0.0,
+        "booksim_total_throughput": 0.0,
+        "latency_curve": [
+            {
+                "rate": 0.01,
+                "latency": Infinity
+            }
+        ]
+    },
+    {
+        "topology": "torus",
+        "dim": 4,
+        "nodes": 16,
+        "routing": "dim_order",
+        "traffic": "uniform",
+        "packet_size": 1,
+        "buffer_size": 8,
+        "vcs": 1,
+        "theory_channel_count": 32,
+        "theory_bisection_bw": 512,
+        "theory_max_load": 24,
+        "theory_edge_loads": {
+            "0->1": 16,
+            "0->4": 16,
+            "0->3": 8,
+            "0->12": 8,
+            "4->5": 16,
+            "4->8": 24,
+            "4->7": 8,
+            "8->9": 16,
+            "8->12": 16,
+            "8->11": 8,
+            "12->13": 16,
+            "12->15": 8,
+            "1->2": 24,
+            "1->5": 16,
+            "1->13": 8,
+            "5->6": 24,
+            "5->9": 24,
+            "9->10": 24,
+            "9->13": 16,
+            "13->14": 24,
+            "2->3": 16,
+            "2->6": 16,
+            "2->14": 8,
+            "6->7": 16,
+            "6->10": 24,
+            "10->11": 16,
+            "10->14": 16,
+            "14->15": 16,
+            "3->7": 16,
+            "3->15": 8,
+            "7->11": 24,
+            "11->15": 16
+        },
+        "theory_avg_hops": 2.1333333333333333,
+        "booksim_zero_load_lat": Infinity,
+        "theory_max_rate": 0.041666666666666664,
+        "booksim_actual_sat_rate": 0.0,
+        "booksim_total_throughput": 0.0,
+        "latency_curve": [
+            {
+                "rate": 0.01,
+                "latency": Infinity
+            }
+        ]
+    },
+    {
+        "topology": "torus",
+        "dim": 5,
+        "nodes": 25,
+        "routing": "dim_order",
+        "traffic": "uniform",
+        "packet_size": 1,
+        "buffer_size": 8,
+        "vcs": 1,
+        "theory_channel_count": 50,
+        "theory_bisection_bw": 640,
+        "theory_max_load": 30,
+        "theory_edge_loads": {
+            "0->1": 30,
+            "0->5": 30,
+            "0->4": 30,
+            "0->20": 30,
+            "5->6": 30,
+            "5->10": 30,
+            "5->9": 30,
+            "10->11": 30,
+            "10->15": 30,
+            "10->14": 30,
+            "15->16": 30,
+            "15->20": 30,
+            "15->19": 30,
+            "20->21": 30,
+            "20->24": 30,
+            "1->2": 30,
+            "1->6": 30,
+            "1->21": 30,
+            "6->7": 30,
+            "6->11": 30,
+            "11->12": 30,
+            "11->16": 30,
+            "16->17": 30,
+            "16->21": 30,
+            "21->22": 30,
+            "2->3": 30,
+            "2->7": 30,
+            "2->22": 30,
+            "7->8": 30,
+            "7->12": 30,
+            "12->13": 30,
+            "12->17": 30,
+            "17->18": 30,
+            "17->22": 30,
+            "22->23": 30,
+            "3->4": 30,
+            "3->8": 30,
+            "3->23": 30,
+            "8->9": 30,
+            "8->13": 30,
+            "13->14": 30,
+            "13->18": 30,
+            "18->19": 30,
+            "18->23": 30,
+            "23->24": 30,
+            "4->9": 30,
+            "4->24": 30,
+            "9->14": 30,
+            "14->19": 30,
+            "19->24": 30
+        },
+        "theory_avg_hops": 2.5,
+        "booksim_zero_load_lat": Infinity,
+        "theory_max_rate": 0.03333333333333333,
+        "booksim_actual_sat_rate": 0.0,
+        "booksim_total_throughput": 0.0,
+        "latency_curve": [
+            {
+                "rate": 0.01,
+                "latency": Infinity
+            }
+        ]
+    },
+    {
+        "topology": "torus",
+        "dim": 6,
+        "nodes": 36,
+        "routing": "dim_order",
+        "traffic": "uniform",
+        "packet_size": 1,
+        "buffer_size": 8,
+        "vcs": 1,
+        "theory_channel_count": 72,
+        "theory_bisection_bw": 768,
+        "theory_max_load": 72,
+        "theory_edge_loads": {
+            "0->1": 48,
+            "0->6": 48,
+            "0->5": 36,
+            "0->30": 36,
+            "6->7": 48,
+            "6->12": 60,
+            "6->11": 36,
+            "12->13": 48,
+            "12->18": 72,
+            "12->17": 36,
+            "18->19": 48,
+            "18->24": 60,
+            "18->23": 36,
+            "24->25": 48,
+            "24->30": 48,
+            "24->29": 36,
+            "30->31": 48,
+            "30->35": 36,
+            "1->2": 60,
+            "1->7": 48,
+            "1->31": 36,
+            "7->8": 60,
+            "7->13": 60,
+            "13->14": 60,
+            "13->19": 72,
+            "19->20": 60,
+            "19->25": 60,
+            "25->26": 60,
+            "25->31": 48,
+            "31->32": 60,
+            "2->3": 72,
+            "2->8": 48,
+            "2->32": 36,
+            "8->9": 72,
+            "8->14": 60,
+            "14->15": 72,
+            "14->20": 72,
+            "20->21": 72,
+            "20->26": 60,
+            "26->27": 72,
+            "26->32": 48,
+            "32->33": 72,
+            "3->4": 60,
+            "3->9": 48,
+            "3->33": 36,
+            "9->10": 60,
+            "9->15": 60,
+            "15->16": 60,
+            "15->21": 72,
+            "21->22": 60,
+            "21->27": 60,
+            "27->28": 60,
+            "27->33": 48,
+            "33->34": 60,
+            "4->5": 48,
+            "4->10": 48,
+            "4->34": 36,
+            "10->11": 48,
+            "10->16": 60,
+            "16->17": 48,
+            "16->22": 72,
+            "22->23": 48,
+            "22->28": 60,
+            "28->29": 48,
+            "28->34": 48,
+            "34->35": 48,
+            "5->11": 48,
+            "5->35": 36,
+            "11->17": 60,
+            "17->23": 72,
+            "23->29": 60,
+            "29->35": 48
+        },
+        "theory_avg_hops": 3.085714285714286,
+        "booksim_zero_load_lat": Infinity,
+        "theory_max_rate": 0.013888888888888888,
+        "booksim_actual_sat_rate": 0.0,
+        "booksim_total_throughput": 0.0,
+        "latency_curve": [
+            {
+                "rate": 0.01,
+                "latency": Infinity
+            }
+        ]
+    },
+    {
         "topology": "mesh",
         "dim": 4,
         "nodes": 16,
         "routing": "xy",
         "traffic": "uniform",
+        "packet_size": 1,
+        "buffer_size": 8,
+        "vcs": 1,
         "theory_channel_count": 24,
         "theory_bisection_bw": 256,
         "theory_max_load": 32,
@@ -189,77 +504,76 @@
         ]
     },
     {
-        "topology": "torus",
-        "dim": 2,
+        "topology": "ring",
+        "dim": 4,
         "nodes": 4,
         "routing": "dim_order",
         "traffic": "uniform",
+        "packet_size": 1,
+        "buffer_size": 8,
+        "vcs": 2,
         "theory_channel_count": 4,
-        "theory_bisection_bw": 256,
-        "theory_max_load": 4,
+        "theory_bisection_bw": 128,
+        "theory_max_load": 5,
         "theory_edge_loads": {
-            "0->1": 4,
-            "0->2": 4,
-            "2->3": 4,
-            "1->3": 4
+            "0->1": 5,
+            "0->3": 3,
+            "1->2": 5,
+            "2->3": 3
         },
         "theory_avg_hops": 1.3333333333333333,
-        "booksim_zero_load_lat": 12.766,
-        "theory_max_rate": 0.25,
-        "booksim_actual_sat_rate": 0.6,
-        "booksim_total_throughput": 2.4,
+        "booksim_zero_load_lat": 12.4894,
+        "theory_max_rate": 0.2,
+        "booksim_actual_sat_rate": 0.5,
+        "booksim_total_throughput": 2.0,
         "latency_curve": [
             {
                 "rate": 0.01,
-                "latency": 12.766
+                "latency": 12.4894
             },
             {
                 "rate": 0.05,
-                "latency": 13.4293
+                "latency": 12.798
             },
             {
                 "rate": 0.1,
-                "latency": 12.9038
+                "latency": 13.2203
             },
             {
                 "rate": 0.15,
-                "latency": 13.4156
+                "latency": 13.356
             },
             {
                 "rate": 0.2,
-                "latency": 13.3543
+                "latency": 13.5653
             },
             {
                 "rate": 0.25,
-                "latency": 13.7543
+                "latency": 13.6
             },
             {
                 "rate": 0.3,
-                "latency": 13.7529
+                "latency": 14.2655
             },
             {
                 "rate": 0.35,
-                "latency": 13.8797
+                "latency": 14.4262
             },
             {
                 "rate": 0.4,
-                "latency": 13.9774
+                "latency": 15.2878
             },
             {
                 "rate": 0.45,
-                "latency": 14.521
+                "latency": 16.2499
             },
             {
                 "rate": 0.5,
-                "latency": 15.3997
+                "latency": 18.0369
             },
             {
                 "rate": 0.6,
-                "latency": 29.0946
-            },
-            {
-                "rate": 0.7,
-                "latency": 285.735
+                "latency": 145.211
             }
         ]
     },
@@ -269,6 +583,9 @@
         "nodes": 25,
         "routing": "xy",
         "traffic": "uniform",
+        "packet_size": 1,
+        "buffer_size": 8,
+        "vcs": 1,
         "theory_channel_count": 40,
         "theory_bisection_bw": 320,
         "theory_max_load": 60,
@@ -347,11 +664,130 @@
         ]
     },
     {
+        "topology": "ring",
+        "dim": 8,
+        "nodes": 8,
+        "routing": "dim_order",
+        "traffic": "uniform",
+        "packet_size": 1,
+        "buffer_size": 8,
+        "vcs": 2,
+        "theory_channel_count": 8,
+        "theory_bisection_bw": 128,
+        "theory_max_load": 17,
+        "theory_edge_loads": {
+            "0->1": 17,
+            "0->7": 15,
+            "1->2": 17,
+            "2->3": 17,
+            "3->4": 17,
+            "4->5": 15,
+            "5->6": 15,
+            "6->7": 15
+        },
+        "theory_avg_hops": 2.2857142857142856,
+        "booksim_zero_load_lat": 19.7903,
+        "theory_max_rate": 0.058823529411764705,
+        "booksim_actual_sat_rate": 0.25,
+        "booksim_total_throughput": 2.0,
+        "latency_curve": [
+            {
+                "rate": 0.01,
+                "latency": 19.7903
+            },
+            {
+                "rate": 0.05,
+                "latency": 19.3159
+            },
+            {
+                "rate": 0.1,
+                "latency": 19.747
+            },
+            {
+                "rate": 0.15,
+                "latency": 20.3691
+            },
+            {
+                "rate": 0.2,
+                "latency": 20.9994
+            },
+            {
+                "rate": 0.25,
+                "latency": 23.1729
+            },
+            {
+                "rate": 0.3,
+                "latency": 133.73
+            }
+        ]
+    },
+    {
+        "topology": "ring",
+        "dim": 16,
+        "nodes": 16,
+        "routing": "dim_order",
+        "traffic": "uniform",
+        "packet_size": 1,
+        "buffer_size": 8,
+        "vcs": 2,
+        "theory_channel_count": 16,
+        "theory_bisection_bw": 128,
+        "theory_max_load": 65,
+        "theory_edge_loads": {
+            "0->1": 65,
+            "0->15": 63,
+            "1->2": 65,
+            "2->3": 65,
+            "3->4": 65,
+            "4->5": 65,
+            "5->6": 65,
+            "6->7": 65,
+            "7->8": 65,
+            "8->9": 63,
+            "9->10": 63,
+            "10->11": 63,
+            "11->12": 63,
+            "12->13": 63,
+            "13->14": 63,
+            "14->15": 63
+        },
+        "theory_avg_hops": 4.266666666666667,
+        "booksim_zero_load_lat": 32.3613,
+        "theory_max_rate": 0.015384615384615385,
+        "booksim_actual_sat_rate": 0.15,
+        "booksim_total_throughput": 2.4,
+        "latency_curve": [
+            {
+                "rate": 0.01,
+                "latency": 32.3613
+            },
+            {
+                "rate": 0.05,
+                "latency": 32.2398
+            },
+            {
+                "rate": 0.1,
+                "latency": 34.0225
+            },
+            {
+                "rate": 0.15,
+                "latency": 64.4269
+            },
+            {
+                "rate": 0.2,
+                "latency": 219.311
+            }
+        ]
+    },
+    {
         "topology": "mesh",
         "dim": 6,
         "nodes": 36,
         "routing": "xy",
         "traffic": "uniform",
+        "packet_size": 1,
+        "buffer_size": 8,
+        "vcs": 1,
         "theory_channel_count": 60,
         "theory_bisection_bw": 384,
         "theory_max_load": 108,
@@ -446,226 +882,14 @@
         ]
     },
     {
-        "topology": "torus",
-        "dim": 3,
-        "nodes": 9,
-        "routing": "dim_order",
-        "traffic": "uniform",
-        "theory_channel_count": 18,
-        "theory_bisection_bw": 384,
-        "theory_max_load": 6,
-        "theory_edge_loads": {
-            "0->1": 6,
-            "0->3": 6,
-            "0->2": 6,
-            "0->6": 6,
-            "3->4": 6,
-            "3->6": 6,
-            "3->5": 6,
-            "6->7": 6,
-            "6->8": 6,
-            "1->2": 6,
-            "1->4": 6,
-            "1->7": 6,
-            "4->5": 6,
-            "4->7": 6,
-            "7->8": 6,
-            "2->5": 6,
-            "2->8": 6,
-            "5->8": 6
-        },
-        "theory_avg_hops": 1.5,
-        "booksim_zero_load_lat": 15.8382,
-        "theory_max_rate": 0.16666666666666666,
-        "booksim_actual_sat_rate": 0.6,
-        "booksim_total_throughput": 5.3999999999999995,
-        "latency_curve": [
-            {
-                "rate": 0.01,
-                "latency": 15.8382
-            },
-            {
-                "rate": 0.05,
-                "latency": 14.9731
-            },
-            {
-                "rate": 0.1,
-                "latency": 15.3551
-            },
-            {
-                "rate": 0.15,
-                "latency": 15.1245
-            },
-            {
-                "rate": 0.2,
-                "latency": 15.6884
-            },
-            {
-                "rate": 0.25,
-                "latency": 15.7703
-            },
-            {
-                "rate": 0.3,
-                "latency": 15.8581
-            },
-            {
-                "rate": 0.35,
-                "latency": 16.3177
-            },
-            {
-                "rate": 0.4,
-                "latency": 16.8521
-            },
-            {
-                "rate": 0.45,
-                "latency": 17.6918
-            },
-            {
-                "rate": 0.5,
-                "latency": 18.5768
-            },
-            {
-                "rate": 0.6,
-                "latency": 39.2129
-            },
-            {
-                "rate": 0.7,
-                "latency": 315.037
-            }
-        ]
-    },
-    {
-        "topology": "ring",
-        "dim": 4,
-        "nodes": 4,
-        "routing": "dim_order",
-        "traffic": "uniform",
-        "theory_channel_count": 4,
-        "theory_bisection_bw": 128,
-        "theory_max_load": 5,
-        "theory_edge_loads": {
-            "0->1": 5,
-            "0->3": 3,
-            "1->2": 5,
-            "2->3": 3
-        },
-        "theory_avg_hops": 1.3333333333333333,
-        "booksim_zero_load_lat": 12.4894,
-        "theory_max_rate": 0.2,
-        "booksim_actual_sat_rate": 0.5,
-        "booksim_total_throughput": 2.0,
-        "latency_curve": [
-            {
-                "rate": 0.01,
-                "latency": 12.4894
-            },
-            {
-                "rate": 0.05,
-                "latency": 12.798
-            },
-            {
-                "rate": 0.1,
-                "latency": 13.2203
-            },
-            {
-                "rate": 0.15,
-                "latency": 13.356
-            },
-            {
-                "rate": 0.2,
-                "latency": 13.5653
-            },
-            {
-                "rate": 0.25,
-                "latency": 13.6
-            },
-            {
-                "rate": 0.3,
-                "latency": 14.2655
-            },
-            {
-                "rate": 0.35,
-                "latency": 14.4262
-            },
-            {
-                "rate": 0.4,
-                "latency": 15.2878
-            },
-            {
-                "rate": 0.45,
-                "latency": 16.2499
-            },
-            {
-                "rate": 0.5,
-                "latency": 18.0369
-            },
-            {
-                "rate": 0.6,
-                "latency": 145.211
-            }
-        ]
-    },
-    {
-        "topology": "ring",
-        "dim": 8,
-        "nodes": 8,
-        "routing": "dim_order",
-        "traffic": "uniform",
-        "theory_channel_count": 8,
-        "theory_bisection_bw": 128,
-        "theory_max_load": 17,
-        "theory_edge_loads": {
-            "0->1": 17,
-            "0->7": 15,
-            "1->2": 17,
-            "2->3": 17,
-            "3->4": 17,
-            "4->5": 15,
-            "5->6": 15,
-            "6->7": 15
-        },
-        "theory_avg_hops": 2.2857142857142856,
-        "booksim_zero_load_lat": 19.7903,
-        "theory_max_rate": 0.058823529411764705,
-        "booksim_actual_sat_rate": 0.25,
-        "booksim_total_throughput": 2.0,
-        "latency_curve": [
-            {
-                "rate": 0.01,
-                "latency": 19.7903
-            },
-            {
-                "rate": 0.05,
-                "latency": 19.3159
-            },
-            {
-                "rate": 0.1,
-                "latency": 19.747
-            },
-            {
-                "rate": 0.15,
-                "latency": 20.3691
-            },
-            {
-                "rate": 0.2,
-                "latency": 20.9994
-            },
-            {
-                "rate": 0.25,
-                "latency": 23.1729
-            },
-            {
-                "rate": 0.3,
-                "latency": 133.73
-            }
-        ]
-    },
-    {
         "topology": "ring",
         "dim": 12,
         "nodes": 12,
         "routing": "dim_order",
         "traffic": "uniform",
+        "packet_size": 1,
+        "buffer_size": 8,
+        "vcs": 2,
         "theory_channel_count": 12,
         "theory_bisection_bw": 128,
         "theory_max_load": 37,
@@ -712,274 +936,14 @@
         ]
     },
     {
-        "topology": "torus",
-        "dim": 4,
-        "nodes": 16,
-        "routing": "dim_order",
-        "traffic": "uniform",
-        "theory_channel_count": 32,
-        "theory_bisection_bw": 512,
-        "theory_max_load": 24,
-        "theory_edge_loads": {
-            "0->1": 16,
-            "0->4": 16,
-            "0->3": 8,
-            "0->12": 8,
-            "4->5": 16,
-            "4->8": 24,
-            "4->7": 8,
-            "8->9": 16,
-            "8->12": 16,
-            "8->11": 8,
-            "12->13": 16,
-            "12->15": 8,
-            "1->2": 24,
-            "1->5": 16,
-            "1->13": 8,
-            "5->6": 24,
-            "5->9": 24,
-            "9->10": 24,
-            "9->13": 16,
-            "13->14": 24,
-            "2->3": 16,
-            "2->6": 16,
-            "2->14": 8,
-            "6->7": 16,
-            "6->10": 24,
-            "10->11": 16,
-            "10->14": 16,
-            "14->15": 16,
-            "3->7": 16,
-            "3->15": 8,
-            "7->11": 24,
-            "11->15": 16
-        },
-        "theory_avg_hops": 2.1333333333333333,
-        "booksim_zero_load_lat": 18.7097,
-        "theory_max_rate": 0.041666666666666664,
-        "booksim_actual_sat_rate": 0.5,
-        "booksim_total_throughput": 8.0,
-        "latency_curve": [
-            {
-                "rate": 0.01,
-                "latency": 18.7097
-            },
-            {
-                "rate": 0.05,
-                "latency": 19.5303
-            },
-            {
-                "rate": 0.1,
-                "latency": 19.3719
-            },
-            {
-                "rate": 0.15,
-                "latency": 19.4487
-            },
-            {
-                "rate": 0.2,
-                "latency": 20.0513
-            },
-            {
-                "rate": 0.25,
-                "latency": 20.3661
-            },
-            {
-                "rate": 0.3,
-                "latency": 21.1047
-            },
-            {
-                "rate": 0.35,
-                "latency": 21.6854
-            },
-            {
-                "rate": 0.4,
-                "latency": 23.5238
-            },
-            {
-                "rate": 0.45,
-                "latency": 25.351
-            },
-            {
-                "rate": 0.5,
-                "latency": 36.4431
-            },
-            {
-                "rate": 0.6,
-                "latency": 283.888
-            }
-        ]
-    },
-    {
-        "topology": "torus",
-        "dim": 5,
-        "nodes": 25,
-        "routing": "dim_order",
-        "traffic": "uniform",
-        "theory_channel_count": 50,
-        "theory_bisection_bw": 640,
-        "theory_max_load": 30,
-        "theory_edge_loads": {
-            "0->1": 30,
-            "0->5": 30,
-            "0->4": 30,
-            "0->20": 30,
-            "5->6": 30,
-            "5->10": 30,
-            "5->9": 30,
-            "10->11": 30,
-            "10->15": 30,
-            "10->14": 30,
-            "15->16": 30,
-            "15->20": 30,
-            "15->19": 30,
-            "20->21": 30,
-            "20->24": 30,
-            "1->2": 30,
-            "1->6": 30,
-            "1->21": 30,
-            "6->7": 30,
-            "6->11": 30,
-            "11->12": 30,
-            "11->16": 30,
-            "16->17": 30,
-            "16->21": 30,
-            "21->22": 30,
-            "2->3": 30,
-            "2->7": 30,
-            "2->22": 30,
-            "7->8": 30,
-            "7->12": 30,
-            "12->13": 30,
-            "12->17": 30,
-            "17->18": 30,
-            "17->22": 30,
-            "22->23": 30,
-            "3->4": 30,
-            "3->8": 30,
-            "3->23": 30,
-            "8->9": 30,
-            "8->13": 30,
-            "13->14": 30,
-            "13->18": 30,
-            "18->19": 30,
-            "18->23": 30,
-            "23->24": 30,
-            "4->9": 30,
-            "4->24": 30,
-            "9->14": 30,
-            "14->19": 30,
-            "19->24": 30
-        },
-        "theory_avg_hops": 2.5,
-        "booksim_zero_load_lat": 21.7149,
-        "theory_max_rate": 0.03333333333333333,
-        "booksim_actual_sat_rate": 0.4,
-        "booksim_total_throughput": 10.0,
-        "latency_curve": [
-            {
-                "rate": 0.01,
-                "latency": 21.7149
-            },
-            {
-                "rate": 0.05,
-                "latency": 21.8538
-            },
-            {
-                "rate": 0.1,
-                "latency": 22.1427
-            },
-            {
-                "rate": 0.15,
-                "latency": 22.3191
-            },
-            {
-                "rate": 0.2,
-                "latency": 22.9023
-            },
-            {
-                "rate": 0.25,
-                "latency": 23.7628
-            },
-            {
-                "rate": 0.3,
-                "latency": 24.8401
-            },
-            {
-                "rate": 0.35,
-                "latency": 26.8341
-            },
-            {
-                "rate": 0.4,
-                "latency": 30.3635
-            },
-            {
-                "rate": 0.45,
-                "latency": 138.748
-            }
-        ]
-    },
-    {
-        "topology": "ring",
-        "dim": 16,
-        "nodes": 16,
-        "routing": "dim_order",
-        "traffic": "uniform",
-        "theory_channel_count": 16,
-        "theory_bisection_bw": 128,
-        "theory_max_load": 65,
-        "theory_edge_loads": {
-            "0->1": 65,
-            "0->15": 63,
-            "1->2": 65,
-            "2->3": 65,
-            "3->4": 65,
-            "4->5": 65,
-            "5->6": 65,
-            "6->7": 65,
-            "7->8": 65,
-            "8->9": 63,
-            "9->10": 63,
-            "10->11": 63,
-            "11->12": 63,
-            "12->13": 63,
-            "13->14": 63,
-            "14->15": 63
-        },
-        "theory_avg_hops": 4.266666666666667,
-        "booksim_zero_load_lat": 32.3613,
-        "theory_max_rate": 0.015384615384615385,
-        "booksim_actual_sat_rate": 0.15,
-        "booksim_total_throughput": 2.4,
-        "latency_curve": [
-            {
-                "rate": 0.01,
-                "latency": 32.3613
-            },
-            {
-                "rate": 0.05,
-                "latency": 32.2398
-            },
-            {
-                "rate": 0.1,
-                "latency": 34.0225
-            },
-            {
-                "rate": 0.15,
-                "latency": 64.4269
-            },
-            {
-                "rate": 0.2,
-                "latency": 219.311
-            }
-        ]
-    },
-    {
         "topology": "ring",
         "dim": 24,
         "nodes": 24,
         "routing": "dim_order",
         "traffic": "uniform",
+        "packet_size": 1,
+        "buffer_size": 8,
+        "vcs": 2,
         "theory_channel_count": 24,
         "theory_bisection_bw": 128,
         "theory_max_load": 145,
@@ -1030,133 +994,6 @@
             {
                 "rate": 0.15,
                 "latency": 279.762
-            }
-        ]
-    },
-    {
-        "topology": "torus",
-        "dim": 6,
-        "nodes": 36,
-        "routing": "dim_order",
-        "traffic": "uniform",
-        "theory_channel_count": 72,
-        "theory_bisection_bw": 768,
-        "theory_max_load": 72,
-        "theory_edge_loads": {
-            "0->1": 48,
-            "0->6": 48,
-            "0->5": 36,
-            "0->30": 36,
-            "6->7": 48,
-            "6->12": 60,
-            "6->11": 36,
-            "12->13": 48,
-            "12->18": 72,
-            "12->17": 36,
-            "18->19": 48,
-            "18->24": 60,
-            "18->23": 36,
-            "24->25": 48,
-            "24->30": 48,
-            "24->29": 36,
-            "30->31": 48,
-            "30->35": 36,
-            "1->2": 60,
-            "1->7": 48,
-            "1->31": 36,
-            "7->8": 60,
-            "7->13": 60,
-            "13->14": 60,
-            "13->19": 72,
-            "19->20": 60,
-            "19->25": 60,
-            "25->26": 60,
-            "25->31": 48,
-            "31->32": 60,
-            "2->3": 72,
-            "2->8": 48,
-            "2->32": 36,
-            "8->9": 72,
-            "8->14": 60,
-            "14->15": 72,
-            "14->20": 72,
-            "20->21": 72,
-            "20->26": 60,
-            "26->27": 72,
-            "26->32": 48,
-            "32->33": 72,
-            "3->4": 60,
-            "3->9": 48,
-            "3->33": 36,
-            "9->10": 60,
-            "9->15": 60,
-            "15->16": 60,
-            "15->21": 72,
-            "21->22": 60,
-            "21->27": 60,
-            "27->28": 60,
-            "27->33": 48,
-            "33->34": 60,
-            "4->5": 48,
-            "4->10": 48,
-            "4->34": 36,
-            "10->11": 48,
-            "10->16": 60,
-            "16->17": 48,
-            "16->22": 72,
-            "22->23": 48,
-            "22->28": 60,
-            "28->29": 48,
-            "28->34": 48,
-            "34->35": 48,
-            "5->11": 48,
-            "5->35": 36,
-            "11->17": 60,
-            "17->23": 72,
-            "23->29": 60,
-            "29->35": 48
-        },
-        "theory_avg_hops": 3.085714285714286,
-        "booksim_zero_load_lat": 25.5823,
-        "theory_max_rate": 0.013888888888888888,
-        "booksim_actual_sat_rate": 0.35,
-        "booksim_total_throughput": 12.6,
-        "latency_curve": [
-            {
-                "rate": 0.01,
-                "latency": 25.5823
-            },
-            {
-                "rate": 0.05,
-                "latency": 25.4599
-            },
-            {
-                "rate": 0.1,
-                "latency": 25.6197
-            },
-            {
-                "rate": 0.15,
-                "latency": 26.4397
-            },
-            {
-                "rate": 0.2,
-                "latency": 27.1041
-            },
-            {
-                "rate": 0.25,
-                "latency": 29.102
-            },
-            {
-                "rate": 0.3,
-                "latency": 32.3896
-            },
-            {
-                "rate": 0.35,
-                "latency": 55.8284
-            },
-            {
-                "rate": 0.4,
-                "latency": 306.901
             }
         ]
     }

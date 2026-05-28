@@ -1,193 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>NoC DSE 互動式分析報告 (Interactive Report)</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        h1 { color: #2c3e50; text-align: center; }
+        .controls { text-align: center; margin: 20px 0; }
+        select { padding: 10px; font-size: 16px; border-radius: 5px; border: 1px solid #ccc; }
+        .chart-container { position: relative; height: 60vh; width: 100%; display: flex; justify-content: center; align-items: center; }
+        .btn-group { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
+        .btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; color: white; font-weight: bold; font-size: 16px; }
+        canvas { max-width: 100%; max-height: 100%; }
+        #topologyCanvas { background-color: #fafafa; border: 1px solid #ddd; border-radius: 8px; }
+    </style>
+</head>
+<body>
 
-    <!DOCTYPE html>
-    <html lang="zh-TW">
-    <head>
-        <meta charset="UTF-8">
-        <title>互動式 DSE 效能趨勢報告</title>
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-        <style>
-            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; }
-            .container { max-width: 1000px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-            h1 { color: #2c3e50; text-align: center; }
-            .controls { text-align: center; margin: 20px 0; }
-            select { padding: 10px; font-size: 16px; border-radius: 5px; border: 1px solid #ccc; }
-            .chart-container { position: relative; height: 60vh; width: 100%; }
-        </style>
-    </head>
-    <body>
+<div class="container">
+    <h1>🚀 網路晶片架構探索 (NoC DSE) 互動式分析報告</h1>
 
-    <div class="container">
-        <h1>互動式 NoC DSE 效能趨勢 (Latency vs. Load)</h1>
-
-        <div class="controls" style="margin-bottom: 10px;">
-            <button onclick="setMode('A')" id="btnModeA" style="padding: 10px 20px; font-weight: bold; background-color: #3cb44b; color: white; border: none; border-radius: 5px; cursor: pointer;">模式 A: 效能動態曲線 (Latency Curves)</button>
-            <button onclick="setMode('B')" id="btnModeB" style="padding: 10px 20px; font-weight: bold; background-color: #ccc; color: white; border: none; border-radius: 5px; cursor: pointer;">模式 B: 架構交叉比對 (Scatter Plot)</button>
-            <button onclick="setMode('C')" id="btnModeC" style="padding: 10px 20px; font-weight: bold; background-color: #ccc; color: white; border: none; border-radius: 5px; cursor: pointer;">模式 C: 通道負載分佈 (Channel Load Bar)</button>
-        </div>
-
-        <div id="modeAControls" class="controls">
-            <fieldset style="border: 1px solid #ddd; padding: 15px; border-radius: 5px; text-align: left; display: inline-block;">
-                <legend><strong>過濾器 (Filters)</strong></legend>
-
-                <label>拓撲 (Topology): </label>
-                <select id="topoSelect" onchange="updateChart()"></select>
-                &nbsp;&nbsp;
-
-                <label>路由 (Routing): </label>
-                <select id="rSelect" onchange="updateChart()"></select>
-                &nbsp;&nbsp;
-
-                <label>流量 (Traffic): </label>
-                <select id="tSelect" onchange="updateChart()"></select>
-                &nbsp;&nbsp;
-
-                <label>封包長度 (Packet Size): </label>
-                <select id="pSelect" onchange="updateChart()"></select>
-                &nbsp;&nbsp;
-
-                <label>緩衝區 (Buffer Size): </label>
-                <select id="bSelect" onchange="updateChart()"></select>
-                &nbsp;&nbsp;
-
-                <label>虛擬通道 (VCs): </label>
-                <select id="vSelect" onchange="updateChart()"></select>
-            </fieldset>
-            <br><br>
-            <fieldset style="border: 1px solid #3cb44b; padding: 15px; border-radius: 5px; text-align: left; display: inline-block;">
-                <legend><strong>比較維度 (Compare By)</strong></legend>
-                <label>將以下維度展開為不同的曲線: </label>
-                <select id="compareSelect" onchange="updateChart()">
-                    <option value="dim" selected>節點數量 (Dimension/Nodes)</option>
-                    <option value="routing">路由演算法 (Routing Algorithm)</option>
-                    <option value="traffic">流量模式 (Traffic Pattern)</option>
-                    <option value="packet_size">封包長度 (Packet Size)</option>
-                    <option value="buffer_size">緩衝區大小 (Buffer Size)</option>
-                    <option value="vcs">虛擬通道數 (VCs)</option>
-                </select>
-            </fieldset>
-        </div>
-
-        <div id="modeBControls" class="controls" style="display: none;">
-            <fieldset style="border: 1px solid #4363d8; padding: 15px; border-radius: 5px; text-align: left; display: inline-block;">
-                <legend><strong>散佈圖維度設定 (Scatter Plot Axes)</strong></legend>
-
-                <label>X 軸 (X-Axis): </label>
-                <select id="scatterX" onchange="updateChart()">
-                    <option value="nodes">節點數 (Nodes)</option>
-                    <option value="theory_avg_hops">理論平均跳數 (Avg Hops)</option>
-                    <option value="theory_max_load">最大通道負載 (Max Load)</option>
-                    <option value="theory_bisection_bw">二分頻寬 (Bisection BW)</option>
-                    <option value="theory_max_rate">理論最大注入率 (Max Rate)</option>
-                    <option value="booksim_zero_load_lat">BookSim 零負載延遲 (Zero-Load Latency)</option>
-                    <option value="booksim_actual_sat_rate">BookSim 實際飽和點 (Saturation Rate)</option>
-                    <option value="booksim_total_throughput">BookSim 總吞吐量 (Total Throughput)</option>
-                </select>
-                &nbsp;&nbsp;&nbsp;&nbsp;
-
-                <label>Y 軸 (Y-Axis): </label>
-                <select id="scatterY" onchange="updateChart()">
-                    <option value="booksim_zero_load_lat" selected>BookSim 零負載延遲 (Zero-Load Latency)</option>
-                    <option value="nodes">節點數 (Nodes)</option>
-                    <option value="theory_avg_hops">理論平均跳數 (Avg Hops)</option>
-                    <option value="theory_max_load">最大通道負載 (Max Load)</option>
-                    <option value="theory_bisection_bw">二分頻寬 (Bisection BW)</option>
-                    <option value="theory_max_rate">理論最大注入率 (Max Rate)</option>
-                    <option value="booksim_actual_sat_rate">BookSim 實際飽和點 (Saturation Rate)</option>
-                    <option value="booksim_total_throughput">BookSim 總吞吐量 (Total Throughput)</option>
-                </select>
-            </fieldset>
-            <br><br>
-            <span style="color: #666; font-size: 0.9em;">提示：在 Mode B 中，我們只繪製具有完整架構參數分析的資料點 (P=1, B=8)。</span>
-        </div>
-
-        <div id="modeCControls" class="controls" style="display: none;">
-            <fieldset style="border: 1px solid #f58231; padding: 15px; border-radius: 5px; text-align: left; display: inline-block;">
-                <legend><strong>選擇觀察拓撲 (Select Topology to Inspect Hotspots)</strong></legend>
-
-                <label>拓撲 (Topology): </label>
-                <select id="topoSelectC" onchange="updateChart()"></select>
-                &nbsp;&nbsp;
-
-                <label>節點維度 (Dimension): </label>
-                <select id="dimSelectC" onchange="updateChart()"></select>
-            </fieldset>
-            <br><br>
-            <span style="color: #666; font-size: 0.9em;">提示：Mode C 會顯示該拓撲下所有通道的熱點分佈圖 (Heatmap)。紅色代表高負載，藍色代表低負載。</span>
-        </div>
-
-        <div class="chart-container">
-            <canvas id="dseChart"></canvas>
-            <img id="heatmapImg" src="" alt="Topology Heatmap" style="display: none; max-width: 100%; max-height: 100%; object-fit: contain; margin: 0 auto;">
-        </div>
+    <div class="btn-group">
+        <button id="btnModeA" class="btn" style="background-color: #3cb44b;" onclick="setMode('A')">模式 A：效能曲線 (Latency Curves)</button>
+        <button id="btnModeB" class="btn" style="background-color: #ccc;" onclick="setMode('B')">模式 B：特徵相關性 (Scatter Correlation)</button>
+        <button id="btnModeC" class="btn" style="background-color: #ccc;" onclick="setMode('C')">模式 C：動態熱點圖 (Dynamic Heatmap)</button>
     </div>
 
-    <script>
-        // 來自 Python 的完整 DSE 曲線資料與選項
-        const allData = [{"topology": "mesh", "dim": 2, "nodes": 4, "routing": "xy", "traffic": "uniform", "packet_size": 1, "buffer_size": 8, "vcs": 1, "theory_channel_count": 4, "theory_bisection_bw": 128, "theory_max_load": 4, "theory_avg_hops": 1.3333333333333333, "theory_max_rate": 0.25, "booksim_zero_load_lat": 11.9574, "booksim_actual_sat_rate": 0.3, "booksim_total_throughput": 1.2, "curve": [{"x": 0.01, "y": 11.9574}, {"x": 0.05, "y": 11.9192}, {"x": 0.1, "y": 12.5949}, {"x": 0.15, "y": 13.202}, {"x": 0.2, "y": 14.1646}, {"x": 0.25, "y": 17.8589}, {"x": 0.3, "y": 32.2339}, {"x": 0.35, "y": 225.184}]}, {"topology": "mesh", "dim": 3, "nodes": 9, "routing": "xy", "traffic": "uniform", "packet_size": 1, "buffer_size": 8, "vcs": 1, "theory_channel_count": 12, "theory_bisection_bw": 192, "theory_max_load": 12, "theory_avg_hops": 2.0, "theory_max_rate": 0.08333333333333333, "booksim_zero_load_lat": 17.2941, "booksim_actual_sat_rate": 0.3, "booksim_total_throughput": 2.6999999999999997, "curve": [{"x": 0.01, "y": 17.2941}, {"x": 0.05, "y": 16.1121}, {"x": 0.1, "y": 16.9466}, {"x": 0.15, "y": 17.2404}, {"x": 0.2, "y": 19.059}, {"x": 0.25, "y": 21.9908}, {"x": 0.3, "y": 48.2298}, {"x": 0.35, "y": 267.982}]}, {"topology": "mesh", "dim": 4, "nodes": 16, "routing": "xy", "traffic": "uniform", "packet_size": 1, "buffer_size": 8, "vcs": 1, "theory_channel_count": 24, "theory_bisection_bw": 256, "theory_max_load": 32, "theory_avg_hops": 2.6666666666666665, "theory_max_rate": 0.03125, "booksim_zero_load_lat": 19.1613, "booksim_actual_sat_rate": 0.25, "booksim_total_throughput": 4.0, "curve": [{"x": 0.01, "y": 19.1613}, {"x": 0.05, "y": 19.8195}, {"x": 0.1, "y": 20.608}, {"x": 0.15, "y": 22.1939}, {"x": 0.2, "y": 25.0048}, {"x": 0.25, "y": 33.9927}, {"x": 0.3, "y": 252.588}]}, {"topology": "torus", "dim": 2, "nodes": 4, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 8, "vcs": 2, "theory_channel_count": 4, "theory_bisection_bw": 256, "theory_max_load": 4, "theory_avg_hops": 1.3333333333333333, "theory_max_rate": 0.25, "booksim_zero_load_lat": 12.766, "booksim_actual_sat_rate": 0.6, "booksim_total_throughput": 2.4, "curve": [{"x": 0.01, "y": 12.766}, {"x": 0.05, "y": 13.4293}, {"x": 0.1, "y": 12.9038}, {"x": 0.15, "y": 13.4156}, {"x": 0.2, "y": 13.3543}, {"x": 0.25, "y": 13.7543}, {"x": 0.3, "y": 13.7529}, {"x": 0.35, "y": 13.8797}, {"x": 0.4, "y": 13.9774}, {"x": 0.45, "y": 14.521}, {"x": 0.5, "y": 15.3997}, {"x": 0.6, "y": 29.0946}, {"x": 0.7, "y": 285.735}]}, {"topology": "mesh", "dim": 5, "nodes": 25, "routing": "xy", "traffic": "uniform", "packet_size": 1, "buffer_size": 8, "vcs": 1, "theory_channel_count": 40, "theory_bisection_bw": 320, "theory_max_load": 60, "theory_avg_hops": 3.3333333333333335, "theory_max_rate": 0.016666666666666666, "booksim_zero_load_lat": 23.2521, "booksim_actual_sat_rate": 0.2, "booksim_total_throughput": 5.0, "curve": [{"x": 0.01, "y": 23.2521}, {"x": 0.05, "y": 23.9751}, {"x": 0.1, "y": 25.0072}, {"x": 0.15, "y": 27.4199}, {"x": 0.2, "y": 33.7834}, {"x": 0.25, "y": 249.63}]}, {"topology": "mesh", "dim": 6, "nodes": 36, "routing": "xy", "traffic": "uniform", "packet_size": 1, "buffer_size": 8, "vcs": 1, "theory_channel_count": 60, "theory_bisection_bw": 384, "theory_max_load": 108, "theory_avg_hops": 4.0, "theory_max_rate": 0.009259259259259259, "booksim_zero_load_lat": 26.6006, "booksim_actual_sat_rate": 0.15, "booksim_total_throughput": 5.3999999999999995, "curve": [{"x": 0.01, "y": 26.6006}, {"x": 0.05, "y": 27.4262}, {"x": 0.1, "y": 29.1403}, {"x": 0.15, "y": 33.1667}, {"x": 0.2, "y": 149.635}]}, {"topology": "torus", "dim": 3, "nodes": 9, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 8, "vcs": 2, "theory_channel_count": 18, "theory_bisection_bw": 384, "theory_max_load": 6, "theory_avg_hops": 1.5, "theory_max_rate": 0.16666666666666666, "booksim_zero_load_lat": 15.8382, "booksim_actual_sat_rate": 0.6, "booksim_total_throughput": 5.3999999999999995, "curve": [{"x": 0.01, "y": 15.8382}, {"x": 0.05, "y": 14.9731}, {"x": 0.1, "y": 15.3551}, {"x": 0.15, "y": 15.1245}, {"x": 0.2, "y": 15.6884}, {"x": 0.25, "y": 15.7703}, {"x": 0.3, "y": 15.8581}, {"x": 0.35, "y": 16.3177}, {"x": 0.4, "y": 16.8521}, {"x": 0.45, "y": 17.6918}, {"x": 0.5, "y": 18.5768}, {"x": 0.6, "y": 39.2129}, {"x": 0.7, "y": 315.037}]}, {"topology": "ring", "dim": 4, "nodes": 4, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 8, "vcs": 2, "theory_channel_count": 4, "theory_bisection_bw": 128, "theory_max_load": 5, "theory_avg_hops": 1.3333333333333333, "theory_max_rate": 0.2, "booksim_zero_load_lat": 12.4894, "booksim_actual_sat_rate": 0.5, "booksim_total_throughput": 2.0, "curve": [{"x": 0.01, "y": 12.4894}, {"x": 0.05, "y": 12.798}, {"x": 0.1, "y": 13.2203}, {"x": 0.15, "y": 13.356}, {"x": 0.2, "y": 13.5653}, {"x": 0.25, "y": 13.6}, {"x": 0.3, "y": 14.2655}, {"x": 0.35, "y": 14.4262}, {"x": 0.4, "y": 15.2878}, {"x": 0.45, "y": 16.2499}, {"x": 0.5, "y": 18.0369}, {"x": 0.6, "y": 145.211}]}, {"topology": "ring", "dim": 8, "nodes": 8, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 8, "vcs": 2, "theory_channel_count": 8, "theory_bisection_bw": 128, "theory_max_load": 17, "theory_avg_hops": 2.2857142857142856, "theory_max_rate": 0.058823529411764705, "booksim_zero_load_lat": 19.7903, "booksim_actual_sat_rate": 0.25, "booksim_total_throughput": 2.0, "curve": [{"x": 0.01, "y": 19.7903}, {"x": 0.05, "y": 19.3159}, {"x": 0.1, "y": 19.747}, {"x": 0.15, "y": 20.3691}, {"x": 0.2, "y": 20.9994}, {"x": 0.25, "y": 23.1729}, {"x": 0.3, "y": 133.73}]}, {"topology": "ring", "dim": 12, "nodes": 12, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 8, "vcs": 2, "theory_channel_count": 12, "theory_bisection_bw": 128, "theory_max_load": 37, "theory_avg_hops": 3.272727272727273, "theory_max_rate": 0.02702702702702703, "booksim_zero_load_lat": 25.5726, "booksim_actual_sat_rate": 0.15, "booksim_total_throughput": 1.7999999999999998, "curve": [{"x": 0.01, "y": 25.5726}, {"x": 0.05, "y": 25.0218}, {"x": 0.1, "y": 26.6285}, {"x": 0.15, "y": 27.6961}, {"x": 0.2, "y": 223.194}]}, {"topology": "torus", "dim": 4, "nodes": 16, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 8, "vcs": 2, "theory_channel_count": 32, "theory_bisection_bw": 512, "theory_max_load": 24, "theory_avg_hops": 2.1333333333333333, "theory_max_rate": 0.041666666666666664, "booksim_zero_load_lat": 18.7097, "booksim_actual_sat_rate": 0.5, "booksim_total_throughput": 8.0, "curve": [{"x": 0.01, "y": 18.7097}, {"x": 0.05, "y": 19.5303}, {"x": 0.1, "y": 19.3719}, {"x": 0.15, "y": 19.4487}, {"x": 0.2, "y": 20.0513}, {"x": 0.25, "y": 20.3661}, {"x": 0.3, "y": 21.1047}, {"x": 0.35, "y": 21.6854}, {"x": 0.4, "y": 23.5238}, {"x": 0.45, "y": 25.351}, {"x": 0.5, "y": 36.4431}, {"x": 0.6, "y": 283.888}]}, {"topology": "torus", "dim": 5, "nodes": 25, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 8, "vcs": 2, "theory_channel_count": 50, "theory_bisection_bw": 640, "theory_max_load": 30, "theory_avg_hops": 2.5, "theory_max_rate": 0.03333333333333333, "booksim_zero_load_lat": 21.7149, "booksim_actual_sat_rate": 0.4, "booksim_total_throughput": 10.0, "curve": [{"x": 0.01, "y": 21.7149}, {"x": 0.05, "y": 21.8538}, {"x": 0.1, "y": 22.1427}, {"x": 0.15, "y": 22.3191}, {"x": 0.2, "y": 22.9023}, {"x": 0.25, "y": 23.7628}, {"x": 0.3, "y": 24.8401}, {"x": 0.35, "y": 26.8341}, {"x": 0.4, "y": 30.3635}, {"x": 0.45, "y": 138.748}]}, {"topology": "ring", "dim": 16, "nodes": 16, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 8, "vcs": 2, "theory_channel_count": 16, "theory_bisection_bw": 128, "theory_max_load": 65, "theory_avg_hops": 4.266666666666667, "theory_max_rate": 0.015384615384615385, "booksim_zero_load_lat": 32.3613, "booksim_actual_sat_rate": 0.15, "booksim_total_throughput": 2.4, "curve": [{"x": 0.01, "y": 32.3613}, {"x": 0.05, "y": 32.2398}, {"x": 0.1, "y": 34.0225}, {"x": 0.15, "y": 64.4269}, {"x": 0.2, "y": 219.311}]}, {"topology": "ring", "dim": 24, "nodes": 24, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 8, "vcs": 2, "theory_channel_count": 24, "theory_bisection_bw": 128, "theory_max_load": 145, "theory_avg_hops": 6.260869565217392, "theory_max_rate": 0.006896551724137931, "booksim_zero_load_lat": 43.4573, "booksim_actual_sat_rate": 0.1, "booksim_total_throughput": 2.4000000000000004, "curve": [{"x": 0.01, "y": 43.4573}, {"x": 0.05, "y": 44.2786}, {"x": 0.1, "y": 78.6394}, {"x": 0.15, "y": 279.762}]}, {"topology": "torus", "dim": 6, "nodes": 36, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 8, "vcs": 2, "theory_channel_count": 72, "theory_bisection_bw": 768, "theory_max_load": 72, "theory_avg_hops": 3.085714285714286, "theory_max_rate": 0.013888888888888888, "booksim_zero_load_lat": 25.5823, "booksim_actual_sat_rate": 0.35, "booksim_total_throughput": 12.6, "curve": [{"x": 0.01, "y": 25.5823}, {"x": 0.05, "y": 25.4599}, {"x": 0.1, "y": 25.6197}, {"x": 0.15, "y": 26.4397}, {"x": 0.2, "y": 27.1041}, {"x": 0.25, "y": 29.102}, {"x": 0.3, "y": 32.3896}, {"x": 0.35, "y": 55.8284}, {"x": 0.4, "y": 306.901}]}, {"topology": "ring", "dim": 4, "nodes": 4, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 2, "vcs": 2, "curve": [{"x": 0.1, "y": 13.3722}, {"x": 0.3, "y": 22.4975}, {"x": 0.5, "y": 594.911}]}, {"topology": "ring", "dim": 4, "nodes": 4, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 2, "vcs": 4, "curve": [{"x": 0.1, "y": 13.1089}, {"x": 0.3, "y": 13.7361}, {"x": 0.5, "y": 15.3468}]}, {"topology": "ring", "dim": 4, "nodes": 4, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 4, "vcs": 2, "curve": [{"x": 0.1, "y": 13.2203}, {"x": 0.3, "y": 14.3773}, {"x": 0.5, "y": 38.7204}]}, {"topology": "ring", "dim": 4, "nodes": 4, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 4, "vcs": 4, "curve": [{"x": 0.1, "y": 13.0886}, {"x": 0.3, "y": 13.4605}, {"x": 0.5, "y": 14.1467}]}, {"topology": "ring", "dim": 4, "nodes": 4, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 8, "vcs": 2, "curve": [{"x": 0.1, "y": 13.2203}, {"x": 0.3, "y": 14.2655}, {"x": 0.5, "y": 18.0369}]}, {"topology": "ring", "dim": 4, "nodes": 4, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 8, "vcs": 4, "curve": [{"x": 0.1, "y": 13.0886}, {"x": 0.3, "y": 13.4605}, {"x": 0.5, "y": 13.979}]}, {"topology": "ring", "dim": 4, "nodes": 4, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 16, "vcs": 2, "curve": [{"x": 0.1, "y": 13.2203}, {"x": 0.3, "y": 14.2655}, {"x": 0.5, "y": 17.4546}]}, {"topology": "ring", "dim": 4, "nodes": 4, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 16, "vcs": 4, "curve": [{"x": 0.1, "y": 13.0886}, {"x": 0.3, "y": 13.4605}, {"x": 0.5, "y": 13.979}]}, {"topology": "ring", "dim": 4, "nodes": 4, "routing": "dim_order", "traffic": "uniform", "packet_size": 2, "buffer_size": 2, "vcs": 2, "curve": [{"x": 0.1, "y": 18.1396}, {"x": 0.3, "y": 566.756}, {"x": 0.5, "y": 873.264}]}, {"topology": "ring", "dim": 4, "nodes": 4, "routing": "dim_order", "traffic": "uniform", "packet_size": 2, "buffer_size": 2, "vcs": 4, "curve": [{"x": 0.1, "y": 15.4253}, {"x": 0.3, "y": 57.3451}, {"x": 0.5, "y": 658.521}]}, {"topology": "ring", "dim": 4, "nodes": 4, "routing": "dim_order", "traffic": "uniform", "packet_size": 2, "buffer_size": 4, "vcs": 2, "curve": [{"x": 0.1, "y": 14.8}, {"x": 0.3, "y": 113.533}, {"x": 0.5, "y": 581.04}]}, {"topology": "ring", "dim": 4, "nodes": 4, "routing": "dim_order", "traffic": "uniform", "packet_size": 2, "buffer_size": 4, "vcs": 4, "curve": [{"x": 0.1, "y": 14.5519}, {"x": 0.3, "y": 17.5467}, {"x": 0.5, "y": 463.935}]}, {"topology": "ring", "dim": 4, "nodes": 4, "routing": "dim_order", "traffic": "uniform", "packet_size": 2, "buffer_size": 8, "vcs": 2, "curve": [{"x": 0.1, "y": 14.762}, {"x": 0.3, "y": 21.3692}, {"x": 0.5, "y": 552.714}]}, {"topology": "ring", "dim": 4, "nodes": 4, "routing": "dim_order", "traffic": "uniform", "packet_size": 2, "buffer_size": 8, "vcs": 4, "curve": [{"x": 0.1, "y": 14.5519}, {"x": 0.3, "y": 17.2675}, {"x": 0.5, "y": 343.975}]}, {"topology": "ring", "dim": 4, "nodes": 4, "routing": "dim_order", "traffic": "uniform", "packet_size": 2, "buffer_size": 16, "vcs": 2, "curve": [{"x": 0.1, "y": 14.762}, {"x": 0.3, "y": 21.4365}, {"x": 0.5, "y": 511.063}]}, {"topology": "ring", "dim": 4, "nodes": 4, "routing": "dim_order", "traffic": "uniform", "packet_size": 2, "buffer_size": 16, "vcs": 4, "curve": [{"x": 0.1, "y": 14.5519}, {"x": 0.3, "y": 17.2675}, {"x": 0.5, "y": 306.702}]}, {"topology": "ring", "dim": 4, "nodes": 4, "routing": "dim_order", "traffic": "uniform", "packet_size": 4, "buffer_size": 4, "vcs": 2, "curve": [{"x": 0.1, "y": 22.8219}, {"x": 0.3, "y": 637.342}, {"x": 0.5, "y": 883.29}]}, {"topology": "ring", "dim": 4, "nodes": 4, "routing": "dim_order", "traffic": "uniform", "packet_size": 4, "buffer_size": 4, "vcs": 4, "curve": [{"x": 0.1, "y": 19.7646}, {"x": 0.3, "y": 573.095}, {"x": 0.5, "y": 773.271}]}, {"topology": "ring", "dim": 4, "nodes": 4, "routing": "dim_order", "traffic": "uniform", "packet_size": 4, "buffer_size": 8, "vcs": 2, "curve": [{"x": 0.1, "y": 19.1949}, {"x": 0.3, "y": 660.117}, {"x": 0.5, "y": 823.723}]}, {"topology": "ring", "dim": 4, "nodes": 4, "routing": "dim_order", "traffic": "uniform", "packet_size": 4, "buffer_size": 8, "vcs": 4, "curve": [{"x": 0.1, "y": 18.4937}, {"x": 0.3, "y": 517.082}, {"x": 0.5, "y": 750.019}]}, {"topology": "ring", "dim": 4, "nodes": 4, "routing": "dim_order", "traffic": "uniform", "packet_size": 4, "buffer_size": 16, "vcs": 2, "curve": [{"x": 0.1, "y": 19.1291}, {"x": 0.3, "y": 587.876}, {"x": 0.5, "y": 781.766}]}, {"topology": "ring", "dim": 4, "nodes": 4, "routing": "dim_order", "traffic": "uniform", "packet_size": 4, "buffer_size": 16, "vcs": 4, "curve": [{"x": 0.1, "y": 18.4937}, {"x": 0.3, "y": 526.846}, {"x": 0.5, "y": 722.026}]}, {"topology": "ring", "dim": 4, "nodes": 4, "routing": "dim_order", "traffic": "uniform", "packet_size": 8, "buffer_size": 8, "vcs": 2, "curve": [{"x": 0.1, "y": 184.282}, {"x": 0.3, "y": 882.899}, {"x": 0.5, "y": 431.444}]}, {"topology": "ring", "dim": 4, "nodes": 4, "routing": "dim_order", "traffic": "uniform", "packet_size": 8, "buffer_size": 8, "vcs": 4, "curve": [{"x": 0.1, "y": 62.2836}, {"x": 0.3, "y": 826.211}, {"x": 0.5, "y": 426.905}]}, {"topology": "ring", "dim": 4, "nodes": 4, "routing": "dim_order", "traffic": "uniform", "packet_size": 8, "buffer_size": 16, "vcs": 2, "curve": [{"x": 0.1, "y": 119.856}, {"x": 0.3, "y": 855.958}, {"x": 0.5, "y": 420.947}]}, {"topology": "ring", "dim": 4, "nodes": 4, "routing": "dim_order", "traffic": "uniform", "packet_size": 8, "buffer_size": 16, "vcs": 4, "curve": [{"x": 0.1, "y": 65.0351}, {"x": 0.3, "y": 807.796}, {"x": 0.5, "y": 420.48}]}, {"topology": "ring", "dim": 6, "nodes": 6, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 2, "vcs": 2, "curve": [{"x": 0.1, "y": 16.4659}, {"x": 0.3, "y": 596.861}, {"x": 0.5, "y": 757.296}]}, {"topology": "ring", "dim": 6, "nodes": 6, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 2, "vcs": 4, "curve": [{"x": 0.1, "y": 15.6772}, {"x": 0.3, "y": 17.8688}, {"x": 0.5, "y": 380.11}]}, {"topology": "ring", "dim": 6, "nodes": 6, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 4, "vcs": 2, "curve": [{"x": 0.1, "y": 15.8719}, {"x": 0.3, "y": 19.1505}, {"x": 0.5, "y": 544.838}]}, {"topology": "ring", "dim": 6, "nodes": 6, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 4, "vcs": 4, "curve": [{"x": 0.1, "y": 15.6023}, {"x": 0.3, "y": 16.7078}, {"x": 0.5, "y": 18.1014}]}, {"topology": "ring", "dim": 6, "nodes": 6, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 8, "vcs": 2, "curve": [{"x": 0.1, "y": 15.8719}, {"x": 0.3, "y": 18.6373}, {"x": 0.5, "y": 443.15}]}, {"topology": "ring", "dim": 6, "nodes": 6, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 8, "vcs": 4, "curve": [{"x": 0.1, "y": 15.6023}, {"x": 0.3, "y": 16.7062}, {"x": 0.5, "y": 18.1456}]}, {"topology": "ring", "dim": 6, "nodes": 6, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 16, "vcs": 2, "curve": [{"x": 0.1, "y": 15.8719}, {"x": 0.3, "y": 18.6373}, {"x": 0.5, "y": 424.149}]}, {"topology": "ring", "dim": 6, "nodes": 6, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 16, "vcs": 4, "curve": [{"x": 0.1, "y": 15.6023}, {"x": 0.3, "y": 16.7062}, {"x": 0.5, "y": 18.1456}]}, {"topology": "ring", "dim": 6, "nodes": 6, "routing": "dim_order", "traffic": "uniform", "packet_size": 2, "buffer_size": 2, "vcs": 2, "curve": [{"x": 0.1, "y": 97.1727}, {"x": 0.3, "y": 799.765}, {"x": 0.5, "y": 1021.6}]}, {"topology": "ring", "dim": 6, "nodes": 6, "routing": "dim_order", "traffic": "uniform", "packet_size": 2, "buffer_size": 2, "vcs": 4, "curve": [{"x": 0.1, "y": 19.6362}, {"x": 0.3, "y": 545.607}, {"x": 0.5, "y": 761.691}]}, {"topology": "ring", "dim": 6, "nodes": 6, "routing": "dim_order", "traffic": "uniform", "packet_size": 2, "buffer_size": 4, "vcs": 2, "curve": [{"x": 0.1, "y": 19.2708}, {"x": 0.3, "y": 621.842}, {"x": 0.5, "y": 767.037}]}, {"topology": "ring", "dim": 6, "nodes": 6, "routing": "dim_order", "traffic": "uniform", "packet_size": 2, "buffer_size": 4, "vcs": 4, "curve": [{"x": 0.1, "y": 18.0997}, {"x": 0.3, "y": 27.2271}, {"x": 0.5, "y": 605.527}]}, {"topology": "ring", "dim": 6, "nodes": 6, "routing": "dim_order", "traffic": "uniform", "packet_size": 2, "buffer_size": 8, "vcs": 2, "curve": [{"x": 0.1, "y": 18.5415}, {"x": 0.3, "y": 449.709}, {"x": 0.5, "y": 629.847}]}, {"topology": "ring", "dim": 6, "nodes": 6, "routing": "dim_order", "traffic": "uniform", "packet_size": 2, "buffer_size": 8, "vcs": 4, "curve": [{"x": 0.1, "y": 18.0748}, {"x": 0.3, "y": 22.6836}, {"x": 0.5, "y": 540.958}]}, {"topology": "ring", "dim": 6, "nodes": 6, "routing": "dim_order", "traffic": "uniform", "packet_size": 2, "buffer_size": 16, "vcs": 2, "curve": [{"x": 0.1, "y": 18.5415}, {"x": 0.3, "y": 251.272}, {"x": 0.5, "y": 622.802}]}, {"topology": "ring", "dim": 6, "nodes": 6, "routing": "dim_order", "traffic": "uniform", "packet_size": 2, "buffer_size": 16, "vcs": 4, "curve": [{"x": 0.1, "y": 18.0748}, {"x": 0.3, "y": 22.6599}, {"x": 0.5, "y": 515.458}]}, {"topology": "ring", "dim": 6, "nodes": 6, "routing": "dim_order", "traffic": "uniform", "packet_size": 4, "buffer_size": 4, "vcs": 2, "curve": [{"x": 0.1, "y": 117.942}, {"x": 0.3, "y": 867.955}, {"x": 0.5, "y": 1011.86}]}, {"topology": "ring", "dim": 6, "nodes": 6, "routing": "dim_order", "traffic": "uniform", "packet_size": 4, "buffer_size": 4, "vcs": 4, "curve": [{"x": 0.1, "y": 23.7088}, {"x": 0.3, "y": 514.9}, {"x": 0.5, "y": 828.292}]}, {"topology": "ring", "dim": 6, "nodes": 6, "routing": "dim_order", "traffic": "uniform", "packet_size": 4, "buffer_size": 8, "vcs": 2, "curve": [{"x": 0.1, "y": 25.2163}, {"x": 0.3, "y": 694.065}, {"x": 0.5, "y": 925.059}]}, {"topology": "ring", "dim": 6, "nodes": 6, "routing": "dim_order", "traffic": "uniform", "packet_size": 4, "buffer_size": 8, "vcs": 4, "curve": [{"x": 0.1, "y": 23.0998}, {"x": 0.3, "y": 471.452}, {"x": 0.5, "y": 811.622}]}, {"topology": "ring", "dim": 6, "nodes": 6, "routing": "dim_order", "traffic": "uniform", "packet_size": 4, "buffer_size": 16, "vcs": 2, "curve": [{"x": 0.1, "y": 24.5774}, {"x": 0.3, "y": 607.303}, {"x": 0.5, "y": 886.316}]}, {"topology": "ring", "dim": 6, "nodes": 6, "routing": "dim_order", "traffic": "uniform", "packet_size": 4, "buffer_size": 16, "vcs": 4, "curve": [{"x": 0.1, "y": 23.0765}, {"x": 0.3, "y": 451.723}, {"x": 0.5, "y": 791.405}]}, {"topology": "ring", "dim": 6, "nodes": 6, "routing": "dim_order", "traffic": "uniform", "packet_size": 8, "buffer_size": 8, "vcs": 2, "curve": [{"x": 0.1, "y": 507.684}, {"x": 0.3, "y": 954.448}, {"x": 0.5, "y": 428.105}]}, {"topology": "ring", "dim": 6, "nodes": 6, "routing": "dim_order", "traffic": "uniform", "packet_size": 8, "buffer_size": 8, "vcs": 4, "curve": [{"x": 0.1, "y": 172.785}, {"x": 0.3, "y": 874.057}, {"x": 0.5, "y": 421.332}]}, {"topology": "ring", "dim": 6, "nodes": 6, "routing": "dim_order", "traffic": "uniform", "packet_size": 8, "buffer_size": 16, "vcs": 2, "curve": [{"x": 0.1, "y": 374.936}, {"x": 0.3, "y": 384.792}, {"x": 0.5, "y": 414.211}]}, {"topology": "ring", "dim": 6, "nodes": 6, "routing": "dim_order", "traffic": "uniform", "packet_size": 8, "buffer_size": 16, "vcs": 4, "curve": [{"x": 0.1, "y": 235.739}, {"x": 0.3, "y": 371.414}, {"x": 0.5, "y": 415.425}]}, {"topology": "ring", "dim": 8, "nodes": 8, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 2, "vcs": 2, "curve": [{"x": 0.1, "y": 20.8814}, {"x": 0.3, "y": 654.623}, {"x": 0.5, "y": 925.157}]}, {"topology": "ring", "dim": 8, "nodes": 8, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 2, "vcs": 4, "curve": [{"x": 0.1, "y": 19.4137}, {"x": 0.3, "y": 72.0715}, {"x": 0.5, "y": 488.264}]}, {"topology": "ring", "dim": 8, "nodes": 8, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 4, "vcs": 2, "curve": [{"x": 0.1, "y": 19.747}, {"x": 0.3, "y": 350.398}, {"x": 0.5, "y": 662.359}]}, {"topology": "ring", "dim": 8, "nodes": 8, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 4, "vcs": 4, "curve": [{"x": 0.1, "y": 19.3109}, {"x": 0.3, "y": 19.9123}, {"x": 0.5, "y": 72.4665}]}, {"topology": "ring", "dim": 8, "nodes": 8, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 8, "vcs": 2, "curve": [{"x": 0.1, "y": 19.747}, {"x": 0.3, "y": 133.73}, {"x": 0.5, "y": 593.151}]}, {"topology": "ring", "dim": 8, "nodes": 8, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 8, "vcs": 4, "curve": [{"x": 0.1, "y": 19.3109}, {"x": 0.3, "y": 19.9878}, {"x": 0.5, "y": 25.3906}]}, {"topology": "ring", "dim": 8, "nodes": 8, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 16, "vcs": 2, "curve": [{"x": 0.1, "y": 19.747}, {"x": 0.3, "y": 34.2875}, {"x": 0.5, "y": 530.226}]}, {"topology": "ring", "dim": 8, "nodes": 8, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 16, "vcs": 4, "curve": [{"x": 0.1, "y": 19.3109}, {"x": 0.3, "y": 19.9878}, {"x": 0.5, "y": 24.7123}]}, {"topology": "ring", "dim": 8, "nodes": 8, "routing": "dim_order", "traffic": "uniform", "packet_size": 2, "buffer_size": 2, "vcs": 2, "curve": [{"x": 0.1, "y": 468.817}, {"x": 0.3, "y": 937.117}, {"x": 0.5, "y": 1093.67}]}, {"topology": "ring", "dim": 8, "nodes": 8, "routing": "dim_order", "traffic": "uniform", "packet_size": 2, "buffer_size": 2, "vcs": 4, "curve": [{"x": 0.1, "y": 22.8538}, {"x": 0.3, "y": 653.866}, {"x": 0.5, "y": 879.61}]}, {"topology": "ring", "dim": 8, "nodes": 8, "routing": "dim_order", "traffic": "uniform", "packet_size": 2, "buffer_size": 4, "vcs": 2, "curve": [{"x": 0.1, "y": 21.6113}, {"x": 0.3, "y": 678.601}, {"x": 0.5, "y": 922.208}]}, {"topology": "ring", "dim": 8, "nodes": 8, "routing": "dim_order", "traffic": "uniform", "packet_size": 2, "buffer_size": 4, "vcs": 4, "curve": [{"x": 0.1, "y": 20.2319}, {"x": 0.3, "y": 316.795}, {"x": 0.5, "y": 604.931}]}, {"topology": "ring", "dim": 8, "nodes": 8, "routing": "dim_order", "traffic": "uniform", "packet_size": 2, "buffer_size": 8, "vcs": 2, "curve": [{"x": 0.1, "y": 20.9842}, {"x": 0.3, "y": 502.494}, {"x": 0.5, "y": 807.614}]}, {"topology": "ring", "dim": 8, "nodes": 8, "routing": "dim_order", "traffic": "uniform", "packet_size": 2, "buffer_size": 8, "vcs": 4, "curve": [{"x": 0.1, "y": 20.2042}, {"x": 0.3, "y": 42.1078}, {"x": 0.5, "y": 535.838}]}, {"topology": "ring", "dim": 8, "nodes": 8, "routing": "dim_order", "traffic": "uniform", "packet_size": 2, "buffer_size": 16, "vcs": 2, "curve": [{"x": 0.1, "y": 20.9842}, {"x": 0.3, "y": 454.851}, {"x": 0.5, "y": 779.068}]}, {"topology": "ring", "dim": 8, "nodes": 8, "routing": "dim_order", "traffic": "uniform", "packet_size": 2, "buffer_size": 16, "vcs": 4, "curve": [{"x": 0.1, "y": 20.2042}, {"x": 0.3, "y": 36.6991}, {"x": 0.5, "y": 491.316}]}, {"topology": "ring", "dim": 8, "nodes": 8, "routing": "dim_order", "traffic": "uniform", "packet_size": 4, "buffer_size": 4, "vcs": 2, "curve": [{"x": 0.1, "y": 492.759}, {"x": 0.3, "y": 406.58}, {"x": 0.5, "y": 433.11}]}, {"topology": "ring", "dim": 8, "nodes": 8, "routing": "dim_order", "traffic": "uniform", "packet_size": 4, "buffer_size": 4, "vcs": 4, "curve": [{"x": 0.1, "y": 28.6868}, {"x": 0.3, "y": 693.44}, {"x": 0.5, "y": 956.33}]}, {"topology": "ring", "dim": 8, "nodes": 8, "routing": "dim_order", "traffic": "uniform", "packet_size": 4, "buffer_size": 8, "vcs": 2, "curve": [{"x": 0.1, "y": 43.8171}, {"x": 0.3, "y": 814.539}, {"x": 0.5, "y": 994.72}]}, {"topology": "ring", "dim": 8, "nodes": 8, "routing": "dim_order", "traffic": "uniform", "packet_size": 4, "buffer_size": 8, "vcs": 4, "curve": [{"x": 0.1, "y": 26.6053}, {"x": 0.3, "y": 660.115}, {"x": 0.5, "y": 847.354}]}, {"topology": "ring", "dim": 8, "nodes": 8, "routing": "dim_order", "traffic": "uniform", "packet_size": 4, "buffer_size": 16, "vcs": 2, "curve": [{"x": 0.1, "y": 34.7461}, {"x": 0.3, "y": 775.043}, {"x": 0.5, "y": 380.431}]}, {"topology": "ring", "dim": 8, "nodes": 8, "routing": "dim_order", "traffic": "uniform", "packet_size": 4, "buffer_size": 16, "vcs": 4, "curve": [{"x": 0.1, "y": 26.5487}, {"x": 0.3, "y": 599.048}, {"x": 0.5, "y": 853.444}]}, {"topology": "ring", "dim": 8, "nodes": 8, "routing": "dim_order", "traffic": "uniform", "packet_size": 8, "buffer_size": 8, "vcs": 2, "curve": [{"x": 0.1, "y": 529.772}, {"x": 0.3, "y": 439.696}, {"x": 0.5, "y": 471.294}]}, {"topology": "ring", "dim": 8, "nodes": 8, "routing": "dim_order", "traffic": "uniform", "packet_size": 8, "buffer_size": 8, "vcs": 4, "curve": [{"x": 0.1, "y": 454.888}, {"x": 0.3, "y": 395.876}, {"x": 0.5, "y": 441.603}]}, {"topology": "ring", "dim": 8, "nodes": 8, "routing": "dim_order", "traffic": "uniform", "packet_size": 8, "buffer_size": 16, "vcs": 2, "curve": [{"x": 0.1, "y": 456.158}, {"x": 0.3, "y": 379.323}, {"x": 0.5, "y": 421.714}]}, {"topology": "ring", "dim": 8, "nodes": 8, "routing": "dim_order", "traffic": "uniform", "packet_size": 8, "buffer_size": 16, "vcs": 4, "curve": [{"x": 0.1, "y": 334.696}, {"x": 0.3, "y": 385.685}, {"x": 0.5, "y": 422.442}]}, {"topology": "ring", "dim": 10, "nodes": 10, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 2, "vcs": 2, "curve": [{"x": 0.1, "y": 29.1062}, {"x": 0.3, "y": 789.426}, {"x": 0.5, "y": 983.232}]}, {"topology": "ring", "dim": 10, "nodes": 10, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 2, "vcs": 4, "curve": [{"x": 0.1, "y": 22.1665}, {"x": 0.3, "y": 404.037}, {"x": 0.5, "y": 594.935}]}, {"topology": "ring", "dim": 10, "nodes": 10, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 4, "vcs": 2, "curve": [{"x": 0.1, "y": 22.6437}, {"x": 0.3, "y": 512.256}, {"x": 0.5, "y": 745.683}]}, {"topology": "ring", "dim": 10, "nodes": 10, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 4, "vcs": 4, "curve": [{"x": 0.1, "y": 21.9862}, {"x": 0.3, "y": 23.5895}, {"x": 0.5, "y": 475.119}]}, {"topology": "ring", "dim": 10, "nodes": 10, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 8, "vcs": 2, "curve": [{"x": 0.1, "y": 22.6394}, {"x": 0.3, "y": 406.004}, {"x": 0.5, "y": 655.209}]}, {"topology": "ring", "dim": 10, "nodes": 10, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 8, "vcs": 4, "curve": [{"x": 0.1, "y": 21.9862}, {"x": 0.3, "y": 23.628}, {"x": 0.5, "y": 306.431}]}, {"topology": "ring", "dim": 10, "nodes": 10, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 16, "vcs": 2, "curve": [{"x": 0.1, "y": 22.6394}, {"x": 0.3, "y": 363.007}, {"x": 0.5, "y": 643.711}]}, {"topology": "ring", "dim": 10, "nodes": 10, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 16, "vcs": 4, "curve": [{"x": 0.1, "y": 21.9862}, {"x": 0.3, "y": 23.628}, {"x": 0.5, "y": 164.184}]}, {"topology": "ring", "dim": 10, "nodes": 10, "routing": "dim_order", "traffic": "uniform", "packet_size": 2, "buffer_size": 2, "vcs": 2, "curve": [{"x": 0.1, "y": 520.961}, {"x": 0.3, "y": 1043.78}, {"x": 0.5, "y": 1143.91}]}, {"topology": "ring", "dim": 10, "nodes": 10, "routing": "dim_order", "traffic": "uniform", "packet_size": 2, "buffer_size": 2, "vcs": 4, "curve": [{"x": 0.1, "y": 28.8617}, {"x": 0.3, "y": 683.117}, {"x": 0.5, "y": 945.617}]}, {"topology": "ring", "dim": 10, "nodes": 10, "routing": "dim_order", "traffic": "uniform", "packet_size": 2, "buffer_size": 4, "vcs": 2, "curve": [{"x": 0.1, "y": 28.1504}, {"x": 0.3, "y": 806.41}, {"x": 0.5, "y": 1017.66}]}, {"topology": "ring", "dim": 10, "nodes": 10, "routing": "dim_order", "traffic": "uniform", "packet_size": 2, "buffer_size": 4, "vcs": 4, "curve": [{"x": 0.1, "y": 24.8909}, {"x": 0.3, "y": 465.312}, {"x": 0.5, "y": 765.868}]}, {"topology": "ring", "dim": 10, "nodes": 10, "routing": "dim_order", "traffic": "uniform", "packet_size": 2, "buffer_size": 8, "vcs": 2, "curve": [{"x": 0.1, "y": 26.4566}, {"x": 0.3, "y": 613.608}, {"x": 0.5, "y": 901.029}]}, {"topology": "ring", "dim": 10, "nodes": 10, "routing": "dim_order", "traffic": "uniform", "packet_size": 2, "buffer_size": 8, "vcs": 4, "curve": [{"x": 0.1, "y": 24.8284}, {"x": 0.3, "y": 391.606}, {"x": 0.5, "y": 631.351}]}, {"topology": "ring", "dim": 10, "nodes": 10, "routing": "dim_order", "traffic": "uniform", "packet_size": 2, "buffer_size": 16, "vcs": 2, "curve": [{"x": 0.1, "y": 26.4566}, {"x": 0.3, "y": 587.561}, {"x": 0.5, "y": 827.535}]}, {"topology": "ring", "dim": 10, "nodes": 10, "routing": "dim_order", "traffic": "uniform", "packet_size": 2, "buffer_size": 16, "vcs": 4, "curve": [{"x": 0.1, "y": 24.8284}, {"x": 0.3, "y": 320.162}, {"x": 0.5, "y": 601.502}]}, {"topology": "ring", "dim": 10, "nodes": 10, "routing": "dim_order", "traffic": "uniform", "packet_size": 4, "buffer_size": 4, "vcs": 2, "curve": [{"x": 0.1, "y": 391.924}, {"x": 0.3, "y": 361.526}, {"x": 0.5, "y": 420.503}]}, {"topology": "ring", "dim": 10, "nodes": 10, "routing": "dim_order", "traffic": "uniform", "packet_size": 4, "buffer_size": 4, "vcs": 4, "curve": [{"x": 0.1, "y": 42.2387}, {"x": 0.3, "y": 742.946}, {"x": 0.5, "y": 1017.18}]}, {"topology": "ring", "dim": 10, "nodes": 10, "routing": "dim_order", "traffic": "uniform", "packet_size": 4, "buffer_size": 8, "vcs": 2, "curve": [{"x": 0.1, "y": 284.514}, {"x": 0.3, "y": 856.699}, {"x": 0.5, "y": 393.01}]}, {"topology": "ring", "dim": 10, "nodes": 10, "routing": "dim_order", "traffic": "uniform", "packet_size": 4, "buffer_size": 8, "vcs": 4, "curve": [{"x": 0.1, "y": 32.3742}, {"x": 0.3, "y": 701.731}, {"x": 0.5, "y": 353.547}]}, {"topology": "ring", "dim": 10, "nodes": 10, "routing": "dim_order", "traffic": "uniform", "packet_size": 4, "buffer_size": 16, "vcs": 2, "curve": [{"x": 0.1, "y": 229.92}, {"x": 0.3, "y": 841.208}, {"x": 0.5, "y": 389.935}]}, {"topology": "ring", "dim": 10, "nodes": 10, "routing": "dim_order", "traffic": "uniform", "packet_size": 4, "buffer_size": 16, "vcs": 4, "curve": [{"x": 0.1, "y": 32.371}, {"x": 0.3, "y": 673.754}, {"x": 0.5, "y": 336.027}]}, {"topology": "ring", "dim": 10, "nodes": 10, "routing": "dim_order", "traffic": "uniform", "packet_size": 8, "buffer_size": 8, "vcs": 2, "curve": [{"x": 0.1, "y": 625.079}, {"x": 0.3, "y": 376.56}, {"x": 0.5, "y": 438.022}]}, {"topology": "ring", "dim": 10, "nodes": 10, "routing": "dim_order", "traffic": "uniform", "packet_size": 8, "buffer_size": 8, "vcs": 4, "curve": [{"x": 0.1, "y": 449.838}, {"x": 0.3, "y": 370.747}, {"x": 0.5, "y": 422.937}]}, {"topology": "ring", "dim": 10, "nodes": 10, "routing": "dim_order", "traffic": "uniform", "packet_size": 8, "buffer_size": 16, "vcs": 2, "curve": [{"x": 0.1, "y": 539.534}, {"x": 0.3, "y": 404.416}, {"x": 0.5, "y": 432.603}]}, {"topology": "ring", "dim": 10, "nodes": 10, "routing": "dim_order", "traffic": "uniform", "packet_size": 8, "buffer_size": 16, "vcs": 4, "curve": [{"x": 0.1, "y": 336.69}, {"x": 0.3, "y": 357.757}, {"x": 0.5, "y": 418.608}]}, {"topology": "ring", "dim": 16, "nodes": 16, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 2, "vcs": 2, "curve": [{"x": 0.1, "y": 314.444}, {"x": 0.3, "y": 835.007}, {"x": 0.5, "y": 1072.19}]}, {"topology": "ring", "dim": 16, "nodes": 16, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 2, "vcs": 4, "curve": [{"x": 0.1, "y": 32.9449}, {"x": 0.3, "y": 484.233}, {"x": 0.5, "y": 733.709}]}, {"topology": "ring", "dim": 16, "nodes": 16, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 4, "vcs": 2, "curve": [{"x": 0.1, "y": 34.2517}, {"x": 0.3, "y": 582.055}, {"x": 0.5, "y": 850.934}]}, {"topology": "ring", "dim": 16, "nodes": 16, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 4, "vcs": 4, "curve": [{"x": 0.1, "y": 31.8698}, {"x": 0.3, "y": 197.075}, {"x": 0.5, "y": 405.756}]}, {"topology": "ring", "dim": 16, "nodes": 16, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 8, "vcs": 2, "curve": [{"x": 0.1, "y": 34.0225}, {"x": 0.3, "y": 550.188}, {"x": 0.5, "y": 763.128}]}, {"topology": "ring", "dim": 16, "nodes": 16, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 8, "vcs": 4, "curve": [{"x": 0.1, "y": 31.8698}, {"x": 0.3, "y": 298.671}, {"x": 0.5, "y": 366.384}]}, {"topology": "ring", "dim": 16, "nodes": 16, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 16, "vcs": 2, "curve": [{"x": 0.1, "y": 34.0225}, {"x": 0.3, "y": 455.809}, {"x": 0.5, "y": 762.069}]}, {"topology": "ring", "dim": 16, "nodes": 16, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 16, "vcs": 4, "curve": [{"x": 0.1, "y": 31.8698}, {"x": 0.3, "y": 50.7313}, {"x": 0.5, "y": 370.238}]}, {"topology": "ring", "dim": 16, "nodes": 16, "routing": "dim_order", "traffic": "uniform", "packet_size": 2, "buffer_size": 2, "vcs": 2, "curve": [{"x": 0.1, "y": 805.034}, {"x": 0.3, "y": 387.475}, {"x": 0.5, "y": 415.717}]}, {"topology": "ring", "dim": 16, "nodes": 16, "routing": "dim_order", "traffic": "uniform", "packet_size": 2, "buffer_size": 2, "vcs": 4, "curve": [{"x": 0.1, "y": 355.91}, {"x": 0.3, "y": 875.619}, {"x": 0.5, "y": 355.867}]}, {"topology": "ring", "dim": 16, "nodes": 16, "routing": "dim_order", "traffic": "uniform", "packet_size": 2, "buffer_size": 4, "vcs": 2, "curve": [{"x": 0.1, "y": 289.627}, {"x": 0.3, "y": 935.495}, {"x": 0.5, "y": 398.716}]}, {"topology": "ring", "dim": 16, "nodes": 16, "routing": "dim_order", "traffic": "uniform", "packet_size": 2, "buffer_size": 4, "vcs": 4, "curve": [{"x": 0.1, "y": 34.8124}, {"x": 0.3, "y": 519.022}, {"x": 0.5, "y": 862.559}]}, {"topology": "ring", "dim": 16, "nodes": 16, "routing": "dim_order", "traffic": "uniform", "packet_size": 2, "buffer_size": 8, "vcs": 2, "curve": [{"x": 0.1, "y": 125.652}, {"x": 0.3, "y": 785.716}, {"x": 0.5, "y": 342.654}]}, {"topology": "ring", "dim": 16, "nodes": 16, "routing": "dim_order", "traffic": "uniform", "packet_size": 2, "buffer_size": 8, "vcs": 4, "curve": [{"x": 0.1, "y": 34.4484}, {"x": 0.3, "y": 470.044}, {"x": 0.5, "y": 692.48}]}, {"topology": "ring", "dim": 16, "nodes": 16, "routing": "dim_order", "traffic": "uniform", "packet_size": 2, "buffer_size": 16, "vcs": 2, "curve": [{"x": 0.1, "y": 48.5697}, {"x": 0.3, "y": 630.309}, {"x": 0.5, "y": 339.087}]}, {"topology": "ring", "dim": 16, "nodes": 16, "routing": "dim_order", "traffic": "uniform", "packet_size": 2, "buffer_size": 16, "vcs": 4, "curve": [{"x": 0.1, "y": 34.4484}, {"x": 0.3, "y": 407.685}, {"x": 0.5, "y": 261.698}]}, {"topology": "ring", "dim": 16, "nodes": 16, "routing": "dim_order", "traffic": "uniform", "packet_size": 4, "buffer_size": 4, "vcs": 2, "curve": [{"x": 0.1, "y": 638.986}, {"x": 0.3, "y": 404.799}, {"x": 0.5, "y": 418.088}]}, {"topology": "ring", "dim": 16, "nodes": 16, "routing": "dim_order", "traffic": "uniform", "packet_size": 4, "buffer_size": 4, "vcs": 4, "curve": [{"x": 0.1, "y": 392.884}, {"x": 0.3, "y": 355.974}, {"x": 0.5, "y": 380.715}]}, {"topology": "ring", "dim": 16, "nodes": 16, "routing": "dim_order", "traffic": "uniform", "packet_size": 4, "buffer_size": 8, "vcs": 2, "curve": [{"x": 0.1, "y": 419.927}, {"x": 0.3, "y": 359.499}, {"x": 0.5, "y": 416.513}]}, {"topology": "ring", "dim": 16, "nodes": 16, "routing": "dim_order", "traffic": "uniform", "packet_size": 4, "buffer_size": 8, "vcs": 4, "curve": [{"x": 0.1, "y": 192.181}, {"x": 0.3, "y": 294.013}, {"x": 0.5, "y": 390.027}]}, {"topology": "ring", "dim": 16, "nodes": 16, "routing": "dim_order", "traffic": "uniform", "packet_size": 4, "buffer_size": 16, "vcs": 2, "curve": [{"x": 0.1, "y": 269.853}, {"x": 0.3, "y": 353.115}, {"x": 0.5, "y": 400.525}]}, {"topology": "ring", "dim": 16, "nodes": 16, "routing": "dim_order", "traffic": "uniform", "packet_size": 4, "buffer_size": 16, "vcs": 4, "curve": [{"x": 0.1, "y": 106.611}, {"x": 0.3, "y": 285.834}, {"x": 0.5, "y": 354.563}]}, {"topology": "ring", "dim": 16, "nodes": 16, "routing": "dim_order", "traffic": "uniform", "packet_size": 8, "buffer_size": 8, "vcs": 2, "curve": [{"x": 0.1, "y": 242.727}, {"x": 0.3, "y": 416.714}, {"x": 0.5, "y": 411.902}]}, {"topology": "ring", "dim": 16, "nodes": 16, "routing": "dim_order", "traffic": "uniform", "packet_size": 8, "buffer_size": 8, "vcs": 4, "curve": [{"x": 0.1, "y": 596.782}, {"x": 0.3, "y": 379.442}, {"x": 0.5, "y": 400.605}]}, {"topology": "ring", "dim": 16, "nodes": 16, "routing": "dim_order", "traffic": "uniform", "packet_size": 8, "buffer_size": 16, "vcs": 2, "curve": [{"x": 0.1, "y": 234.409}, {"x": 0.3, "y": 373.179}, {"x": 0.5, "y": 416.574}]}, {"topology": "ring", "dim": 16, "nodes": 16, "routing": "dim_order", "traffic": "uniform", "packet_size": 8, "buffer_size": 16, "vcs": 4, "curve": [{"x": 0.1, "y": 212.306}, {"x": 0.3, "y": 360.924}, {"x": 0.5, "y": 387.127}]}];
-        const allOptions = {"topology": ["mesh", "ring", "torus"], "routing": ["dim_order", "xy"], "traffic": ["uniform"], "packet_size": [1, 2, 4, 8], "buffer_size": [2, 4, 8, 16], "vcs": [1, 2, 4]};
+    <!-- MODE A Controls -->
+    <div id="modeAControls" class="controls">
+        <label>Topology: <select id="topoSelect" onchange="updateChart()"></select></label>
+        <label>Routing: <select id="rSelect" onchange="updateChart()"></select></label>
+        <label>Traffic: <select id="tSelect" onchange="updateChart()"></select></label>
+        <br><br>
+        <label>Packet Size: <select id="pSelect" onchange="updateChart()"></select></label>
+        <label>Buffer Size: <select id="bSelect" onchange="updateChart()"></select></label>
+        <label>VCs: <select id="vSelect" onchange="updateChart()"></select></label>
+        <br><br>
+        <label>比較維度 (Compare By):
+            <select id="compareSelect" onchange="updateChart()">
+                <option value="dim">網路大小 (Nodes/Dimensions)</option>
+                <option value="routing">路由演算法 (Routing)</option>
+                <option value="traffic">流量模式 (Traffic)</option>
+                <option value="packet_size">封包大小 (Packet Size)</option>
+                <option value="buffer_size">緩衝區大小 (Buffer Size)</option>
+                <option value="vcs">虛擬通道數 (VCs)</option>
+            </select>
+        </label>
+    </div>
 
-        let currentMode = 'A';
+    <!-- MODE B Controls -->
+    <div id="modeBControls" class="controls" style="display: none;">
+        <label>X 軸 (X-Axis):
+            <select id="scatterX" onchange="updateChart()">
+                <option value="theory_avg_hops">理論平均跳數 (Theory Avg Hops)</option>
+                <option value="theory_max_rate">理論最大注入率 (Theory Max Rate)</option>
+                <option value="theory_max_load">理論最大通道負載 (Theory Max Load)</option>
+                <option value="theory_bisection_bw">理論二分頻寬 (Theory Bisection BW)</option>
+            </select>
+        </label>
+        <label>Y 軸 (Y-Axis):
+            <select id="scatterY" onchange="updateChart()">
+                <option value="booksim_zero_load_lat">實際零負載延遲 (Zero-Load Latency)</option>
+                <option value="booksim_actual_sat_rate">實際飽和注入率 (Actual Sat Rate)</option>
+                <option value="booksim_total_throughput">實際總吞吐量 (Total Throughput)</option>
+            </select>
+        </label>
+    </div>
 
-        function setMode(mode) {
-            currentMode = mode;
+    <!-- MODE C Controls -->
+    <div id="modeCControls" class="controls" style="display: none;">
+        <label>Topology: <select id="topoSelectC" onchange="updateChart()"></select></label>
+        <label>Dimension: <select id="dimSelectC" onchange="updateChart()"></select></label>
+        <br><br>
+        <span style="color: #666; font-size: 0.9em;">(動態 JavaScript 繪製，深紅色代表網路熱點瓶頸，淺藍色代表負載較低)</span>
+    </div>
 
-            document.getElementById('modeAControls').style.display = 'none';
-            document.getElementById('modeBControls').style.display = 'none';
-            document.getElementById('modeCControls').style.display = 'none';
-            document.getElementById('btnModeA').style.backgroundColor = '#ccc';
-            document.getElementById('btnModeB').style.backgroundColor = '#ccc';
-            document.getElementById('btnModeC').style.backgroundColor = '#ccc';
+    <div class="chart-container">
+        <!-- For Mode A and B -->
+        <canvas id="dseChart"></canvas>
+        <!-- For Mode C -->
+        <canvas id="topologyCanvas" width="800" height="600" style="display: none;"></canvas>
+    </div>
+</div>
 
-            if (mode === 'A') {
-                document.getElementById('modeAControls').style.display = 'block';
-                document.getElementById('btnModeA').style.backgroundColor = '#3cb44b';
-            } else if (mode === 'B') {
-                document.getElementById('modeBControls').style.display = 'block';
-                document.getElementById('btnModeB').style.backgroundColor = '#4363d8';
-            } else if (mode === 'C') {
-                document.getElementById('modeCControls').style.display = 'block';
-                document.getElementById('btnModeC').style.backgroundColor = '#f58231';
-            }
-            updateChart();
+<script>
+    const allData = [{"topology": "mesh", "dim": 2, "nodes": 4, "routing": "xy", "traffic": "uniform", "packet_size": 1, "buffer_size": 8, "vcs": 1, "theory_avg_hops": 1.3333333333333333, "theory_max_rate": 0.25, "theory_max_load": 4, "theory_bisection_bw": 128, "booksim_zero_load_lat": 11.9574, "booksim_actual_sat_rate": 0.3, "booksim_total_throughput": 1.2, "theory_edge_loads": {"0->1": 4, "0->2": 4, "2->3": 4, "1->3": 4}, "curve": [{"x": 0.01, "y": 11.9574}, {"x": 0.05, "y": 11.9192}, {"x": 0.1, "y": 12.5949}, {"x": 0.15, "y": 13.202}, {"x": 0.2, "y": 14.1646}, {"x": 0.25, "y": 17.8589}, {"x": 0.3, "y": 32.2339}, {"x": 0.35, "y": 225.184}]}, {"topology": "mesh", "dim": 3, "nodes": 9, "routing": "xy", "traffic": "uniform", "packet_size": 1, "buffer_size": 8, "vcs": 1, "theory_avg_hops": 2.0, "theory_max_rate": 0.08333333333333333, "theory_max_load": 12, "theory_bisection_bw": 192, "booksim_zero_load_lat": 17.2941, "booksim_actual_sat_rate": 0.3, "booksim_total_throughput": 2.6999999999999997, "theory_edge_loads": {"0->1": 12, "0->3": 12, "3->4": 12, "3->6": 12, "6->7": 12, "1->2": 12, "1->4": 12, "4->5": 12, "4->7": 12, "7->8": 12, "2->5": 12, "5->8": 12}, "curve": [{"x": 0.01, "y": 17.2941}, {"x": 0.05, "y": 16.1121}, {"x": 0.1, "y": 16.9466}, {"x": 0.15, "y": 17.2404}, {"x": 0.2, "y": 19.059}, {"x": 0.25, "y": 21.9908}, {"x": 0.3, "y": 48.2298}, {"x": 0.35, "y": 267.982}]}, {"topology": "torus", "dim": 2, "nodes": 4, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 8, "vcs": 1, "theory_avg_hops": 1.3333333333333333, "theory_max_rate": 0.25, "theory_max_load": 4, "theory_bisection_bw": 256, "booksim_zero_load_lat": Infinity, "booksim_actual_sat_rate": 0.0, "booksim_total_throughput": 0.0, "theory_edge_loads": {"0->1": 4, "0->2": 4, "2->3": 4, "1->3": 4}, "curve": []}, {"topology": "torus", "dim": 3, "nodes": 9, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 8, "vcs": 1, "theory_avg_hops": 1.5, "theory_max_rate": 0.16666666666666666, "theory_max_load": 6, "theory_bisection_bw": 384, "booksim_zero_load_lat": Infinity, "booksim_actual_sat_rate": 0.0, "booksim_total_throughput": 0.0, "theory_edge_loads": {"0->1": 6, "0->3": 6, "0->2": 6, "0->6": 6, "3->4": 6, "3->6": 6, "3->5": 6, "6->7": 6, "6->8": 6, "1->2": 6, "1->4": 6, "1->7": 6, "4->5": 6, "4->7": 6, "7->8": 6, "2->5": 6, "2->8": 6, "5->8": 6}, "curve": []}, {"topology": "torus", "dim": 4, "nodes": 16, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 8, "vcs": 1, "theory_avg_hops": 2.1333333333333333, "theory_max_rate": 0.041666666666666664, "theory_max_load": 24, "theory_bisection_bw": 512, "booksim_zero_load_lat": Infinity, "booksim_actual_sat_rate": 0.0, "booksim_total_throughput": 0.0, "theory_edge_loads": {"0->1": 16, "0->4": 16, "0->3": 8, "0->12": 8, "4->5": 16, "4->8": 24, "4->7": 8, "8->9": 16, "8->12": 16, "8->11": 8, "12->13": 16, "12->15": 8, "1->2": 24, "1->5": 16, "1->13": 8, "5->6": 24, "5->9": 24, "9->10": 24, "9->13": 16, "13->14": 24, "2->3": 16, "2->6": 16, "2->14": 8, "6->7": 16, "6->10": 24, "10->11": 16, "10->14": 16, "14->15": 16, "3->7": 16, "3->15": 8, "7->11": 24, "11->15": 16}, "curve": []}, {"topology": "torus", "dim": 5, "nodes": 25, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 8, "vcs": 1, "theory_avg_hops": 2.5, "theory_max_rate": 0.03333333333333333, "theory_max_load": 30, "theory_bisection_bw": 640, "booksim_zero_load_lat": Infinity, "booksim_actual_sat_rate": 0.0, "booksim_total_throughput": 0.0, "theory_edge_loads": {"0->1": 30, "0->5": 30, "0->4": 30, "0->20": 30, "5->6": 30, "5->10": 30, "5->9": 30, "10->11": 30, "10->15": 30, "10->14": 30, "15->16": 30, "15->20": 30, "15->19": 30, "20->21": 30, "20->24": 30, "1->2": 30, "1->6": 30, "1->21": 30, "6->7": 30, "6->11": 30, "11->12": 30, "11->16": 30, "16->17": 30, "16->21": 30, "21->22": 30, "2->3": 30, "2->7": 30, "2->22": 30, "7->8": 30, "7->12": 30, "12->13": 30, "12->17": 30, "17->18": 30, "17->22": 30, "22->23": 30, "3->4": 30, "3->8": 30, "3->23": 30, "8->9": 30, "8->13": 30, "13->14": 30, "13->18": 30, "18->19": 30, "18->23": 30, "23->24": 30, "4->9": 30, "4->24": 30, "9->14": 30, "14->19": 30, "19->24": 30}, "curve": []}, {"topology": "torus", "dim": 6, "nodes": 36, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 8, "vcs": 1, "theory_avg_hops": 3.085714285714286, "theory_max_rate": 0.013888888888888888, "theory_max_load": 72, "theory_bisection_bw": 768, "booksim_zero_load_lat": Infinity, "booksim_actual_sat_rate": 0.0, "booksim_total_throughput": 0.0, "theory_edge_loads": {"0->1": 48, "0->6": 48, "0->5": 36, "0->30": 36, "6->7": 48, "6->12": 60, "6->11": 36, "12->13": 48, "12->18": 72, "12->17": 36, "18->19": 48, "18->24": 60, "18->23": 36, "24->25": 48, "24->30": 48, "24->29": 36, "30->31": 48, "30->35": 36, "1->2": 60, "1->7": 48, "1->31": 36, "7->8": 60, "7->13": 60, "13->14": 60, "13->19": 72, "19->20": 60, "19->25": 60, "25->26": 60, "25->31": 48, "31->32": 60, "2->3": 72, "2->8": 48, "2->32": 36, "8->9": 72, "8->14": 60, "14->15": 72, "14->20": 72, "20->21": 72, "20->26": 60, "26->27": 72, "26->32": 48, "32->33": 72, "3->4": 60, "3->9": 48, "3->33": 36, "9->10": 60, "9->15": 60, "15->16": 60, "15->21": 72, "21->22": 60, "21->27": 60, "27->28": 60, "27->33": 48, "33->34": 60, "4->5": 48, "4->10": 48, "4->34": 36, "10->11": 48, "10->16": 60, "16->17": 48, "16->22": 72, "22->23": 48, "22->28": 60, "28->29": 48, "28->34": 48, "34->35": 48, "5->11": 48, "5->35": 36, "11->17": 60, "17->23": 72, "23->29": 60, "29->35": 48}, "curve": []}, {"topology": "mesh", "dim": 4, "nodes": 16, "routing": "xy", "traffic": "uniform", "packet_size": 1, "buffer_size": 8, "vcs": 1, "theory_avg_hops": 2.6666666666666665, "theory_max_rate": 0.03125, "theory_max_load": 32, "theory_bisection_bw": 256, "booksim_zero_load_lat": 19.1613, "booksim_actual_sat_rate": 0.25, "booksim_total_throughput": 4.0, "theory_edge_loads": {"0->1": 24, "0->4": 24, "4->5": 24, "4->8": 32, "8->9": 24, "8->12": 24, "12->13": 24, "1->2": 32, "1->5": 24, "5->6": 32, "5->9": 32, "9->10": 32, "9->13": 24, "13->14": 32, "2->3": 24, "2->6": 24, "6->7": 24, "6->10": 32, "10->11": 24, "10->14": 24, "14->15": 24, "3->7": 24, "7->11": 32, "11->15": 24}, "curve": [{"x": 0.01, "y": 19.1613}, {"x": 0.05, "y": 19.8195}, {"x": 0.1, "y": 20.608}, {"x": 0.15, "y": 22.1939}, {"x": 0.2, "y": 25.0048}, {"x": 0.25, "y": 33.9927}, {"x": 0.3, "y": 252.588}]}, {"topology": "ring", "dim": 4, "nodes": 4, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 8, "vcs": 2, "theory_avg_hops": 1.3333333333333333, "theory_max_rate": 0.2, "theory_max_load": 5, "theory_bisection_bw": 128, "booksim_zero_load_lat": 12.4894, "booksim_actual_sat_rate": 0.5, "booksim_total_throughput": 2.0, "theory_edge_loads": {"0->1": 5, "0->3": 3, "1->2": 5, "2->3": 3}, "curve": [{"x": 0.01, "y": 12.4894}, {"x": 0.05, "y": 12.798}, {"x": 0.1, "y": 13.2203}, {"x": 0.15, "y": 13.356}, {"x": 0.2, "y": 13.5653}, {"x": 0.25, "y": 13.6}, {"x": 0.3, "y": 14.2655}, {"x": 0.35, "y": 14.4262}, {"x": 0.4, "y": 15.2878}, {"x": 0.45, "y": 16.2499}, {"x": 0.5, "y": 18.0369}, {"x": 0.6, "y": 145.211}]}, {"topology": "mesh", "dim": 5, "nodes": 25, "routing": "xy", "traffic": "uniform", "packet_size": 1, "buffer_size": 8, "vcs": 1, "theory_avg_hops": 3.3333333333333335, "theory_max_rate": 0.016666666666666666, "theory_max_load": 60, "theory_bisection_bw": 320, "booksim_zero_load_lat": 23.2521, "booksim_actual_sat_rate": 0.2, "booksim_total_throughput": 5.0, "theory_edge_loads": {"0->1": 40, "0->5": 40, "5->6": 40, "5->10": 60, "10->11": 40, "10->15": 60, "15->16": 40, "15->20": 40, "20->21": 40, "1->2": 60, "1->6": 40, "6->7": 60, "6->11": 60, "11->12": 60, "11->16": 60, "16->17": 60, "16->21": 40, "21->22": 60, "2->3": 60, "2->7": 40, "7->8": 60, "7->12": 60, "12->13": 60, "12->17": 60, "17->18": 60, "17->22": 40, "22->23": 60, "3->4": 40, "3->8": 40, "8->9": 40, "8->13": 60, "13->14": 40, "13->18": 60, "18->19": 40, "18->23": 40, "23->24": 40, "4->9": 40, "9->14": 60, "14->19": 60, "19->24": 40}, "curve": [{"x": 0.01, "y": 23.2521}, {"x": 0.05, "y": 23.9751}, {"x": 0.1, "y": 25.0072}, {"x": 0.15, "y": 27.4199}, {"x": 0.2, "y": 33.7834}, {"x": 0.25, "y": 249.63}]}, {"topology": "ring", "dim": 8, "nodes": 8, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 8, "vcs": 2, "theory_avg_hops": 2.2857142857142856, "theory_max_rate": 0.058823529411764705, "theory_max_load": 17, "theory_bisection_bw": 128, "booksim_zero_load_lat": 19.7903, "booksim_actual_sat_rate": 0.25, "booksim_total_throughput": 2.0, "theory_edge_loads": {"0->1": 17, "0->7": 15, "1->2": 17, "2->3": 17, "3->4": 17, "4->5": 15, "5->6": 15, "6->7": 15}, "curve": [{"x": 0.01, "y": 19.7903}, {"x": 0.05, "y": 19.3159}, {"x": 0.1, "y": 19.747}, {"x": 0.15, "y": 20.3691}, {"x": 0.2, "y": 20.9994}, {"x": 0.25, "y": 23.1729}, {"x": 0.3, "y": 133.73}]}, {"topology": "ring", "dim": 16, "nodes": 16, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 8, "vcs": 2, "theory_avg_hops": 4.266666666666667, "theory_max_rate": 0.015384615384615385, "theory_max_load": 65, "theory_bisection_bw": 128, "booksim_zero_load_lat": 32.3613, "booksim_actual_sat_rate": 0.15, "booksim_total_throughput": 2.4, "theory_edge_loads": {"0->1": 65, "0->15": 63, "1->2": 65, "2->3": 65, "3->4": 65, "4->5": 65, "5->6": 65, "6->7": 65, "7->8": 65, "8->9": 63, "9->10": 63, "10->11": 63, "11->12": 63, "12->13": 63, "13->14": 63, "14->15": 63}, "curve": [{"x": 0.01, "y": 32.3613}, {"x": 0.05, "y": 32.2398}, {"x": 0.1, "y": 34.0225}, {"x": 0.15, "y": 64.4269}, {"x": 0.2, "y": 219.311}]}, {"topology": "mesh", "dim": 6, "nodes": 36, "routing": "xy", "traffic": "uniform", "packet_size": 1, "buffer_size": 8, "vcs": 1, "theory_avg_hops": 4.0, "theory_max_rate": 0.009259259259259259, "theory_max_load": 108, "theory_bisection_bw": 384, "booksim_zero_load_lat": 26.6006, "booksim_actual_sat_rate": 0.15, "booksim_total_throughput": 5.3999999999999995, "theory_edge_loads": {"0->1": 60, "0->6": 60, "6->7": 60, "6->12": 96, "12->13": 60, "12->18": 108, "18->19": 60, "18->24": 96, "24->25": 60, "24->30": 60, "30->31": 60, "1->2": 96, "1->7": 60, "7->8": 96, "7->13": 96, "13->14": 96, "13->19": 108, "19->20": 96, "19->25": 96, "25->26": 96, "25->31": 60, "31->32": 96, "2->3": 108, "2->8": 60, "8->9": 108, "8->14": 96, "14->15": 108, "14->20": 108, "20->21": 108, "20->26": 96, "26->27": 108, "26->32": 60, "32->33": 108, "3->4": 96, "3->9": 60, "9->10": 96, "9->15": 96, "15->16": 96, "15->21": 108, "21->22": 96, "21->27": 96, "27->28": 96, "27->33": 60, "33->34": 96, "4->5": 60, "4->10": 60, "10->11": 60, "10->16": 96, "16->17": 60, "16->22": 108, "22->23": 60, "22->28": 96, "28->29": 60, "28->34": 60, "34->35": 60, "5->11": 60, "11->17": 96, "17->23": 108, "23->29": 96, "29->35": 60}, "curve": [{"x": 0.01, "y": 26.6006}, {"x": 0.05, "y": 27.4262}, {"x": 0.1, "y": 29.1403}, {"x": 0.15, "y": 33.1667}, {"x": 0.2, "y": 149.635}]}, {"topology": "ring", "dim": 12, "nodes": 12, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 8, "vcs": 2, "theory_avg_hops": 3.272727272727273, "theory_max_rate": 0.02702702702702703, "theory_max_load": 37, "theory_bisection_bw": 128, "booksim_zero_load_lat": 25.5726, "booksim_actual_sat_rate": 0.15, "booksim_total_throughput": 1.7999999999999998, "theory_edge_loads": {"0->1": 37, "0->11": 35, "1->2": 37, "2->3": 37, "3->4": 37, "4->5": 37, "5->6": 37, "6->7": 35, "7->8": 35, "8->9": 35, "9->10": 35, "10->11": 35}, "curve": [{"x": 0.01, "y": 25.5726}, {"x": 0.05, "y": 25.0218}, {"x": 0.1, "y": 26.6285}, {"x": 0.15, "y": 27.6961}, {"x": 0.2, "y": 223.194}]}, {"topology": "ring", "dim": 24, "nodes": 24, "routing": "dim_order", "traffic": "uniform", "packet_size": 1, "buffer_size": 8, "vcs": 2, "theory_avg_hops": 6.260869565217392, "theory_max_rate": 0.006896551724137931, "theory_max_load": 145, "theory_bisection_bw": 128, "booksim_zero_load_lat": 43.4573, "booksim_actual_sat_rate": 0.1, "booksim_total_throughput": 2.4000000000000004, "theory_edge_loads": {"0->1": 145, "0->23": 143, "1->2": 145, "2->3": 145, "3->4": 145, "4->5": 145, "5->6": 145, "6->7": 145, "7->8": 145, "8->9": 145, "9->10": 145, "10->11": 145, "11->12": 145, "12->13": 143, "13->14": 143, "14->15": 143, "15->16": 143, "16->17": 143, "17->18": 143, "18->19": 143, "19->20": 143, "20->21": 143, "21->22": 143, "22->23": 143}, "curve": [{"x": 0.01, "y": 43.4573}, {"x": 0.05, "y": 44.2786}, {"x": 0.1, "y": 78.6394}, {"x": 0.15, "y": 279.762}]}];
+    const allOptions = {"topology": ["mesh", "ring", "torus"], "routing": ["dim_order", "xy"], "traffic": ["uniform"], "packet_size": [1], "buffer_size": [8], "vcs": [1, 2]};
+
+    let currentMode = 'A';
+    let myChart = null;
+
+    function setMode(mode) {
+        currentMode = mode;
+        document.getElementById('modeAControls').style.display = 'none';
+        document.getElementById('modeBControls').style.display = 'none';
+        document.getElementById('modeCControls').style.display = 'none';
+        document.getElementById('btnModeA').style.backgroundColor = '#ccc';
+        document.getElementById('btnModeB').style.backgroundColor = '#ccc';
+        document.getElementById('btnModeC').style.backgroundColor = '#ccc';
+
+        if (mode === 'A') {
+            document.getElementById('modeAControls').style.display = 'block';
+            document.getElementById('btnModeA').style.backgroundColor = '#3cb44b';
+        } else if (mode === 'B') {
+            document.getElementById('modeBControls').style.display = 'block';
+            document.getElementById('btnModeB').style.backgroundColor = '#4363d8';
+        } else if (mode === 'C') {
+            document.getElementById('modeCControls').style.display = 'block';
+            document.getElementById('btnModeC').style.backgroundColor = '#f58231';
+        }
+        updateChart();
+    }
+
+    function populateSelect(id, optionsArray, addAllOption = true) {
+        const select = document.getElementById(id);
+        select.innerHTML = '';
+        if (addAllOption) {
+            select.add(new Option('全部 (All)', 'all'));
+        }
+        optionsArray.forEach(opt => select.add(new Option(opt, opt)));
+    }
+
+    // 幫定值到 0~1 的熱圖顏色函數 (藍 -> 綠 -> 黃 -> 紅)
+    function valueToColor(val) {
+        val = Math.max(0, Math.min(1, val));
+        // Simple Jet colormap approximation
+        let r = Math.max(0, Math.min(255, Math.round(255 * (1.5 - Math.abs(1 - 4 * (val - 0.5))))));
+        let g = Math.max(0, Math.min(255, Math.round(255 * (1.5 - Math.abs(1 - 4 * (val - 0.25))))));
+        let b = Math.max(0, Math.min(255, Math.round(255 * (1.5 - Math.abs(1 - 4 * val)))));
+        if (val < 0.25) { r = 0; g = Math.round(4 * val * 255); b = 255; }
+        else if (val < 0.5) { r = 0; g = 255; b = Math.round(255 * (1 - 4 * (val - 0.25))); }
+        else if (val < 0.75) { r = Math.round(255 * 4 * (val - 0.5)); g = 255; b = 0; }
+        else { r = 255; g = Math.round(255 * (1 - 4 * (val - 0.75))); b = 0; }
+        return `rgb(${r}, ${g}, ${b})`;
+    }
+
+    function drawTopology(record) {
+        const canvas = document.getElementById('topologyCanvas');
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        if (!record || !record.theory_edge_loads || Object.keys(record.theory_edge_loads).length === 0) {
+            ctx.font = '20px sans-serif';
+            ctx.fillStyle = '#000';
+            ctx.fillText('無熱點資料可供繪製', 300, 300);
+            return;
         }
 
-        // 初始化下拉選單
-        function populateSelect(id, optionsArray, addAllOption = true) {
-            const select = document.getElementById(id);
-            if (addAllOption) {
-                let opt = document.createElement('option');
-                opt.value = 'all';
-                opt.text = '全部 (All)';
-                select.add(opt);
+        const edgeLoads = record.theory_edge_loads;
+        const topo = record.topology;
+        const dim = parseInt(record.dim);
+
+        // 將有向邊轉無向邊以繪製
+        const undirectedLoads = {};
+        let maxLoad = 1;
+        for (const [key, load] of Object.entries(edgeLoads)) {
+            const parts = key.split('->');
+            if (parts.length === 2) {
+                const u = parseInt(parts[0]);
+                const v = parseInt(parts[1]);
+                const edgeKey = u < v ? `${u}-${v}` : `${v}-${u}`;
+                undirectedLoads[edgeKey] = (undirectedLoads[edgeKey] || 0) + load;
+                if (undirectedLoads[edgeKey] > maxLoad) maxLoad = undirectedLoads[edgeKey];
             }
-            optionsArray.forEach(val => {
-                let opt = document.createElement('option');
-                opt.value = val;
-                opt.text = val;
-                select.add(opt);
-            });
         }
 
-        // 預設顏色庫
-        const colors = [
-            '#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231',
-            '#911eb4', '#46f0f0', '#f032e6', '#bcf60c', '#fabebe'
-        ];
+        const margin = 50;
+        const width = canvas.width - 2 * margin;
+        const height = canvas.height - 2 * margin;
 
-        let myChart = null;
-
-        function updateChart() {
-            const ctx = document.getElementById('dseChart').getContext('2d');
-            if (myChart) {
-                myChart.destroy();
+        // 計算節點位置
+        const pos = {};
+        if (topo === 'mesh' || topo === 'torus') {
+            const nodeSpacingX = width / (dim - 1 || 1);
+            const nodeSpacingY = height / (dim - 1 || 1);
+            for (let i = 0; i < record.nodes; i++) {
+                const x = i % dim;
+                const y = Math.floor(i / dim);
+                pos[i] = { x: margin + x * nodeSpacingX, y: margin + y * nodeSpacingY };
             }
+        } else if (topo === 'ring') {
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+            const r = Math.min(width, height) / 2;
+            for (let i = 0; i < record.nodes; i++) {
+                const angle = i * (2 * Math.PI / record.nodes) - Math.PI / 2;
+                pos[i] = { x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle) };
+            }
+        }
 
-            // 預設隱藏 heatmap, 顯示 canvas
-            document.getElementById('heatmapImg').style.display = 'none';
-            document.getElementById('dseChart').style.display = 'block';
+        // 繪製邊
+        for (const [key, load] of Object.entries(undirectedLoads)) {
+            const parts = key.split('-');
+            const u = parseInt(parts[0]);
+            const v = parseInt(parts[1]);
+
+            if (pos[u] && pos[v]) {
+                const normalized = load / maxLoad;
+                ctx.beginPath();
+                ctx.moveTo(pos[u].x, pos[u].y);
+
+                // 若為 Torus 的 wrap-around 邊界線，用弧線畫以免重疊
+                if (topo === 'torus') {
+                    const ux = u % dim, uy = Math.floor(u / dim);
+                    const vx = v % dim, vy = Math.floor(v / dim);
+                    if (Math.abs(ux - vx) > 1 || Math.abs(uy - vy) > 1) {
+                        ctx.quadraticCurveTo(canvas.width/2, canvas.height/2, pos[v].x, pos[v].y);
+                    } else {
+                        ctx.lineTo(pos[v].x, pos[v].y);
+                    }
+                } else {
+                    ctx.lineTo(pos[v].x, pos[v].y);
+                }
+
+                ctx.strokeStyle = valueToColor(normalized);
+                ctx.lineWidth = 1 + 6 * normalized;
+                ctx.stroke();
+            }
+        }
+
+        // 繪製節點
+        for (let i = 0; i < record.nodes; i++) {
+            if (pos[i]) {
+                ctx.beginPath();
+                ctx.arc(pos[i].x, pos[i].y, 12, 0, 2 * Math.PI);
+                ctx.fillStyle = '#fff';
+                ctx.fill();
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = '#333';
+                ctx.stroke();
+
+                ctx.fillStyle = '#000';
+                ctx.font = '10px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(i, pos[i].x, pos[i].y);
+            }
+        }
+
+        // Draw Legend
+        ctx.fillStyle = '#000';
+        ctx.font = '14px sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(`Max Load: ${maxLoad}`, 10, 20);
+    }
+
+    function updateChart() {
+        const canvasA = document.getElementById('dseChart');
+        const canvasC = document.getElementById('topologyCanvas');
+
+        if (myChart) myChart.destroy();
+
+        if (currentMode === 'A' || currentMode === 'B') {
+            canvasA.style.display = 'block';
+            canvasC.style.display = 'none';
+            const ctx = canvasA.getContext('2d');
+            const colors = ['#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4', '#46f0f0'];
 
             if (currentMode === 'A') {
-                // ===== MODE A: Latency Curves =====
                 const topo = document.getElementById('topoSelect').value;
                 const routing = document.getElementById('rSelect').value;
                 const traffic = document.getElementById('tSelect').value;
@@ -212,82 +284,60 @@
                 }
 
                 let datasets = [];
-                filteredData.forEach((d, index) => {
-                    let label = `Nodes: ${d.nodes}`;
-                    if (compareBy === 'routing') label = `Routing: ${d.routing} (Nodes: ${d.nodes})`;
-                    if (compareBy === 'traffic') label = `Traffic: ${d.traffic} (Nodes: ${d.nodes})`;
-                    if (compareBy === 'packet_size') label = `Packet: ${d.packet_size} flits (Nodes: ${d.nodes})`;
-                    if (compareBy === 'buffer_size') label = `Buffer: ${d.buffer_size} flits (Nodes: ${d.nodes})`;
-                    if (compareBy === 'vcs') label = `VCs: ${d.vcs} (Nodes: ${d.nodes})`;
-                    if (compareBy === 'dim') label = `Nodes: ${d.nodes} (R:${d.routing}, P:${d.packet_size}, B:${d.buffer_size}, V:${d.vcs})`;
+                filteredData.forEach((d, i) => {
+                    if (d.curve.length > 0) {
+                        let label = `Nodes: ${d.nodes}`;
+                        if (compareBy === 'routing') label = `Routing: ${d.routing} (Nodes: ${d.nodes})`;
+                        if (compareBy === 'traffic') label = `Traffic: ${d.traffic} (Nodes: ${d.nodes})`;
+                        if (compareBy === 'packet_size') label = `Packet: ${d.packet_size} flits (Nodes: ${d.nodes})`;
+                        if (compareBy === 'buffer_size') label = `Buffer: ${d.buffer_size} flits (Nodes: ${d.nodes})`;
+                        if (compareBy === 'vcs') label = `VCs: ${d.vcs} (Nodes: ${d.nodes})`;
+                        if (compareBy === 'dim') label = `Nodes: ${d.nodes} (R:${d.routing}, P:${d.packet_size}, B:${d.buffer_size}, V:${d.vcs})`;
 
-                    datasets.push({
-                        label: label,
-                        data: d.curve,
-                        borderColor: colors[index % colors.length],
-                        backgroundColor: colors[index % colors.length],
-                        fill: false,
-                        tension: 0.1,
-                        pointRadius: 5,
-                        pointHoverRadius: 8
-                    });
+                        datasets.push({
+                            label: label,
+                            data: d.curve,
+                            borderColor: colors[i % colors.length],
+                            backgroundColor: colors[i % colors.length],
+                            fill: false,
+                            tension: 0.1,
+                            pointRadius: 5,
+                            pointHoverRadius: 8
+                        });
+                    }
                 });
-
-                if (datasets.length === 0) datasets = [{ label: '無符合資料 (No Data)', data: [] }];
 
                 myChart = new Chart(ctx, {
                     type: 'line',
                     data: { datasets: datasets },
                     options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            x: {
-                                type: 'linear',
-                                title: { display: true, text: '注入率 (Injection Rate) [flits/node/cycle]', font: { size: 14, weight: 'bold' } },
-                                min: 0
-                            },
-                            y: {
-                                title: { display: true, text: '平均延遲 (Average Latency) [cycles]', font: { size: 14, weight: 'bold' } },
-                                min: 0,
-                                suggestedMax: 100
-                            }
-                        },
-                        plugins: {
-                            tooltip: { callbacks: { label: function(context) { return context.dataset.label + ': Rate ' + context.parsed.x + ' -> Latency ' + context.parsed.y + ' cycles'; } } },
-                            legend: { position: 'right' }
-                        }
+                        responsive: true, maintainAspectRatio: false,
+                        scales: { x: { type: 'linear', title: { display: true, text: 'Injection Rate' } }, y: { title: { display: true, text: 'Latency' } } }
                     }
                 });
-
             } else if (currentMode === 'B') {
-                // ===== MODE B: Scatter Plot =====
                 const xKey = document.getElementById('scatterX').value;
                 const yKey = document.getElementById('scatterY').value;
 
-                // 為了比較理論極限，Mode B 我們過濾出 packet=1, buffer=8 的結果 (與 verification script 一致)
+                // 為了比較理論極限，Mode B 我們過濾出 packet=1, buffer=8 的結果
                 const baseData = allData.filter(d => d.packet_size === 1 && d.buffer_size === 8 && d.theory_avg_hops > 0);
 
-                // 把拓撲分開成不同的 dataset
                 const topos = ['mesh', 'torus', 'ring'];
                 let datasets = [];
 
                 topos.forEach((topo, index) => {
-                    let topoData = baseData.filter(d => d.topology === topo);
-                    let points = [];
-                    topoData.forEach(d => {
+                    let pts = [];
+                    baseData.filter(d => d.topology === topo).forEach(d => {
                         let xVal = d[xKey];
                         let yVal = d[yKey];
-                        // 過濾不合法數值
-                        if(xVal !== undefined && yVal !== undefined && xVal !== null && yVal !== null && xVal !== Infinity && yVal !== Infinity) {
-                            points.push({ x: xVal, y: yVal, _meta: `Nodes: ${d.nodes}` });
+                        if (xVal !== undefined && yVal !== undefined && xVal !== null && yVal !== null && xVal !== Infinity && yVal !== Infinity) {
+                            pts.push({ x: xVal, y: yVal, _meta: `Nodes: ${d.nodes}` });
                         }
                     });
-
-                    if(points.length > 0) {
+                    if (pts.length > 0) {
                         datasets.push({
                             label: topo.toUpperCase(),
-                            data: points,
+                            data: pts,
                             backgroundColor: colors[index % colors.length],
                             pointRadius: 8,
                             pointHoverRadius: 12
@@ -295,65 +345,47 @@
                     }
                 });
 
-                if (datasets.length === 0) datasets = [{ label: '無符合資料 (No Data)', data: [] }];
-
                 myChart = new Chart(ctx, {
                     type: 'scatter',
                     data: { datasets: datasets },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        scales: {
-                            x: {
-                                type: 'linear',
-                                title: { display: true, text: document.getElementById('scatterX').options[document.getElementById('scatterX').selectedIndex].text, font: { size: 14, weight: 'bold' } }
-                            },
-                            y: {
-                                title: { display: true, text: document.getElementById('scatterY').options[document.getElementById('scatterY').selectedIndex].text, font: { size: 14, weight: 'bold' } }
-                            }
-                        },
                         plugins: {
                             tooltip: { callbacks: { label: function(context) { return context.dataset.label + ' ' + context.raw._meta + ' | X: ' + context.parsed.x + ', Y: ' + context.parsed.y; } } },
                             legend: { position: 'right' }
+                        },
+                        scales: {
+                            x: { title: { display: true, text: document.getElementById('scatterX').options[document.getElementById('scatterX').selectedIndex].text, font: { size: 14, weight: 'bold' } } },
+                            y: { title: { display: true, text: document.getElementById('scatterY').options[document.getElementById('scatterY').selectedIndex].text, font: { size: 14, weight: 'bold' } } }
                         }
                     }
                 });
-            } else if (currentMode === 'C') {
-                // ===== MODE C: Heatmap Image =====
-                const topo = document.getElementById('topoSelectC').value;
-                const dim = document.getElementById('dimSelectC').value;
-
-                document.getElementById('dseChart').style.display = 'none';
-
-                const img = document.getElementById('heatmapImg');
-                img.src = `heatmaps/${topo}_${dim}.png`;
-                img.style.display = 'block';
             }
+        } else if (currentMode === 'C') {
+            canvasA.style.display = 'none';
+            canvasC.style.display = 'block';
+
+            const topo = document.getElementById('topoSelectC').value;
+            const dim = parseInt(document.getElementById('dimSelectC').value);
+
+            let record = allData.find(d => d.topology === topo && parseInt(d.dim) === dim && d.theory_edge_loads && Object.keys(d.theory_edge_loads).length > 0);
+            drawTopology(record);
         }
+    }
 
-        // 初始化
-        window.onload = function() {
-            // Extract unique dimensions for Mode C
-            let dims = [...new Set(allData.map(item => item.dim))].sort((a,b) => a-b);
-
-            // 填入下拉選項 (Topology 不給 All)
-            populateSelect('topoSelect', allOptions.topology, false);
-            populateSelect('rSelect', allOptions.routing, true);
-            populateSelect('tSelect', allOptions.traffic, true);
-            populateSelect('pSelect', allOptions.packet_size, true);
-            populateSelect('bSelect', allOptions.buffer_size, true);
-            populateSelect('vSelect', allOptions.vcs, true);
-
-            populateSelect('topoSelectC', allOptions.topology, false);
-            populateSelect('dimSelectC', dims, false);
-
-            // 設定預設選項並更新
-            if(allOptions.topology.includes('ring')) {
-                document.getElementById('topoSelect').value = 'ring';
-                document.getElementById('topoSelectC').value = 'ring';
-            }
-            updateChart();
-        };
-    </script>
-    </body>
-    </html>
+    window.onload = function() {
+        let dims = [...new Set(allData.map(d => d.dim))].sort((a,b) => a-b);
+        populateSelect('topoSelect', allOptions.topology, false);
+        populateSelect('rSelect', allOptions.routing, true);
+        populateSelect('tSelect', allOptions.traffic, true);
+        populateSelect('pSelect', allOptions.packet_size, true);
+        populateSelect('bSelect', allOptions.buffer_size, true);
+        populateSelect('vSelect', allOptions.vcs, true);
+        populateSelect('topoSelectC', allOptions.topology, false);
+        populateSelect('dimSelectC', dims, false);
+        updateChart();
+    };
+</script>
+</body>
+</html>
