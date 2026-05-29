@@ -8,8 +8,8 @@ def generate_interactive_html():
     unified_data = []
 
     # 1. 讀取 verification_results.json (主要是 Mesh/Torus/Ring 固定參數的掃描)
-    if os.path.exists('report/verification_results.json'):
-        with open('report/verification_results.json', 'r', encoding='utf-8') as f:
+    if os.path.exists('dse_tools/report/verification_results.json'):
+        with open('dse_tools/report/verification_results.json', 'r', encoding='utf-8') as f:
             v_results = json.load(f)
             for r in v_results:
                 vcs = r.get('vcs') if 'vcs' in r else (1 if r['topology'] == 'mesh' else 2)
@@ -27,6 +27,7 @@ def generate_interactive_html():
                     "theory_channel_count": r.get('theory_channel_count', 0),
                     "theory_bisection_bw": r.get('theory_bisection_bw', 0),
                     "theory_max_load": r.get('theory_max_load', 0),
+                    "theory_edge_loads": r.get('theory_edge_loads', {}),
                     "theory_avg_hops": r.get('theory_avg_hops', 0),
                     "theory_max_rate": r.get('theory_max_rate', 0),
                     "booksim_zero_load_lat": r.get('booksim_zero_load_lat', 0),
@@ -38,8 +39,8 @@ def generate_interactive_html():
                     unified_data.append(record)
 
     # 2. 讀取 report_full_booksim_ring.json (Ring 拓撲的龐大參數矩陣掃描)
-    if os.path.exists('report/report_full_booksim_ring.json'):
-        with open('report/report_full_booksim_ring.json', 'r', encoding='utf-8') as f:
+    if os.path.exists('dse_tools/report/report_full_booksim_ring.json'):
+        with open('dse_tools/report/report_full_booksim_ring.json', 'r', encoding='utf-8') as f:
             r_results = json.load(f)
             for key, runs in r_results.items():
                 dim = int(key.split('_')[1])
@@ -204,9 +205,12 @@ def generate_interactive_html():
             <span style="color: #666; font-size: 0.9em;">提示：Mode C 會顯示該拓撲下所有通道的熱點分佈圖 (Heatmap)。紅色代表高負載，藍色代表低負載。</span>
         </div>
 
-        <div class="chart-container">
+        <div class="chart-container" id="chartContainer">
             <canvas id="dseChart"></canvas>
-            <img id="heatmapImg" src="" alt="Topology Heatmap" style="display: none; max-width: 100%; max-height: 100%; object-fit: contain; margin: 0 auto;">
+            <div id="heatmapContainer" style="display: none; width: 100%; height: 100%; position: relative;">
+                <canvas id="heatmapCanvas" style="width: 100%; height: 100%;"></canvas>
+                <div id="heatmapTooltip" style="position: absolute; display: none; background: rgba(0,0,0,0.8); color: white; padding: 5px 10px; border-radius: 4px; pointer-events: none; font-size: 14px; z-index: 10;"></div>
+            </div>
         </div>
     </div>
 
@@ -216,6 +220,8 @@ def generate_interactive_html():
         const allOptions = {options_json};
 
         let currentMode = 'A';
+        let heatmapNodes = [];
+        let heatmapEdges = [];
 
         function setMode(mode) {{
             currentMode = mode;
@@ -272,7 +278,7 @@ def generate_interactive_html():
             }}
 
             // 預設隱藏 heatmap, 顯示 canvas
-            document.getElementById('heatmapImg').style.display = 'none';
+            document.getElementById('heatmapContainer').style.display = 'none';
             document.getElementById('dseChart').style.display = 'block';
 
             if (currentMode === 'A') {{
@@ -349,7 +355,7 @@ def generate_interactive_html():
                     }}
                 }});
 
-            }} else {{
+            }} else if (currentMode === 'B') {{
                 // ===== MODE B: Scatter Plot =====
                 const xKey = document.getElementById('scatterX').value;
                 const yKey = document.getElementById('scatterY').value;
@@ -408,17 +414,209 @@ def generate_interactive_html():
                     }}
                 }});
             }} else if (currentMode === 'C') {{
-                // ===== MODE C: Heatmap Image =====
-                const topo = document.getElementById('topoSelectC').value;
-                const dim = document.getElementById('dimSelectC').value;
-
+                // ===== MODE C: JS Canvas Heatmap =====
                 document.getElementById('dseChart').style.display = 'none';
+                document.getElementById('heatmapContainer').style.display = 'block';
 
-                const img = document.getElementById('heatmapImg');
-                img.src = `heatmaps/${{topo}}_${{dim}}.png`;
-                img.style.display = 'block';
+                const topo = document.getElementById('topoSelectC').value;
+                const dim = parseInt(document.getElementById('dimSelectC').value);
+
+                // Find the relevant data record to get edge loads
+                let targetData = null;
+                for (let i = 0; i < allData.length; i++) {{
+                    if (allData[i].topology === topo && allData[i].dim === dim && allData[i].theory_edge_loads) {{
+                        targetData = allData[i];
+                        break;
+                    }}
+                }}
+
+                drawHeatmap(topo, dim, targetData ? targetData.theory_edge_loads : {{}});
             }}
         }}
+
+        function getColorForLoad(load, maxLoad) {{
+            if (maxLoad === 0 || load === 0) return 'rgba(200, 200, 200, 0.5)'; // Grey for zero load
+            // Color scale from blue (low) to red (high)
+            const ratio = load / maxLoad;
+            const hue = (1 - ratio) * 240; // 240 is blue, 0 is red
+            return `hsla(${{hue}}, 100%, 50%, 0.8)`;
+        }}
+
+        function drawHeatmap(topo, dim, edgeLoads) {{
+            const canvas = document.getElementById('heatmapCanvas');
+            const container = document.getElementById('heatmapContainer');
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            heatmapNodes = [];
+            heatmapEdges = [];
+
+            if (!edgeLoads || Object.keys(edgeLoads).length === 0) {{
+                ctx.fillStyle = 'black';
+                ctx.font = '20px Arial';
+                ctx.fillText("尚無該拓撲的通道負載資料 (No edge load data available)", 50, 50);
+                return;
+            }}
+
+            let maxLoad = 0;
+            for (let key in edgeLoads) {{
+                if (edgeLoads[key] > maxLoad) maxLoad = edgeLoads[key];
+            }}
+
+            const padding = 50;
+            const drawWidth = canvas.width - padding * 2;
+            const drawHeight = canvas.height - padding * 2;
+
+            let nodes = [];
+            let width = dim;
+            let height = dim;
+
+            if (topo === 'ring') {{
+                width = dim;
+                height = 1;
+                const radius = Math.min(drawWidth, drawHeight) / 2;
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                for (let i = 0; i < dim; i++) {{
+                    const angle = (i / dim) * 2 * Math.PI - Math.PI / 2;
+                    nodes.push({{
+                        id: i,
+                        x: centerX + radius * Math.cos(angle),
+                        y: centerY + radius * Math.sin(angle)
+                    }});
+                }}
+            }} else {{ // mesh or torus
+                const stepX = drawWidth / (width > 1 ? width - 1 : 1);
+                const stepY = drawHeight / (height > 1 ? height - 1 : 1);
+                for (let y = 0; y < height; y++) {{
+                    for (let x = 0; x < width; x++) {{
+                        nodes.push({{
+                            id: y * width + x,
+                            x: padding + x * stepX,
+                            y: padding + y * stepY
+                        }});
+                    }}
+                }}
+            }}
+
+            heatmapNodes = nodes;
+
+            // Prepare edges based on edgeLoads keys (e.g., "0->1")
+            for (let key in edgeLoads) {{
+                const parts = key.split('->');
+                if (parts.length === 2) {{
+                    const u = parseInt(parts[0]);
+                    const v = parseInt(parts[1]);
+                    const load = edgeLoads[key];
+                    const nodeU = nodes.find(n => n.id === u);
+                    const nodeV = nodes.find(n => n.id === v);
+
+                    if (nodeU && nodeV) {{
+                        heatmapEdges.push({{
+                            u: u, v: v,
+                            x1: nodeU.x, y1: nodeU.y,
+                            x2: nodeV.x, y2: nodeV.y,
+                            load: load,
+                            color: getColorForLoad(load, maxLoad)
+                        }});
+                    }}
+                }}
+            }}
+
+            // Draw edges
+            ctx.lineWidth = 4;
+            for (let edge of heatmapEdges) {{
+                ctx.beginPath();
+                ctx.moveTo(edge.x1, edge.y1);
+
+                // For Torus wrap-around, draw curved or broken lines if distance is too large
+                if (topo === 'torus' && (Math.abs(edge.x1 - edge.x2) > drawWidth * 0.8 || Math.abs(edge.y1 - edge.y2) > drawHeight * 0.8)) {{
+                    ctx.strokeStyle = edge.color;
+                    ctx.setLineDash([5, 5]); // dashed line for wrap-around
+                    // simple curve for wrap around
+                    ctx.quadraticCurveTo(canvas.width/2, canvas.height/2, edge.x2, edge.y2);
+                }} else {{
+                    ctx.strokeStyle = edge.color;
+                    ctx.setLineDash([]);
+                    ctx.lineTo(edge.x2, edge.y2);
+                }}
+
+                ctx.stroke();
+            }}
+            ctx.setLineDash([]); // reset
+
+            // Draw nodes
+            for (let node of nodes) {{
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, 8, 0, 2 * Math.PI);
+                ctx.fillStyle = '#333';
+                ctx.fill();
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }}
+        }}
+
+        // Add mousemove listener for tooltip
+        document.getElementById('heatmapCanvas').addEventListener('mousemove', function(e) {{
+            if (currentMode !== 'C') return;
+            const rect = this.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            let hoveredEdge = null;
+            // Check edges (simple line distance)
+            for (let edge of heatmapEdges) {{
+                const A = mouseX - edge.x1;
+                const B = mouseY - edge.y1;
+                const C = edge.x2 - edge.x1;
+                const D = edge.y2 - edge.y1;
+
+                const dot = A * C + B * D;
+                const len_sq = C * C + D * D;
+                let param = -1;
+                if (len_sq != 0) // in case of 0 length line
+                    param = dot / len_sq;
+
+                let xx, yy;
+
+                if (param < 0) {{
+                    xx = edge.x1;
+                    yy = edge.y1;
+                }}
+                else if (param > 1) {{
+                    xx = edge.x2;
+                    yy = edge.y2;
+                }}
+                else {{
+                    xx = edge.x1 + param * C;
+                    yy = edge.y1 + param * D;
+                }}
+
+                const dx = mouseX - xx;
+                const dy = mouseY - yy;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < 5) {{ // 5px tolerance
+                    hoveredEdge = edge;
+                    break;
+                }}
+            }}
+
+            const tooltip = document.getElementById('heatmapTooltip');
+            if (hoveredEdge) {{
+                tooltip.style.display = 'block';
+                tooltip.style.left = (e.clientX - rect.left + 15) + 'px';
+                tooltip.style.top = (e.clientY - rect.top + 15) + 'px';
+                tooltip.innerHTML = `連線 (Edge): ${{hoveredEdge.u}} &rarr; ${{hoveredEdge.v}}<br>負載 (Load): ${{hoveredEdge.load}}`;
+                this.style.cursor = 'pointer';
+            }} else {{
+                tooltip.style.display = 'none';
+                this.style.cursor = 'default';
+            }}
+        }});
 
         // 初始化
         window.onload = function() {{
@@ -448,7 +646,7 @@ def generate_interactive_html():
     </html>
     """
 
-    output_path = 'report/interactive_dse_trends.html'
+    output_path = 'dse_tools/report/interactive_dse_trends.html'
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write(html_content)
     print(f"互動式 HTML 報告已產生：{output_path}")
