@@ -11,36 +11,40 @@
 ## Overview
 This project is a comprehensive framework dedicated to Network-on-Chip (NoC) Design Space Exploration (DSE). The primary goal is to evaluate, simulate, and compare various NoC topologies, routing algorithms, and flow control mechanisms to find optimal architectural configurations for specific workloads.
 
-Unlike a simple standalone simulator, this project is structured in multiple layers and phases, starting from theoretical Python-based analysis, advancing to C++ functional modeling, and eventually scaling to Transaction-Level Modeling (TLM) and Register-Transfer Level (RTL) implementations.
+Unlike a simple standalone simulator, this project is structured in multiple layers, starting from theoretical Python-based analysis, advancing to cross-verification with industry-standard simulators, and eventually scaling to C++ functional modeling, Transaction-Level Modeling (TLM), and RTL implementations.
 
-## Key Objectives
-1. **Theoretical Analysis**: Quickly estimate NoC performance limits (Bisection Bandwidth, Channel Loading, Hot Spots) using mathematical models.
-2. **Flexible C-Model Simulation**: Provide a fast, modular C++ simulator that can easily swap different topologies and routing algorithms.
-3. **Cross-Verification**: Integrate well-known standalone open-source NoC simulators (like BookSim, Noxim) as submodules to establish baselines and verify the correctness of our models.
-4. **Hardware Implementation**: Lay the groundwork for hardware-accurate modeling (TLM/RTL) after architectural parameters are chosen.
+## Project Phases & Status
+The development of this DSE framework is structured into four main phases:
+
+*   **Phase 1: Theoretical Analysis (✅ Mostly Complete)**
+    *   Python-based mathematical models to quickly estimate NoC performance limits (Bisection Bandwidth, Channel Loading, Hot Spots, Average Hops).
+*   **Phase 2: C++ Functional Simulation Refactoring (⏳ In Progress)**
+    *   Refactoring the legacy C++ model to be modular, removing hardcoded parameters, and adding robust statistics collection for latency and throughput.
+*   **Phase 3: Cross-Verification Framework (✅ Mostly Complete)**
+    *   Automated Python orchestration pipeline that translates a unified `NoC_config.yaml` to third-party simulator formats, executes sweeps, and generates interactive HTML5 Canvas dashboards (Heatmaps & Latency Curves) for empirical verification against our theoretical models.
+*   **Phase 4: Hardware Implementation (📅 Planned)**
+    *   Translating optimal architectures into hardware-accurate SystemC TLM and synthesizable Verilog RTL models.
+
+## Integrated 3rd-Party Simulators
+To ensure our theoretical models and eventual hardware implementations are accurate, we integrate several well-known standalone open-source NoC simulators as submodules in the `third_party/` directory for cross-verification:
+
+*   **BookSim 2.0**: The classic, cycle-accurate simulator. It serves as our "Golden Model" for verifying topologies, routing latency, and saturation points.
+*   **Noxim**: A SystemC-based simulator, particularly renowned for its "Power/Energy" evaluation capabilities, and support for 3D NoC and WiNoC architectures.
+*   **ProNoC**: Features a graphical user interface (GUI) and focuses on generating synthesizable RTL (Verilog/VHDL) code directly, making it ideal for FPGA/ASIC implementations.
+*   **Constellation**: A Chisel-based NoC generator that is highly parameterized and widely adopted within the RISC-V ecosystem (e.g., Rocket Chip, Chipyard).
 
 ## Documentation
-To understand the details of the project, please refer to the following documents:
-
 *   [**Architecture (`architecture.md`)**](./architecture.md): Detailed explanation of NoC topologies, routing algorithms, and theoretical formulas.
-*   [**Implementation Plan (`implementation.md`)**](./implementation.md): Phased approach and structural planning for developing this DSE framework.
-*   [**To-Do List (`todo.md`)**](./todo.md): Actionable tasks and upcoming milestones, including third-party simulator integration.
+*   [**Implementation Plan (`implementation.md`)**](./implementation.md): Phased approach and structural planning.
+*   [**To-Do List (`todo.md`)**](./todo.md): Actionable tasks and upcoming milestones.
 
 ## Directory Structure
-*Currently, the legacy code is present. As the implementation phases progress, the directory will be restructured to isolate topologies, routing algorithms, and implementation levels.*
-
 *   `noc_arch_trace/`: Architecture tools and trace analyzers.
-*   `noc_c_model/`: Legacy C++ functional model (Will be refactored).
-*   `noc_tlm_model/`: SystemC Transaction Level Modeling.
-*   `noc_rtl/`: Verilog implementation.
-*   `third_party/`: Contains integrated open-source standalone simulators for cross-verification (Currently includes: `booksim`, `noxim`, `pronoc`, `constellation`).
-*   `dse_tools/`: Python toolkit for NoC Design Space Exploration.
-    *   `core/`: Topology and mathematical metric calculators.
-    *   `converters/`: YAML to simulator-specific configuration adapters.
-    *   `runners/`: Orchestration scripts for parallel execution and cross-verification.
-    *   `generators/`: Scripts to build interactive HTML and Markdown reports.
-    *   `config/`: Master YAML configuration files (`NoC_config.yaml`, `verification_sweep.yaml`).
-    *   `report/`: Persistent storage for generated plots, JSON data, and interactive dashboards.
+*   `noc_c_model/`: Legacy C++ functional model (Currently undergoing Phase 2 refactoring).
+*   `noc_tlm_model/`: SystemC Transaction Level Modeling (Phase 4).
+*   `noc_rtl/`: Verilog implementation (Phase 4).
+*   `third_party/`: Integrated open-source standalone simulators (`booksim`, `noxim`, `pronoc`, `constellation`).
+*   `dse_tools/`: Core Python toolkit for NoC Design Space Exploration, orchestration, and HTML/Markdown report generation.
 
 <br>
 
@@ -53,33 +57,37 @@ To understand the details of the project, please refer to the following document
 ## 專案概述
 本專案是一個專門用於片上網路 (NoC) 架構探索 (DSE) 的綜合性框架。主要目標是評估、模擬和比較各種 NoC 拓撲結構、路由演算法和流量控制機制，以為特定的工作負載找到最佳的架構配置。
 
-有別於單純的獨立模擬器，本專案分為多個層次和階段：從基於 Python 的理論分析開始，進展到 C++ 功能性建模，最終擴展到交易層級建模 (TLM) 以及暫存器傳輸層級 (RTL) 實作。
+有別於單純的獨立模擬器，本專案分為多個層次和階段：從基於 Python 的理論分析開始，進展到與業界標準模擬器的交叉驗證，隨後重構 C++ 功能性建模，最終擴展到交易層級建模 (TLM) 以及暫存器傳輸層級 (RTL) 實作。
 
-## 核心目標
-1. **理論分析**: 使用數學模型快速估算 NoC 效能極限，如二分頻寬、通道負載、熱點等。
-2. **彈性的 C 模型模擬**: 提供一個快速、模組化的 C++ 模擬器，可以輕鬆抽換不同的拓撲和路由演算法。
-3. **交叉驗證**: 整合知名的獨立開源 NoC 模擬器（如 BookSim、Noxim）作為 submodule，以建立基準並驗證我們模型的正確性。
-4. **硬體實作**: 在選定架構參數後，為硬體精確建模 (TLM/RTL) 奠定基礎。
+## 專案階段與目前狀態 (Project Phases & Status)
+本框架的開發分為四個主要階段：
+
+*   **階段 1 (Phase 1): 理論分析與建模 (✅ 幾乎完成)**
+    *   使用 Python 建立數學模型，快速估算 NoC 的效能極限（如：二分頻寬、通道負載、熱點預測、平均跳數）。
+*   **階段 2 (Phase 2): C++ 功能性模擬重構 (⏳ 進行中)**
+    *   重構舊版的 C++ 模型，使其模組化、移除寫死的參數，並加入完整的統計數據收集（延遲、吞吐量），以支援運行時調整。
+*   **階段 3 (Phase 3): 交叉驗證整合 (✅ 幾乎完成)**
+    *   自動化的 Python 調度管線。將統一的 `NoC_config.yaml` 轉換為第三方模擬器格式，自動執行參數掃描，並產生純 JS (HTML5 Canvas) 的互動式儀表板（包含動態熱點圖與延遲曲線），以經驗數據驗證我們的理論模型。
+*   **階段 4 (Phase 4): 硬體精確實作 (📅 規劃中)**
+    *   在選定最佳架構參數後，將其轉化為硬體精確的 SystemC TLM 模型與可合成的 Verilog RTL 實作。
+
+## 整合的第三方模擬器 (Integrated 3rd-Party Simulators)
+為了確保我們的理論模型和未來的硬體實作正確無誤，我們在 `third_party/` 目錄中整合了多個知名的開源 NoC 模擬器作為交叉驗證的基準：
+
+*   **BookSim 2.0**: 最經典的週期精確 (Cycle-accurate) 模擬器。它是我們驗證拓撲與路由延遲的「黃金基準 (Golden Model)」。
+*   **Noxim**: 基於 SystemC 開發，特別擅長於「功耗/能量評估 (Power/Energy)」，並且支援 3D NoC 與無線 NoC (WiNoC) 架構。
+*   **ProNoC**: 提供圖形介面 (GUI)，主打能夠直接產生可合成的 RTL 程式碼 (Verilog/VHDL)，非常適合 FPGA/ASIC 的快速實作。
+*   **Constellation**: 基於 Chisel 語言的 NoC 產生器，具備高度參數化的特性，在 RISC-V 生態系 (如 Rocket Chip, Chipyard) 中被廣泛使用。
 
 ## 相關文件
-想了解專案的詳細資訊，請參考以下文件：
-
 *   [**架構設計 (`architecture.md`)**](./architecture.md): 詳細解釋 NoC 拓撲、路由演算法及理論公式。
 *   [**實作計畫 (`implementation.md`)**](./implementation.md): 開發此 DSE 框架的階段性方法與架構規劃。
-*   [**待辦事項 (`todo.md`)**](./todo.md): 待辦事項和即將到來的里程碑，包含第三方模擬器整合計畫。
+*   [**待辦事項 (`todo.md`)**](./todo.md): 待辦事項和即將到來的里程碑，包含尚未完成的模組細節。
 
 ## 目錄結構
-*目前仍保留舊版程式碼。隨著實作階段的推進，目錄將被重構，以隔離拓撲、路由演算法和不同層級的實作。*
-
 *   `noc_arch_trace/`: 架構工具與 Trace 分析器。
-*   `noc_c_model/`: 舊版 C++ 功能性模型（將進行重構）。
-*   `noc_tlm_model/`: SystemC 交易層級建模。
-*   `noc_rtl/`: Verilog 實作。
-*   `third_party/`: 包含用於交叉驗證的獨立開源模擬器（目前包含：`booksim`、`noxim`、`pronoc`、`constellation`）。
-*   `dse_tools/`: 用於片上網路架構探索的 Python 工具包。
-    *   `core/`: 拓撲產生器與數學指標計算器。
-    *   `converters/`: 負責將 YAML 轉接至各個第三方模擬器格式的轉接器。
-    *   `runners/`: 負責平行執行模擬與交叉驗證的自動化腳本。
-    *   `generators/`: 負責產生互動式 HTML 與 Markdown 報告的腳本。
-    *   `config/`: 主設定檔目錄 (`NoC_config.yaml`, `verification_sweep.yaml`)。
-    *   `report/`: 用於永久存放產生的圖表、JSON 數據與互動式儀表板。
+*   `noc_c_model/`: 舊版 C++ 功能性模型（目前正在進行 Phase 2 重構）。
+*   `noc_tlm_model/`: SystemC 交易層級建模 (Phase 4)。
+*   `noc_rtl/`: Verilog 實作 (Phase 4)。
+*   `third_party/`: 包含用於交叉驗證的獨立開源模擬器 (`booksim`, `noxim`, `pronoc`, `constellation`)。
+*   `dse_tools/`: 核心 Python 工具包，負責理論計算、模擬器調度、以及 HTML/Markdown 報告的自動生成。
