@@ -11,23 +11,34 @@
 
 ## 階段 2：C++ 模型重構 (Phase 2)
 
-*   [ ] **重構 `noc_c_model` 架構**：移除 `Config.h` 中寫死的拓撲大小以支援 runtime 調整與 DSE 掃描；解耦 `Router.cpp` 內嚴重耦合的 Mesh 拓撲與 XY 路由邏輯。
-*   [ ] **修正 C 模型同步問題**：解決 `step()` 中同週期寫入鄰居緩衝區的同步與競爭 (Race Condition) 問題，確保模擬行為準確。
-*   [ ] **新增統計數據追蹤**：在 C++ 模型中實作完全缺失的延遲 (Latency)、吞吐量 (Throughput) 和連結負載 (Link Load) 監控。
+*   [ ] **重構 `noc_c_model` 架構 (Topology/Routing)**：
+    *   移除 `Config.h` 中寫死的 `MESH_WIDTH` 和 `MESH_HEIGHT`，以支援 runtime 調整與 DSE 參數掃描。
+    *   解耦 `Router.cpp` 內嚴重耦合的 Mesh 拓撲與 XY 路由邏輯。
+    *   實作抽象的 Router 介面，以支援不同的拓撲 (Torus, Ring) 和路由演算法。
+*   [ ] **修正 C 模型同步與架構問題**：
+    *   解決 `step()` 中同週期寫入鄰居緩衝區的同步與競爭 (Race Condition) 問題。
+    *   實作 Pipeline 階段或 Double Buffering 以正確模擬硬體行為。
+*   [ ] **新增統計數據追蹤 (Statistics Collection)**：
+    *   在 C++ 模型中實作追蹤每封包的延遲 (Latency)。
+    *   計算整體的吞吐量 (Throughput)。
+    *   監控與記錄每個連結的使用率 (Link Load)，以利與 Python 理論分析進行交叉驗證。
 
 ## 階段 3：交叉驗證整合 (Cross-Verification Integration)
 
 *   [x] **整合開源模擬器**：引入成熟的開源 NoC 模型 (BookSim, Noxim, ProNoC, Constellation) 作為 Git submodules，以作為驗證基準。
 *   [x] **設計統一設定檔 `NoC_config.yaml`**：定義單一 YAML 檔作為所有 DSE 參數（拓撲、路由、緩衝區、流量）的主輸入。
 *   [x] **開發轉接腳本 (Adapter Scripts)**：撰寫轉換腳本以解析 YAML，並為 BookSim 產生專屬設定檔 (Noxim, ProNoC, Constellation 骨架已建立)。
-*   [ ] **實作剩餘轉接器**：將 Noxim, ProNoC 和 Constellation 的轉換器空骨架實作完成。
+*   [ ] **實作剩餘的模擬器轉接器 (Converters)**：
+    *   [ ] 實作 `NoximConverter` (`dse_tools/converters/other_converters.py`)。
+    *   [ ] 實作 `PronocConverter` (`dse_tools/converters/other_converters.py`)。
+    *   [ ] 實作 `ConstellationConverter` (`dse_tools/converters/other_converters.py`)。
 *   [x] **開發自動化執行器 (Runners)**：建立封裝腳本，自動讀取配置並執行 BookSim。
 *   [x] **擴充驗證資料集 (Comprehensive Sweep)**：掃描涵蓋完整注入率 (Injection Rates) 陣列，以完整記錄 Latency 曲線資料。
 *   [x] **開發互動式 DSE 報告產生器 (Interactive HTML Report)**：利用 Chart.js 產生可切換拓撲與節點數、並能動態呈現效能趨勢與飽和點的互動式網頁報告。
 
 
 ## 視覺化進階 (Future Visualizations)
-*   [ ] **動態互動式拓撲熱點圖 (Interactive JS Heatmaps)**：將目前產生的靜態 Topology Heatmap (.png) 升級為純 JavaScript (例如 D3.js 或 Cytoscape.js) 實作的動態可拖拉視窗，支援滑鼠懸停顯示具體 Edge Load 數值。
+*   [x] **動態互動式拓撲熱點圖 (Interactive JS Heatmaps)**：將目前產生的靜態 Topology Heatmap (.png) 升級為純 JavaScript (HTML5 Canvas) 實作的動態視窗，支援滑鼠懸停顯示具體 Edge Load 數值。
 
 ## 階段 4：硬體精確實作 (Phases 3 & 4)
 
