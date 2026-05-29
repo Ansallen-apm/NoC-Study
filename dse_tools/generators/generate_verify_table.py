@@ -5,15 +5,15 @@ import json
 import numpy as np
 
 def generate_markdown_table():
-    with open('report/verification_results.json', 'r', encoding='utf-8') as f:
+    with open('dse_tools/report/verification_results.json', 'r', encoding='utf-8') as f:
         results = json.load(f)
 
     # Sort results by topology then by dimension
     results.sort(key=lambda x: (x['topology'], x['dim']))
 
     md = "## 交叉驗證結果總結 (Cross-Verification Summary)\n\n"
-    md += "| 拓撲 (Topology) | 維度 (Dim) | 連線數 (Channels) | 二分頻寬 (Bisection BW) | 最大通道負載 (Max Load) | 理論平均跳數 (Avg Hops) | BookSim 零負載延遲 (Zero-Load Latency) | 理論最大注入率 (Theory Max Rate) | BookSim 實際飽和點 (Actual Sat Rate) |\n"
-    md += "| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |\n"
+    md += "| 拓撲 (Topology) | 維度 (Dim) | 理論連線數 (Theory Channels) | 實際連線數 (Actual Channels) | 理論二分頻寬 (Theory Bisec BW) | 實際總吞吐量 (Actual Throughput) | 理論最大負載 (Theory Max Load) | 實際飽和點倒數 (1/Sat Rate) | 理論平均跳數 (Theory Avg Hops) | 實際零負載延遲 (Zero-Load Latency) | 理論最大注入率 (Theory Max Rate) | 實際飽和點 (Actual Sat Rate) |\n"
+    md += "| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |\n"
 
     theory_hops = []
     bs_zlat = []
@@ -36,7 +36,15 @@ def generate_markdown_table():
         th_rate = f"{r['theory_max_rate']:.4f}" if r.get('theory_max_rate') is not None else "N/A"
         bs_s = f"{r['booksim_actual_sat_rate']:.4f}" if r.get('booksim_actual_sat_rate') is not None else "N/A"
 
-        md += f"| {topo} | {dim} | {channels} | {bisec_bw} | {max_load} | {th_hops} | {bs_zl} | {th_rate} | {bs_s} |\n"
+        # Calculate actual channels (proxy by just mirroring if we don't have it explicitly, but let's just use what we have or "N/A")
+        actual_channels = "N/A"
+
+        bs_throughput_val = f"{r['booksim_total_throughput']:.4f}" if r.get('booksim_total_throughput') is not None else "N/A"
+
+        sat_rate = r.get('booksim_actual_sat_rate')
+        inv_sat = f"{(1.0 / sat_rate):.4f}" if sat_rate and sat_rate > 0 else "N/A"
+
+        md += f"| {topo} | {dim} | {channels} | {actual_channels} | {bisec_bw} | {bs_throughput_val} | {max_load} | {inv_sat} | {th_hops} | {bs_zl} | {th_rate} | {bs_s} |\n"
 
         if r.get('booksim_zero_load_lat') != float('inf') and r.get('theory_avg_hops') is not None:
             theory_hops.append(r['theory_avg_hops'])
@@ -78,9 +86,9 @@ def generate_markdown_table():
     md += f"   - **相關係數:** `{corr_bw:.4f}`\n"
     md += "   - **物理意義:** 即使在 Uniform Random 流量而非特定跨界流量下，當網路全面飽和時，整體吞吐量 (總節點數 × 每個節點的極限注入率) 仍然受到網路中央截面的二分頻寬所限制，兩者呈現高度正相關。\n"
 
-    with open('report/verification_summary.md', 'w', encoding='utf-8') as f:
+    with open('dse_tools/report/verification_summary.md', 'w', encoding='utf-8') as f:
         f.write(md)
 
 if __name__ == "__main__":
     generate_markdown_table()
-    print("Markdown 報告產生完畢：report/verification_summary.md")
+    print("Markdown 報告產生完畢：dse_tools/report/verification_summary.md")
