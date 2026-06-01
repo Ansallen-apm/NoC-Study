@@ -44,6 +44,20 @@
 *   [x] **開發互動式 DSE 報告產生器 (Interactive HTML Report)**：利用 Chart.js 產生可切換拓撲與節點數、並能動態呈現效能趨勢與飽和點的互動式網頁報告。
 
 
+### 階段 3.5：進階交叉驗證與參數擴充 (Advanced Cross-Verification)
+*(目的：擴展交叉驗證的範圍，涵蓋更多真實場景與變數)*
+*   [ ] **流量模式 (Traffic Patterns) 的驗證**：
+    *   [ ] 在 Python 理論模型中實作非均勻流量 (如 Transpose, Bit-complement, Tornado, Hotspot) 的熱點與負載計算。
+    *   [ ] 使用 BookSim 針對多種標準流量模式進行模擬，確認理論熱點分佈與實際瓶頸一致。
+    *   [ ] 支援匯入真實應用 Trace，進行理論模型與模擬器的端到端比對。
+*   [ ] **非確定性路由 (Adaptive Routing) 的驗證**：
+    *   [ ] 在 Python 核心中建立自適應路由 (Adaptive Routing) 的理論分析模型，推算多路徑負載平衡對最大通道負載的影響。
+    *   [ ] 於 BookSim 啟用自適應路由 (如 Minimal Adaptive)，並將其飽和點與延遲結果與 Python 預測進行交叉比對。
+*   [ ] **封包長度與虛擬通道 (VC/Packet Size) 影響驗證**：
+    *   [ ] 建立不同封包長度如何影響網路實際飽和點的數學/經驗公式。
+    *   [ ] 量化不同 VC 數量與緩衝區深度對排程效率及死結 (Deadlock) 避免的影響，並整合進理論模型。
+    *   [ ] 透過 BookSim 自動化掃描多種封包大小與 VC 配置組合，並將模擬結果與理論經驗公式進行迴歸比對。
+
 ## 視覺化進階 (Future Visualizations)
 *   [x] **動態互動式拓撲熱點圖 (Interactive JS Heatmaps)**：將目前產生的靜態 Topology Heatmap (.png) 升級為純 JavaScript (HTML5 Canvas) 實作的動態視窗，支援滑鼠懸停顯示具體 Edge Load 數值。
 
