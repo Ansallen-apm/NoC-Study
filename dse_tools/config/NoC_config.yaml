@@ -15,6 +15,11 @@ simulation:
   sim_cycles: 5000         # 實際收集統計資料的模擬週期數
   # 注意：injection_rate 通常由 sweep script 覆蓋，但這裡提供一個預設值
   injection_rate: 0.1
+  # 可選的掃描範圍定義
+  sweep_range:
+    start: 0.05
+    end: 0.50
+    step: 0.05
 
 # 特定模擬器的覆蓋/擴充參數 (Simulator-Specific Overrides)
 simulators:
