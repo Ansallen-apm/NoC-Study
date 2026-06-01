@@ -12,13 +12,26 @@ class BookSimConverter(ConfigConverterBase):
         sim = self.config.get('simulation', {})
         booksim_overrides = self.config.get('simulators', {}).get('booksim', {})
 
+        topo_type = arch.get('topology', 'mesh').lower()
+        routing = arch.get('routing', 'xy').lower()
+
+        # BookSim models a ring as a 1D torus
+        bs_topology = "torus" if topo_type == "ring" else topo_type
+        dimension_n = 1 if topo_type == "ring" else 2
+
+        # Default mapping for routing
+        if routing == 'xy':
+            bs_routing = 'dim_order'
+        else:
+            bs_routing = routing
+
         # 對應 BookSim 的參數名稱
         bs_config = {
             # Topology
-            "topology": arch.get('topology', 'mesh'),
-            "k": arch.get('width', 4),  # Mesh size
-            "n": 2,                     # Dimension (2D)
-            "routing_function": "dim_order" if arch.get('routing', 'xy') == 'xy' else arch.get('routing', 'xy'),
+            "topology": bs_topology,
+            "k": arch.get('width', 4),  # Mesh size / Nodes in ring
+            "n": dimension_n,           # Dimension (2D or 1D)
+            "routing_function": bs_routing,
 
             # Flow Control & Buffers
             "num_vcs": arch.get('num_vcs', 1),
