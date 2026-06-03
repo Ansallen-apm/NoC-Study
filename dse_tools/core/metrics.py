@@ -42,6 +42,13 @@ def get_traffic_destinations(src, num_nodes, traffic_pattern='uniform', width=No
             # Fallback to uniform if dimensions aren't provided
             prob = 1.0 / (num_nodes - 1) if num_nodes > 1 else 0
             return [(dst, prob) for dst in range(num_nodes) if dst != src]
+
+        # 對於 1D Ring 拓撲，Transpose 等同於收發反轉 (或簡單地回退為 Uniform 以防越界)
+        # 這裡為了對齊 BookSim 的行為，我們將其視為 uniform 或者進行模數運算
+        if height == 1:
+            dest = (num_nodes - src) % num_nodes
+            return [(dest, 1.0)] if dest != src else []
+
         src_x = src % width
         src_y = src // width
         # Assuming square or swapping dimensions; for pure transpose we swap x and y.
@@ -57,8 +64,15 @@ def get_traffic_destinations(src, num_nodes, traffic_pattern='uniform', width=No
         if width is None:
             prob = 1.0 / (num_nodes - 1) if num_nodes > 1 else 0
             return [(dst, prob) for dst in range(num_nodes) if dst != src]
+
         src_x = src % width
         src_y = src // width
+
+        # 對於 Ring (height == 1)，Tornado 退化為向右平移 (k/2 - 1) 步
+        if height == 1:
+            dest = (src + (width // 2 - 1)) % width
+            return [(dest, 1.0)] if dest != src else []
+
         dest_x = (src_x + (width // 2 - 1)) % width
         dest = src_y * width + dest_x
         return [(dest, 1.0)] if dest != src else []
