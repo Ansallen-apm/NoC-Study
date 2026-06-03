@@ -82,14 +82,25 @@ int main(int argc, char* argv[]) {
 
     for (sim_time = 0; sim_time < max_cycles; ++sim_time) {
         // Injection Phase (注入階段)
+        std::vector<bool> injected_this_cycle(global_config.num_nodes, false);
         auto it = pending_packets.begin();
         while (it != pending_packets.end()) {
             Packet& p = *it;
-            // Try to inject (嘗試注入)
-            if (routers[p.src_id]->inject_packet(p)) {
-                it = pending_packets.erase(it); // Remove if successful (成功則移除)
+            // Only inject if it's time, and the node hasn't injected yet this cycle
+            if (sim_time >= p.creation_time) {
+                if (!injected_this_cycle[p.src_id]) {
+                    // Try to inject (嘗試注入)
+                    if (routers[p.src_id]->inject_packet(p)) {
+                        injected_this_cycle[p.src_id] = true;
+                        it = pending_packets.erase(it); // Remove if successful (成功則移除)
+                    } else {
+                        ++it; // Buffer full, try again later
+                    }
+                } else {
+                    ++it; // Node already injected this cycle, try again next cycle
+                }
             } else {
-                ++it; // Try next packet if this one failed (若失敗則嘗試下一個)
+                ++it; // Not time yet
             }
         }
 
