@@ -8,7 +8,6 @@ import multiprocessing
 import re
 import json
 import numpy as np
-import matplotlib.pyplot as plt
 
 from core.topology import generate_mesh_topology, generate_torus_topology, generate_ring_topology
 from core.metrics import calculate_average_hop_count, analyze_channel_load, calculate_channel_count, calculate_bisection_bandwidth
@@ -223,74 +222,25 @@ def calc_and_plot(results):
     theory_max_load = [theory_max_load[i] for i in valid_inv]
     bs_sat_inv = [bs_sat_inv[i] for i in valid_inv]
 
-    # 1. 繪製 Zero-Load Correlation
-    plt.figure(figsize=(8, 6))
-    plt.scatter(theory_hops, bs_zlat, color='blue', s=100, alpha=0.7)
-
     # 計算相關係數 (Pearson)
     if len(theory_hops) > 1:
         corr_hops = np.corrcoef(theory_hops, bs_zlat)[0, 1]
     else:
         corr_hops = 0.0
 
-    # Fit line
-    m, b = np.polyfit(theory_hops, bs_zlat, 1)
-    plt.plot(np.array(theory_hops), m*np.array(theory_hops) + b, color='red', linestyle='--')
-
-    plt.title(f'Zero-load Latency vs. Theory Avg Hops\nCorrelation: {corr_hops:.4f}')
-    plt.xlabel('Python Theory Average Hops')
-    plt.ylabel('BookSim Zero-Load Latency (cycles)')
-    plt.grid(True)
-    plt.savefig('report/zero_load_correlation.png')
-
-    # 2. 繪製 Saturation Correlation
-    plt.figure(figsize=(8, 6))
-    plt.scatter(theory_rate, bs_sat, color='green', s=100, alpha=0.7)
-
     if len(theory_rate) > 1:
         corr_rate = np.corrcoef(theory_rate, bs_sat)[0, 1]
     else:
         corr_rate = 0.0
 
-    m2, b2 = np.polyfit(theory_rate, bs_sat, 1)
-    plt.plot(np.array(theory_rate), m2*np.array(theory_rate) + b2, color='red', linestyle='--')
-
-    plt.title(f'BookSim Saturation vs. Theory Max Injection Rate\nCorrelation: {corr_rate:.4f}')
-    plt.xlabel('Python Theory Max Injection Rate (proxy)')
-    plt.ylabel('BookSim Actual Saturation Rate')
-    plt.grid(True)
-    plt.savefig('report/saturation_correlation.png')
-
-    # 3. 繪製 Max Load Correlation
-    plt.figure(figsize=(8, 6))
-    plt.scatter(theory_max_load, bs_sat_inv, color='purple', s=100, alpha=0.7)
     corr_load = np.corrcoef(theory_max_load, bs_sat_inv)[0, 1] if len(theory_max_load) > 1 else 0.0
-    m3, b3 = np.polyfit(theory_max_load, bs_sat_inv, 1)
-    plt.plot(np.array(theory_max_load), m3*np.array(theory_max_load) + b3, color='red', linestyle='--')
-    plt.title(f'BookSim Saturation (Inv) vs. Theory Max Load\nCorrelation: {corr_load:.4f}')
-    plt.xlabel('Python Theory Max Channel Load')
-    plt.ylabel('BookSim Saturation Rate Inverted (1 / Sat_Rate)')
-    plt.grid(True)
-    plt.savefig('report/max_load_correlation.png')
-
-    # 4. 繪製 Bisection Bandwidth vs Total Throughput Correlation
-    plt.figure(figsize=(8, 6))
-    plt.scatter(theory_bisec, bs_throughput, color='orange', s=100, alpha=0.7)
     corr_bw = np.corrcoef(theory_bisec, bs_throughput)[0, 1] if len(theory_bisec) > 1 else 0.0
-    m4, b4 = np.polyfit(theory_bisec, bs_throughput, 1)
-    plt.plot(np.array(theory_bisec), m4*np.array(theory_bisec) + b4, color='red', linestyle='--')
-    plt.title(f'BookSim Total Throughput vs. Theory Bisection BW\nCorrelation: {corr_bw:.4f}')
-    plt.xlabel('Python Theory Bisection Bandwidth (bps)')
-    plt.ylabel('BookSim Total Throughput at Saturation (packets/cycle)')
-    plt.grid(True)
-    plt.savefig('report/bisection_bw_correlation.png')
 
     print("\n=== 交叉驗證總結 ===")
     print(f"Zero-Load 延遲相關係數 (Avg Hops vs Base Latency) = {corr_hops:.4f} (預期接近 1.0)")
     print(f"網路飽和度相關係數 (Theory Max Rate vs Actual Sat Rate) = {corr_rate:.4f} (預期接近 1.0)")
     print(f"最大通道負載相關係數 (Max Load vs 1/Actual_Sat_Rate) = {corr_load:.4f} (預期接近 1.0)")
     print(f"二分頻寬相關係數 (Bisection BW vs Total Throughput) = {corr_bw:.4f} (預期高度正相關)")
-    print("所有圖表已匯出至 report/ 目錄下。")
 
 if __name__ == "__main__":
     main()
