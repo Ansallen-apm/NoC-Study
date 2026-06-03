@@ -6,16 +6,16 @@ import yaml
 from core.topology import generate_mesh_topology, generate_torus_topology, generate_ring_topology
 from core.metrics import calculate_average_hop_count, calculate_bisection_bandwidth, analyze_channel_load
 
-def analyze_topology(name, graph, channel_bandwidth):
+def analyze_topology(name, graph, channel_bandwidth, traffic_pattern='uniform'):
     """
     對單一拓撲圖形進行完整的指標分析。
     """
-    print(f"正在分析 {name} ({graph.graph['width']}x{graph.graph['height']}) 拓撲...")
+    print(f"正在分析 {name} ({graph.graph['width']}x{graph.graph['height']}) 拓撲，流量模式: {traffic_pattern}...")
 
     # 計算各項指標
-    avg_hops = calculate_average_hop_count(graph)
+    avg_hops = calculate_average_hop_count(graph, traffic_pattern=traffic_pattern)
     bisection_bw = calculate_bisection_bandwidth(graph, channel_bandwidth)
-    load_analysis = analyze_channel_load(graph, routing_algorithm='xy')
+    load_analysis = analyze_channel_load(graph, routing_algorithm='xy', traffic_pattern=traffic_pattern)
 
     # 格式化並回傳結果
     return {
@@ -45,15 +45,19 @@ def main():
         return
 
     arch = config.get('architecture', {})
+    sim = config.get('simulation', {})
+
     topo_type = arch.get('topology', 'mesh').lower()
     width = arch.get('width', 4)
     height = arch.get('height', 4)
+    traffic_pattern = sim.get('traffic_pattern', 'uniform').lower()
+
     # Channel bandwidth typically is packet_size or flit width, here using fixed 32 for demo or scaling by packet
     channel_bandwidth = 32
 
     results = {}
 
-    print(f"從 {config_path} 讀取到拓撲設定: {topo_type} (W:{width}, H:{height})")
+    print(f"從 {config_path} 讀取到拓撲設定: {topo_type} (W:{width}, H:{height}), 流量模式: {traffic_pattern}")
 
     # 動態產生對應的拓撲
     name = f"{topo_type.capitalize()}_{width}x{height}"
@@ -69,7 +73,7 @@ def main():
         print(f"不支援的拓撲類型: {topo_type}")
         return
 
-    results[name] = analyze_topology(name, graph, channel_bandwidth)
+    results[name] = analyze_topology(name, graph, channel_bandwidth, traffic_pattern)
 
     # 3. 輸出結果為 JSON 檔案
     json_filename = "report/dse_theory_results.json"
