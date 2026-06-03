@@ -4,7 +4,6 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import yaml
 import subprocess
 import re
-import matplotlib.pyplot as plt
 from multiprocessing import Pool
 import copy
 from converters.booksim_converter import BookSimConverter
@@ -88,30 +87,6 @@ def main():
             print(f"  Rate: {rate:.3f} -> 平均延遲 (Average Latency): {lat} cycles")
         else:
             print(f"  Rate: {rate:.3f} -> 網路飽和/不穩定")
-
-    # 繪製圖表
-    print("\n繪製延遲與負載圖表 (Latency vs. Injected Load)...")
-    plt.figure(figsize=(10, 6))
-
-    # 確保按照順序畫圖
-    sorted_rates = sorted(latencies_dict.keys())
-    valid_rates = [r for r in sorted_rates if latencies_dict[r] != float('inf')]
-    valid_latencies = [latencies_dict[r] for r in valid_rates]
-
-    topo_name = master_config.get('architecture', {}).get('topology', 'mesh')
-
-    plt.plot(valid_rates, valid_latencies, marker='o', linestyle='-', color='b', label=f'BookSim ({topo_name})')
-
-    plt.title('NoC DSE: Latency vs Injected Load')
-    plt.xlabel('Injection Rate (flits/node/cycle)')
-    plt.ylabel('Average Packet Latency (cycles)')
-    plt.grid(True)
-    plt.legend()
-
-    os.makedirs("dse_tools/report", exist_ok=True)
-    plot_filename = "dse_tools/report/booksim_latency_vs_load.png"
-    plt.savefig(plot_filename)
-    print(f"圖表已儲存至 {plot_filename}")
 
 if __name__ == "__main__":
     import multiprocessing
