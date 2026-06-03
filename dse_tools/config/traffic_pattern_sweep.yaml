@@ -1,0 +1,32 @@
+# 流量模式 (Traffic Patterns) 驗證的掃描設定檔
+# 此設定將針對選定的拓撲進行多種流量模式的交叉驗證
+
+sweep_parameters:
+  # 基礎網路設定
+  architectures:
+    - topology: "mesh"
+      width: 4
+      height: 4
+    - topology: "torus"
+      width: 4
+      height: 4
+
+  # 要驗證的流量模式
+  traffic_patterns:
+    - "uniform"
+    - "transpose"
+    - "bitcomp"
+    - "tornado"
+
+  # 固定路由演算法 (XY routing)
+  routing_algorithm: "xy"
+
+  # BookSim 掃描設定
+  injection_rate:
+    start: 0.01
+    end: 0.99
+    step: 0.05
+
+  # 固定參數
+  packet_size: 1
+  num_vcs: 2
