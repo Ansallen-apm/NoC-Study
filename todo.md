@@ -47,8 +47,8 @@
 ### 階段 3.5：進階交叉驗證與參數擴充 (Advanced Cross-Verification)
 *(目的：擴展交叉驗證的範圍，涵蓋更多真實場景與變數)*
 *   [ ] **流量模式 (Traffic Patterns) 的驗證**：
-    *   [ ] 在 Python 理論模型中實作非均勻流量 (如 Transpose, Bit-complement, Tornado, Hotspot) 的熱點與負載計算。
-    *   [ ] 使用 BookSim 針對多種標準流量模式進行模擬，確認理論熱點分佈與實際瓶頸一致。
+    *   [x] 在 Python 理論模型中實作非均勻流量 (如 Transpose, Bit-complement, Tornado) 的熱點與負載期望值計算 (`dse_tools/core/metrics.py`)。
+    *   [x] 使用 BookSim 針對多種標準流量模式進行自動化參數掃描模擬 (`verify_traffic_patterns.py`)，確認理論瓶頸與實際飽和點一致。
     *   [ ] 支援匯入真實應用 Trace，進行理論模型與模擬器的端到端比對。
 *   [ ] **非確定性路由 (Adaptive Routing) 的驗證**：
     *   [ ] 在 Python 核心中建立自適應路由 (Adaptive Routing) 的理論分析模型，推算多路徑負載平衡對最大通道負載的影響。

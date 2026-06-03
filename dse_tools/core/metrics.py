@@ -15,33 +15,89 @@ def calculate_channel_count(G):
     """
     return G.number_of_edges()
 
-def calculate_average_hop_count(G):
+import math
+
+def get_traffic_destinations(src, num_nodes, traffic_pattern='uniform', width=None, height=None):
     """
-    計算在均勻隨機 (Uniform Random) 流量模式下，整個網路的平均跳數 (Average Hop Count)。
+    根據流量模式取得目的節點列表與機率分佈。
+    回傳格式: [(dest_node, probability), ...]
+    """
+    if traffic_pattern == 'uniform':
+        # 均勻發送給所有其他節點
+        prob = 1.0 / (num_nodes - 1) if num_nodes > 1 else 0
+        return [(dst, prob) for dst in range(num_nodes) if dst != src]
+
+    elif traffic_pattern == 'bitcomp':
+        # Bit-complement: dest = ~src
+        bits = max(1, math.ceil(math.log2(num_nodes)))
+        mask = (1 << bits) - 1
+        dest = (~src) & mask
+        if dest >= num_nodes:
+            dest = dest % num_nodes # Fallback if out of bounds, though Booksim typically expects pow2 nodes
+        return [(dest, 1.0)] if dest != src else []
+
+    elif traffic_pattern == 'transpose':
+        # Transpose: dest_x = src_y, dest_y = src_x
+        if width is None or height is None:
+            # Fallback to uniform if dimensions aren't provided
+            prob = 1.0 / (num_nodes - 1) if num_nodes > 1 else 0
+            return [(dst, prob) for dst in range(num_nodes) if dst != src]
+        src_x = src % width
+        src_y = src // width
+        # Assuming square or swapping dimensions; for pure transpose we swap x and y.
+        # Note: if height != width, standard transpose might map out of bounds.
+        # Booksim typically uses transpose on square meshes.
+        dest_x = src_y % width
+        dest_y = src_x % height
+        dest = dest_y * width + dest_x
+        return [(dest, 1.0)] if dest != src else []
+
+    elif traffic_pattern == 'tornado':
+        # Tornado: dest_x = (src_x + (k/2 - 1)) % k, dest_y = src_y
+        if width is None:
+            prob = 1.0 / (num_nodes - 1) if num_nodes > 1 else 0
+            return [(dst, prob) for dst in range(num_nodes) if dst != src]
+        src_x = src % width
+        src_y = src // width
+        dest_x = (src_x + (width // 2 - 1)) % width
+        dest = src_y * width + dest_x
+        return [(dest, 1.0)] if dest != src else []
+
+    # 預設回退到 uniform
+    prob = 1.0 / (num_nodes - 1) if num_nodes > 1 else 0
+    return [(dst, prob) for dst in range(num_nodes) if dst != src]
+
+
+def calculate_average_hop_count(G, traffic_pattern='uniform'):
+    """
+    計算在特定流量模式下，整個網路的預期平均跳數 (Expected Average Hop Count)。
 
     參數:
         G (nx.Graph): 代表網路拓撲的 NetworkX 圖形物件。
+        traffic_pattern (str): 流量模式。
 
     回傳:
-        float: 理論上的平均跳數。
+        float: 理論上的平均跳數期望值。
     """
-    # 取得所有節點之間的最短路徑長度
-    # shortest_path_length 會回傳一個產生器，包含了所有節點對的最短距離
     path_lengths = dict(nx.shortest_path_length(G))
 
-    total_hops = 0
-    num_paths = 0
+    expected_hops = 0.0
+    num_nodes = G.number_of_nodes()
+    width = G.graph.get('width')
+    height = G.graph.get('height')
 
     for source in G.nodes():
-        for dest in G.nodes():
+        dests = get_traffic_destinations(source, num_nodes, traffic_pattern, width, height)
+        for dest, prob in dests:
             if source != dest:
-                total_hops += path_lengths[source][dest]
-                num_paths += 1
+                # 節點送出封包的期望跳數 = 最短距離 * 該目的地被選擇的機率
+                expected_hops += path_lengths[source][dest] * prob
 
-    if num_paths == 0:
+    # 因為每個節點都會平均地送出封包，我們將總期望值除以節點數，得到整網的平均跳數期望值
+    if num_nodes == 0:
         return 0.0
 
-    return total_hops / num_paths
+    return expected_hops / num_nodes
 
 def calculate_bisection_bandwidth(G, channel_bandwidth_bits=32):
     """
@@ -83,27 +139,30 @@ def calculate_bisection_bandwidth(G, channel_bandwidth_bits=32):
         # 實際上 DSE 會針對特定拓撲撰寫精確公式
         return 0
 
-def analyze_channel_load(G, routing_algorithm='xy'):
+def analyze_channel_load(G, routing_algorithm='xy', traffic_pattern='uniform'):
     """
-    分析在均勻隨機 (Uniform Random) 流量模式下的通道負載 (Channel Load)，
+    分析在特定流量模式下的通道負載 (Channel Load)，
     並找出潛在的熱點 (Hot Spots)。
 
     參數:
         G (nx.Graph): 網路拓撲圖。
         routing_algorithm (str): 路由演算法，預設為 'xy'。
+        traffic_pattern (str): 流量模式。
 
     回傳:
-        dict: 包含 'max_load' (最大負載量) 與 'hot_spots' (熱點邊的列表)。
+        dict: 包含 'max_load' (最大負載期望量) 與 'hot_spots' (熱點邊的列表)。
     """
-    # 建立一個字典來計算每條邊經過的次數
-    # 初始化所有邊的計數為 0
-    edge_loads = {edge: 0 for edge in G.edges()}
+    # 建立一個字典來計算每條邊期望經過的次數
+    # 初始化所有邊的計數為 0.0
+    edge_loads = {edge: 0.0 for edge in G.edges()}
 
-    # 確保是雙向統計 (A->B 和 B->A 都可以算在同一條無向邊上，或者將有向負載加總)
     width = G.graph.get('width', 0)
+    height = G.graph.get('height', 0)
+    num_nodes = G.number_of_nodes()
 
     for src in G.nodes():
-        for dst in G.nodes():
+        dests = get_traffic_destinations(src, num_nodes, traffic_pattern, width, height)
+        for dst, prob in dests:
             if src != dst:
                 if routing_algorithm == 'xy' and G.graph.get('type') in ['mesh', 'torus']:
                     # 實作 XY Routing 計算路徑
@@ -151,33 +210,34 @@ def analyze_channel_load(G, routing_algorithm='xy'):
                         curr_y = next_y
                         curr = next_node
 
-                    # 將路徑上的每一條邊計數加 1
+                    # 將路徑上的每一條邊計數加上機率值 (期望負載)
                     for u, v in path:
                         # 找到圖形中對應的邊 (無向圖中 u,v 或 v,u)
                         if (u, v) in edge_loads:
-                            edge_loads[(u, v)] += 1
+                            edge_loads[(u, v)] += prob
                         elif (v, u) in edge_loads:
-                            edge_loads[(v, u)] += 1
+                            edge_loads[(v, u)] += prob
                 else:
                     # 如果不是 XY 路由，使用 NetworkX 最短路徑近似
                     path = nx.shortest_path(G, source=src, target=dst)
                     for i in range(len(path) - 1):
                         u, v = path[i], path[i+1]
                         if (u, v) in edge_loads:
-                            edge_loads[(u, v)] += 1
+                            edge_loads[(u, v)] += prob
                         elif (v, u) in edge_loads:
-                            edge_loads[(v, u)] += 1
+                            edge_loads[(v, u)] += prob
 
     # 找出最大負載
     if not edge_loads:
         return {'max_load': 0, 'hot_spots': [], 'all_edge_loads': {}}
 
-    max_load = max(edge_loads.values())
+    # 為避免浮點數誤差，取到小數第四位進行比較
+    max_load = round(max(edge_loads.values()), 4)
     # 找出所有等於最大負載的邊 (熱點)
-    hot_spots = [edge for edge, load in edge_loads.items() if load == max_load]
+    hot_spots = [edge for edge, load in edge_loads.items() if round(load, 4) == max_load]
 
     # 將所有邊的負載轉換為字串 key 方便 JSON 序列化
-    serializable_edge_loads = {f"{u}->{v}": load for (u, v), load in edge_loads.items()}
+    serializable_edge_loads = {f"{u}->{v}": round(load, 4) for (u, v), load in edge_loads.items()}
 
     return {
         'max_load': max_load,
