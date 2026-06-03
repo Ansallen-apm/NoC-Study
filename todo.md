@@ -19,16 +19,16 @@
 ## 階段 2：C++ 模型重構 (Phase 2)
 
 *   [ ] **重構 `noc_c_model` 架構 (Topology/Routing)**：
-    *   移除 `Config.h` 中寫死的 `MESH_WIDTH` 和 `MESH_HEIGHT`，以支援 runtime 調整與 DSE 參數掃描。
-    *   解耦 `Router.cpp` 內嚴重耦合的 Mesh 拓撲與 XY 路由邏輯。
-    *   實作抽象的 Router 介面，以支援不同的拓撲 (Torus, Ring) 和路由演算法。
-*   [ ] **修正 C 模型同步與架構問題**：
-    *   解決 `step()` 中同週期寫入鄰居緩衝區的同步與競爭 (Race Condition) 問題。
-    *   實作 Pipeline 階段或 Double Buffering 以正確模擬硬體行為。
+    *   [x] 移除 `Config.h` 中寫死的 `MESH_WIDTH` 和 `MESH_HEIGHT`，以支援 runtime 調整與 DSE 參數掃描。
+    *   [ ] 解耦 `Router.cpp` 內嚴重耦合的 Mesh 拓撲與 XY 路由邏輯。
+    *   [ ] 實作抽象的 Router 介面，以支援不同的拓撲 (Torus, Ring) 和路由演算法。
+*   [x] **修正 C 模型同步與架構問題**：
+    *   [x] 解決 `step()` 中同週期寫入鄰居緩衝區的同步與競爭 (Race Condition) 問題。
+    *   [x] 實作 Pipeline 階段或 Double Buffering 以正確模擬硬體行為。
 *   [ ] **新增統計數據追蹤 (Statistics Collection)**：
-    *   在 C++ 模型中實作追蹤每封包的延遲 (Latency)。
-    *   計算整體的吞吐量 (Throughput)。
-    *   監控與記錄每個連結的使用率 (Link Load)，以利與 Python 理論分析進行交叉驗證。
+    *   [x] 在 C++ 模型中實作追蹤每封包的延遲 (Latency)。
+    *   [x] 計算整體的吞吐量 (Throughput)。
+    *   [ ] 監控與記錄每個連結的使用率 (Link Load)，以利與 Python 理論分析進行交叉驗證。
 
 ## 階段 3：交叉驗證整合 (Cross-Verification Integration)
 

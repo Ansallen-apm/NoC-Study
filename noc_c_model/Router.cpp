@@ -1,9 +1,9 @@
 #include "Router.h"
 #include <iostream>
 
-Router::Router(int _id) : id(_id) {
-    x = id % Config::MESH_WIDTH;
-    y = id / Config::MESH_WIDTH;
+Router::Router(int _id, int width, int height, int buf_size) : id(_id), mesh_width(width), mesh_height(height), buffer_size(buf_size) {
+    x = id % mesh_width;
+    y = id / mesh_width;
     for (int i = 0; i < NUM_DIRS; ++i) {
         neighbors[i] = nullptr;
     }
@@ -15,7 +15,7 @@ void Router::connect(Direction dir, Router* neighbor) {
 
 bool Router::inject_packet(Packet p) {
     // 檢查本地緩衝區是否已滿 (Check if local buffer is full)
-    if (input_buffers[LOCAL].size() < Config::BUFFER_SIZE) {
+    if (input_buffers[LOCAL].size() < (size_t)buffer_size) {
         input_buffers[LOCAL].push(p);
         return true;
     } else {
@@ -25,8 +25,8 @@ bool Router::inject_packet(Packet p) {
 }
 
 Direction Router::compute_next_hop(int dst_id) {
-    int dst_x = dst_id % Config::MESH_WIDTH;
-    int dst_y = dst_id / Config::MESH_WIDTH;
+    int dst_x = dst_id % mesh_width;
+    int dst_y = dst_id / mesh_width;
 
     // XY Routing (XY 路由演算法)
     if (dst_x > x) return EAST;
@@ -37,14 +37,9 @@ Direction Router::compute_next_hop(int dst_id) {
     return LOCAL;
 }
 
-void Router::step() {
-    // A simple simulation step:
-    // Process one packet from each input buffer if possible.
-    // In a real hardware cycle, arbitration happens.
-    // Here we iterate all ports to approximate behavior.
-    // 簡單的模擬步驟：如果可能，從每個輸入緩衝區處理一個封包。
-    // 在真實硬體週期中，會發生仲裁。這裡我們遍歷所有埠來近似此行為。
-
+void Router::evaluate(int current_time) {
+    // 階段一：評估所有輸入埠的封包並決定走向 (Phase 1: Evaluate packets and determine routing)
+    // 為了避免 Race Condition，這裡只會修改自己的 `ejected_packets` 或鄰居的 `next_input_buffers`
     for (int i = 0; i < NUM_DIRS; ++i) {
         if (!input_buffers[i].empty()) {
             Packet p = input_buffers[i].front();
@@ -54,6 +49,7 @@ void Router::step() {
             bool success = false;
             if (out_dir == LOCAL) {
                 // Eject (彈出封包)
+                p.ejection_time = current_time;
                 ejected_packets.push_back(p);
                 success = true;
             } else {
@@ -69,9 +65,9 @@ void Router::step() {
                     else if (out_dir == WEST) neighbor_ingress = EAST;
                     else neighbor_ingress = LOCAL;
 
-                    // 檢查鄰居緩衝區空間 (Check neighbor buffer space)
-                    if (next_router->input_buffers[neighbor_ingress].size() < Config::BUFFER_SIZE) {
-                        next_router->input_buffers[neighbor_ingress].push(p);
+                    // 檢查鄰居下一個週期的緩衝區空間 (考量目前的暫存數量與預期進入的數量)
+                    if ((next_router->input_buffers[neighbor_ingress].size() + next_router->next_input_buffers[neighbor_ingress].size()) < (size_t)next_router->buffer_size) {
+                        next_router->next_input_buffers[neighbor_ingress].push(p);
                         success = true;
                     }
                 }
@@ -80,6 +76,16 @@ void Router::step() {
             if (success) {
                 input_buffers[i].pop();
             }
+        }
+    }
+}
+
+void Router::update() {
+    // 階段二：將 `next_input_buffers` 轉移到 `input_buffers` (Phase 2: Update buffers)
+    for (int i = 0; i < NUM_DIRS; ++i) {
+        while (!next_input_buffers[i].empty()) {
+            input_buffers[i].push(next_input_buffers[i].front());
+            next_input_buffers[i].pop();
         }
     }
 }

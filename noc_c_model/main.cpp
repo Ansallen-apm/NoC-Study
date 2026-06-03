@@ -3,6 +3,7 @@
 #include <vector>
 #include <list>
 #include <sstream>
+#include <yaml-cpp/yaml.h>
 #include "Router.h"
 #include "Config.h"
 
@@ -10,31 +11,47 @@
 int sim_time = 0;
 
 int main(int argc, char* argv[]) {
-    if (argc < 2) {
-        std::cerr << "Usage: " << argv[0] << " <trace_file>" << std::endl;
+    if (argc < 3) {
+        std::cerr << "Usage: " << argv[0] << " <config_file> <trace_file>" << std::endl;
         return 1;
     }
 
+    // 0. 讀取 YAML 配置 (Load YAML Config)
+    Config global_config;
+    try {
+        YAML::Node config = YAML::LoadFile(argv[1]);
+        if (config["architecture"]) {
+            if (config["architecture"]["width"]) global_config.mesh_width = config["architecture"]["width"].as<int>();
+            if (config["architecture"]["height"]) global_config.mesh_height = config["architecture"]["height"].as<int>();
+            if (config["architecture"]["buffer_size"]) global_config.buffer_size = config["architecture"]["buffer_size"].as<int>();
+            global_config.num_nodes = global_config.mesh_width * global_config.mesh_height;
+        }
+    } catch (const YAML::Exception& e) {
+        std::cerr << "Error parsing YAML file: " << e.what() << "\nUsing default configuration." << std::endl;
+    }
+
+    std::cout << "Configured Mesh: " << global_config.mesh_width << "x" << global_config.mesh_height << std::endl;
+
     // 1. Setup Mesh (建立網格)
     std::vector<Router*> routers;
-    for (int i = 0; i < Config::NUM_NODES; ++i) {
-        routers.push_back(new Router(i));
+    for (int i = 0; i < global_config.num_nodes; ++i) {
+        routers.push_back(new Router(i, global_config.mesh_width, global_config.mesh_height, global_config.buffer_size));
     }
 
     // Connect Mesh (連接網格)
-    for (int y = 0; y < Config::MESH_HEIGHT; ++y) {
-        for (int x = 0; x < Config::MESH_WIDTH; ++x) {
-            int id = y * Config::MESH_WIDTH + x;
+    for (int y = 0; y < global_config.mesh_height; ++y) {
+        for (int x = 0; x < global_config.mesh_width; ++x) {
+            int id = y * global_config.mesh_width + x;
             Router* r = routers[id];
 
             // North (北)
-            if (y > 0) r->connect(NORTH, routers[(y - 1) * Config::MESH_WIDTH + x]);
+            if (y > 0) r->connect(NORTH, routers[(y - 1) * global_config.mesh_width + x]);
             // South (南)
-            if (y < Config::MESH_HEIGHT - 1) r->connect(SOUTH, routers[(y + 1) * Config::MESH_WIDTH + x]);
+            if (y < global_config.mesh_height - 1) r->connect(SOUTH, routers[(y + 1) * global_config.mesh_width + x]);
             // West (西)
-            if (x > 0) r->connect(WEST, routers[y * Config::MESH_WIDTH + (x - 1)]);
+            if (x > 0) r->connect(WEST, routers[y * global_config.mesh_width + (x - 1)]);
             // East (東)
-            if (x < Config::MESH_WIDTH - 1) r->connect(EAST, routers[y * Config::MESH_WIDTH + (x + 1)]);
+            if (x < global_config.mesh_width - 1) r->connect(EAST, routers[y * global_config.mesh_width + (x + 1)]);
         }
     }
 
@@ -43,14 +60,16 @@ int main(int argc, char* argv[]) {
     // Here we assume they are ready to be injected immediately.
     // 我們將待處理的封包儲存在列表中。真實模擬中，這些封包會有時間戳記。
     std::list<Packet> pending_packets;
-    std::ifstream infile(argv[1]);
+    std::ifstream infile(argv[2]);
     std::string line;
     while (std::getline(infile, line)) {
         if (line.empty() || line[0] == '#') continue;
         std::stringstream ss(line);
-        int src, dst, payload;
+        int src, dst, payload, time;
+        // Try reading time if available, else default to 0
         if (ss >> src >> dst >> payload) {
-            pending_packets.push_back(Packet(src, dst, payload, 0));
+            if (!(ss >> time)) time = 0;
+            pending_packets.push_back(Packet(src, dst, payload, time));
         }
     }
 
@@ -85,9 +104,14 @@ int main(int argc, char* argv[]) {
             break;
         }
 
-        // Step all routers (執行所有路由器的一步)
+        // Evaluate all routers (階段一：評估網路狀態)
         for (auto r : routers) {
-            r->step();
+            r->evaluate(sim_time);
+        }
+
+        // Update all routers (階段二：更新緩衝區)
+        for (auto r : routers) {
+            r->update();
         }
     }
 
@@ -99,12 +123,30 @@ int main(int argc, char* argv[]) {
         std::cout << "Pending Packets: " << pending_packets.size() << std::endl;
     }
 
+    // Calculate latency and throughput (計算延遲與吞吐量)
+    long long total_latency = 0;
+    int max_latency = 0;
+    for (auto r : routers) {
+        for (const auto& p : r->ejected_packets) {
+            int lat = p.ejection_time - p.creation_time;
+            total_latency += lat;
+            if (lat > max_latency) max_latency = lat;
+        }
+    }
+
+    double avg_latency = total_received > 0 ? (double)total_latency / total_received : 0.0;
+    double throughput = sim_time > 0 ? (double)total_received / sim_time : 0.0;
+
+    std::cout << "Average Latency: " << avg_latency << " cycles" << std::endl;
+    std::cout << "Max Latency: " << max_latency << " cycles" << std::endl;
+    std::cout << "Total Throughput: " << throughput << " packets/cycle" << std::endl;
+
     // Dump specific reception info (輸出特定接收資訊)
     for (auto r : routers) {
         if (!r->ejected_packets.empty()) {
             std::cout << "Router " << r->id << " received: ";
             for (const auto& p : r->ejected_packets) {
-                std::cout << "[Src:" << p.src_id << " Data:" << p.payload << "] ";
+                std::cout << "[Src:" << p.src_id << " Data:" << p.payload << " Lat:" << (p.ejection_time - p.creation_time) << "] ";
             }
             std::cout << std::endl;
         }
