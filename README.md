@@ -18,8 +18,8 @@ The development of this DSE framework is structured into four main phases:
 
 *   **Phase 1: Theoretical Analysis (✅ Mostly Complete)**
     *   Python-based mathematical models to quickly estimate NoC performance limits (Bisection Bandwidth, Channel Loading, Hot Spots, Average Hops).
-*   **Phase 2: C++ Functional Simulation Refactoring (⏳ In Progress)**
-    *   Refactoring the legacy C++ model to be modular, removing hardcoded parameters, and adding robust statistics collection for latency and throughput.
+*   **Phase 2: C++ Functional Simulation Refactoring (✅ Mostly Complete)**
+    *   Refactored the legacy C++ model to dynamically load configs using `yaml-cpp`, resolved race conditions with double-buffering, and added robust statistics collection for latency and throughput.
 *   **Phase 3: Cross-Verification Framework (✅ Mostly Complete)**
     *   Automated Python orchestration pipeline that translates a unified `NoC_config.yaml` to third-party simulator formats, executes sweeps, and generates interactive HTML5 Canvas dashboards (Heatmaps & Latency Curves) for empirical verification against our theoretical models.
 *   **Phase 4: Hardware Implementation (📅 Planned)**
@@ -40,7 +40,7 @@ To ensure our theoretical models and eventual hardware implementations are accur
 
 ## Directory Structure
 *   `noc_arch_trace/`: Architecture tools and trace analyzers.
-*   `noc_c_model/`: Legacy C++ functional model (Currently undergoing Phase 2 refactoring).
+*   `noc_c_model/`: Refactored C++ functional model with dynamic yaml loading and double-buffering.
 *   `noc_tlm_model/`: SystemC Transaction Level Modeling (Phase 4).
 *   `noc_rtl/`: Verilog implementation (Phase 4).
 *   `third_party/`: Integrated open-source standalone simulators (`booksim`, `noxim`, `pronoc`, `constellation`).
@@ -64,8 +64,8 @@ To ensure our theoretical models and eventual hardware implementations are accur
 
 *   **階段 1 (Phase 1): 理論分析與建模 (✅ 幾乎完成)**
     *   使用 Python 建立數學模型，快速估算 NoC 的效能極限（如：二分頻寬、通道負載、熱點預測、平均跳數）。
-*   **階段 2 (Phase 2): C++ 功能性模擬重構 (⏳ 進行中)**
-    *   重構舊版的 C++ 模型，使其模組化、移除寫死的參數，並加入完整的統計數據收集（延遲、吞吐量），以支援運行時調整。
+*   **階段 2 (Phase 2): C++ 功能性模擬重構 (✅ 幾乎完成)**
+    *   重構 C++ 模型，整合 `yaml-cpp` 使其可動態讀取配置、實作雙重緩衝 (Double-Buffering) 解決競爭危害，並加入完整的統計數據收集（延遲、吞吐量），以支援自動化掃描與比對。
 *   **階段 3 (Phase 3): 交叉驗證整合 (✅ 幾乎完成)**
     *   自動化的 Python 調度管線。將統一的 `NoC_config.yaml` 轉換為第三方模擬器格式，自動執行參數掃描，並產生純 JS (HTML5 Canvas) 的互動式儀表板（包含動態熱點圖與延遲曲線），以經驗數據驗證我們的理論模型。
 *   **階段 4 (Phase 4): 硬體精確實作 (📅 規劃中)**
@@ -86,7 +86,7 @@ To ensure our theoretical models and eventual hardware implementations are accur
 
 ## 目錄結構
 *   `noc_arch_trace/`: 架構工具與 Trace 分析器。
-*   `noc_c_model/`: 舊版 C++ 功能性模型（目前正在進行 Phase 2 重構）。
+*   `noc_c_model/`: 重構後的 C++ 功能性模型（支援動態 yaml 讀取與雙重緩衝機制）。
 *   `noc_tlm_model/`: SystemC 交易層級建模 (Phase 4)。
 *   `noc_rtl/`: Verilog 實作 (Phase 4)。
 *   `third_party/`: 包含用於交叉驗證的獨立開源模擬器 (`booksim`, `noxim`, `pronoc`, `constellation`)。
