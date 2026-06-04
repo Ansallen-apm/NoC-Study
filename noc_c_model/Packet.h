@@ -9,9 +9,10 @@ struct Packet {
     int dst_id;       // 目的 ID
     int payload;      // 資料負載
     int creation_time;// 建立時間
+    int ejection_time;// 到達時間
 
     Packet(int s = -1, int d = -1, int p = 0, int time = 0)
-        : src_id(s), dst_id(d), payload(p), creation_time(time) {}
+        : src_id(s), dst_id(d), payload(p), creation_time(time), ejection_time(-1) {}
 };
 
 #endif

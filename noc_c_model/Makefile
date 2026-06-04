@@ -8,7 +8,7 @@ OBJS = $(SRCS:.cpp=.o)
 all: $(TARGET)
 
 $(TARGET): $(OBJS)
-	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJS)
+	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJS) -lyaml-cpp
 
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@

@@ -3,10 +3,12 @@
 
 // System Configuration (系統配置)
 struct Config {
-    static const int MESH_WIDTH = 4;   // 網格寬度
-    static const int MESH_HEIGHT = 4;  // 網格高度
-    static const int NUM_NODES = MESH_WIDTH * MESH_HEIGHT; // 總節點數
-    static const int BUFFER_SIZE = 4;  // 每個埠的緩衝區大小
+    int mesh_width;
+    int mesh_height;
+    int num_nodes;
+    int buffer_size;
+
+    Config() : mesh_width(4), mesh_height(4), num_nodes(16), buffer_size(4) {}
 };
 
 #endif
