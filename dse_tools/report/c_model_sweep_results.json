@@ -1,52 +1,52 @@
 [
     {
         "rate": 0.05,
-        "latency": 2.67589,
-        "throughput": 0.80863
+        "latency": 3.32131,
+        "throughput": 0.606362
     },
     {
         "rate": 0.1,
-        "latency": 2.71943,
-        "throughput": 1.59364
+        "latency": 3.45593,
+        "throughput": 1.1753
     },
     {
         "rate": 0.15,
-        "latency": 2.74829,
-        "throughput": 2.42435
+        "latency": 3.55928,
+        "throughput": 1.77734
     },
     {
         "rate": 0.2,
-        "latency": 2.82312,
-        "throughput": 3.21083
+        "latency": 3.58676,
+        "throughput": 2.34527
     },
     {
         "rate": 0.25,
-        "latency": 2.84065,
-        "throughput": 4.03197
+        "latency": 3.93945,
+        "throughput": 3.02087
     },
     {
         "rate": 0.3,
-        "latency": 2.90785,
-        "throughput": 4.79496
+        "latency": 4.45719,
+        "throughput": 3.50743
     },
     {
         "rate": 0.35,
-        "latency": 2.96872,
-        "throughput": 5.57714
+        "latency": 24.5907,
+        "throughput": 3.86351
     },
     {
         "rate": 0.4,
-        "latency": 3.03843,
-        "throughput": 6.38002
+        "latency": 53.3296,
+        "throughput": 3.88644
     },
     {
         "rate": 0.45,
-        "latency": 3.125,
-        "throughput": 7.18358
+        "latency": 79.9471,
+        "throughput": 4.04015
     },
     {
         "rate": 0.5,
-        "latency": 3.23179,
-        "throughput": 7.97162
+        "latency": 133.053,
+        "throughput": 3.98284
     }
 ]
