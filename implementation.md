@@ -27,18 +27,18 @@ This document outlines the phased implementation strategy for building the compr
 **Goal (目標):** Refactor the legacy C model to be highly modular, supporting the topologies and routing algorithms evaluated in Phase 1.
 (重構舊版的 C 模型，使其高度模組化，以支援在階段 1 中評估的拓撲和路由演算法。)
 
-*   **Item 2.1: Directory & Architecture Restructuring (目錄與架構重組)**
-    *   *Plan (規劃)*: Separate code into distinct folders based on functionality (e.g., `src/topology/`, `src/routing/`, `src/router/`). Abstract out base classes for Topologies and Routers.
-      (根據功能將程式碼分類到不同的資料夾中（例如：`src/topology/`、`src/routing/`、`src/router/`）。抽象出拓撲和路由器的基底類別。)
-*   **Item 2.2: Expand Topology Support (擴展拓撲支援)**
-    *   *Plan (規劃)*: Implement generic interfaces to easily instantiate Mesh, Torus, and arbitrary graph-based network topologies in C++.
-      (實作通用介面，以便在 C++ 中輕鬆實例化 Mesh、Torus 以及任意基於圖形的網路拓撲。)
-*   **Item 2.3: Expand Routing Algorithm Support (擴展路由演算法支援)**
-    *   *Plan (規劃)*: Add support for Adaptive Routing and source-based routing, alongside the existing deterministic XY routing.
-      (除了現有的確定性 XY 路由外，新增對自適應路由和基於來源路由的支援。)
-*   **Item 2.4: Statistics Collection (統計數據收集)**
-    *   *Plan (規劃)*: Add hooks to track latency, throughput, and link utilization to compare against the theoretical Phase 1 Python results.
-      (新增鉤子 (hooks) 以追蹤延遲、吞吐量和連結利用率，以便與階段 1 的 Python 理論結果進行比較。)
+*   **Item 2.1: Dynamic Configuration & Parameter Decoupling (動態配置與參數解耦)** - **[COMPLETED (已完成)]**
+    *   *Plan (規劃)*: Remove hardcoded structural dimensions (`MESH_WIDTH`, `MESH_HEIGHT`) and buffer sizes. Link the model to `yaml-cpp` to load configurations natively from the universal `NoC_config.yaml`.
+      (移除寫死的架構維度 (`MESH_WIDTH`, `MESH_HEIGHT`) 與緩衝區大小。整合 `yaml-cpp` 以原生地從通用 `NoC_config.yaml` 載入配置。)
+*   **Item 2.2: Cycle-Accurate Synchronization (週期精確同步)** - **[COMPLETED (已完成)]**
+    *   *Plan (規劃)*: Resolve intra-cycle race conditions present in single-threaded event processing by implementing a robust Double-Buffering protocol (`evaluate` and `update` phases).
+      (透過實作穩健的雙重緩衝協定 (`evaluate` 與 `update` 階段)，解決單執行緒事件處理中存在的同週期競爭危害。)
+*   **Item 2.3: Expand Topology Support & Routing interfaces (擴展拓撲支援與路由介面)**
+    *   *Plan (規劃)*: Decouple Mesh-specific logic from `Router.cpp` to implement generic interfaces supporting Torus, Ring, and custom Adaptive Routing protocols.
+      (解耦 `Router.cpp` 中寫死的 Mesh 邏輯，實作支援 Torus、Ring 以及自訂自適應路由協定的通用介面。)
+*   **Item 2.4: Statistics Collection & Validation Pipeline (統計數據收集與驗證管線)** - **[COMPLETED (已完成)]**
+    *   *Plan (規劃)*: Add hooks to track per-packet latency and overall throughput. Build Python automation scripts (`run_c_model_dse.py`) to execute sweeps and generate baseline comparison reports (`c_model_report.md`) against BookSim.
+      (新增鉤子 (hooks) 以追蹤每封包的延遲與整體吞吐量。建立 Python 自動化腳本 (`run_c_model_dse.py`) 執行參數掃描，並針對 BookSim 產生基準比較報告 (`c_model_report.md`)。)
 
 ---
 
@@ -50,12 +50,12 @@ This document outlines the phased implementation strategy for building the compr
 *   **Item 3.1: Submodule Integration (Submodule 整合)** - **[COMPLETED (已完成)]**
     *   *Plan (規劃)*: Add prominent standalone simulators (BookSim, Noxim, ProNoC, Constellation) as Git submodules in a `third_party/` directory.
       (在 `third_party/` 目錄中，將著名的獨立模擬器（BookSim, Noxim, ProNoC, Constellation）新增為 Git submodules。)
-*   **Item 3.2: Universal Configuration & Format Adapter (通用配置與格式適配器)**
+*   **Item 3.2: Universal Configuration & Format Adapter (通用配置與格式適配器)** - **[COMPLETED (已完成)]**
     *   *Plan (規劃)*: Design a unified `NoC_config.yaml` to serve as the master parameter input for all DSE processes. Create parsing scripts that read this YAML and automatically translate the parameters (e.g., topology, routing, packet size) and standard traffic trace files into the distinct, specific input formats required by the four integrated third-party simulators.
       (設計一個統一的 `NoC_config.yaml` 作為所有 DSE 流程的主參數輸入。建立解析腳本，讀取此 YAML 並自動將參數（如拓撲、路由、封包大小）與標準流量 trace 檔案，轉換為這四個整合的第三方模擬器所需的各別特定輸入格式。)
-*   **Item 3.3: Automated Orchestration & Comparison Scripts (自動化調度與比較腳本)**
-    *   *Plan (規劃)*: Write wrapper scripts that execute these submodules automatically based on the generated configs. Run simulations on our C++ model and the third-party models simultaneously, then extract, parse, and plot comparison graphs (e.g., Latency vs. Injected Load) to establish baselines.
-      (撰寫封裝腳本，根據產生的設定檔自動執行這些子模組。同時在我們的 C++ 模型和第三方模型上執行模擬，然後提取、解析並繪製比較圖表（例如：延遲 vs. 注入負載），以建立基準線。)
+*   **Item 3.3: Automated Orchestration & Interactive Visualizations (自動化調度與互動式圖表)** - **[COMPLETED (已完成)]**
+    *   *Plan (規劃)*: Write wrapper scripts that execute these submodules automatically based on the generated configs. Run simulations on our C++ model and the third-party models simultaneously, then extract, parse, and render dynamic HTML5 Canvas dashboards and Chart.js correlation graphs to establish baseline validations.
+      (撰寫封裝腳本，根據產生的設定檔自動執行這些子模組。同時在我們的 C++ 模型和第三方模型上執行模擬，然後提取、解析並渲染動態 HTML5 Canvas 儀表板與 Chart.js 相關性圖表，以建立基準驗證。)
 
 ---
 

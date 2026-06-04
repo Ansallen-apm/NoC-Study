@@ -20,6 +20,7 @@
 
 *   [ ] **重構 `noc_c_model` 架構 (Topology/Routing)**：
     *   [x] 移除 `Config.h` 中寫死的 `MESH_WIDTH` 和 `MESH_HEIGHT`，以支援 runtime 調整與 DSE 參數掃描。
+    *   [x] 整合 `yaml-cpp` 使 C++ 模型能與 Python 共用 `NoC_config.yaml`。
     *   [ ] 解耦 `Router.cpp` 內嚴重耦合的 Mesh 拓撲與 XY 路由邏輯。
     *   [ ] 實作抽象的 Router 介面，以支援不同的拓撲 (Torus, Ring) 和路由演算法。
 *   [x] **修正 C 模型同步與架構問題**：
@@ -29,6 +30,9 @@
     *   [x] 在 C++ 模型中實作追蹤每封包的延遲 (Latency)。
     *   [x] 計算整體的吞吐量 (Throughput)。
     *   [ ] 監控與記錄每個連結的使用率 (Link Load)，以利與 Python 理論分析進行交叉驗證。
+*   [x] **開發 C++ 自動化掃描與驗證管線 (C++ Benchmarking)**：
+    *   [x] 開發 `run_c_model_dse.py` 執行與 BookSim 相同的注入率參數掃描。
+    *   [x] 開發 `generate_c_model_report.py` 產生 C++ 理論與 BookSim 的交叉比較分析報告 (`c_model_report.md`)。
 
 ## 階段 3：交叉驗證整合 (Cross-Verification Integration)
 
