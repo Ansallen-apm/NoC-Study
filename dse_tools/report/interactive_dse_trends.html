@@ -370,26 +370,9 @@
                 return;
             }
 
-            // Combine directional edge loads into undirected loads
-            let undirectedLoads = {};
-            for (let key in edgeLoads) {
-                const parts = key.split('->');
-                if (parts.length === 2) {
-                    const u = parseInt(parts[0]);
-                    const v = parseInt(parts[1]);
-                    const minNode = Math.min(u, v);
-                    const maxNode = Math.max(u, v);
-                    const edgeKey = minNode + '-' + maxNode;
-                    if (!undirectedLoads[edgeKey]) {
-                        undirectedLoads[edgeKey] = 0;
-                    }
-                    undirectedLoads[edgeKey] += edgeLoads[key];
-                }
-            }
-
             let maxLoad = 0;
-            for (let key in undirectedLoads) {
-                if (undirectedLoads[key] > maxLoad) maxLoad = undirectedLoads[key];
+            for (let key in edgeLoads) {
+                if (edgeLoads[key] > maxLoad) maxLoad = edgeLoads[key];
             }
 
             const padding = 50;
@@ -430,13 +413,13 @@
 
             heatmapNodes = nodes;
 
-            // Prepare edges based on undirectedLoads keys (e.g., "0-1")
-            for (let key in undirectedLoads) {
-                const parts = key.split('-');
+            // Prepare edges based on edgeLoads keys (e.g., "0->1")
+            for (let key in edgeLoads) {
+                const parts = key.split('->');
                 if (parts.length === 2) {
                     const u = parseInt(parts[0]);
                     const v = parseInt(parts[1]);
-                    const load = undirectedLoads[key];
+                    const load = edgeLoads[key];
                     const nodeU = nodes.find(n => n.id === u);
                     const nodeV = nodes.find(n => n.id === v);
 
@@ -446,10 +429,25 @@
                             isWrapAround = true;
                         }
 
+                        // Calculate orthogonal offset vector to draw parallel lines
+                        const dx = nodeV.x - nodeU.x;
+                        const dy = nodeV.y - nodeU.y;
+                        const length = Math.sqrt(dx * dx + dy * dy);
+
+                        let nx = 0, ny = 0;
+                        if (length > 0) {
+                            nx = -dy / length;
+                            ny = dx / length;
+                        }
+
+                        const offset = 6; // offset by 6 pixels
+                        const shiftX = nx * offset;
+                        const shiftY = ny * offset;
+
                         heatmapEdges.push({
                             u: u, v: v,
-                            x1: nodeU.x, y1: nodeU.y,
-                            x2: nodeV.x, y2: nodeV.y,
+                            x1: nodeU.x + shiftX, y1: nodeU.y + shiftY,
+                            x2: nodeV.x + shiftX, y2: nodeV.y + shiftY,
                             load: load,
                             color: getColorForLoad(load, maxLoad),
                             isWrapAround: isWrapAround
@@ -501,6 +499,21 @@
                     ctx.strokeStyle = edge.color;
                     ctx.setLineDash([]);
                     ctx.lineTo(edge.x2, edge.y2);
+
+                    // Draw arrow head at the end
+                    const dx = edge.x2 - edge.x1;
+                    const dy = edge.y2 - edge.y1;
+                    const angle = Math.atan2(dy, dx);
+                    const headlen = 10;
+
+                    // Position arrow slightly before the actual node center so it doesn't overlap the circle
+                    const offsetTargetX = edge.x2 - 12 * Math.cos(angle);
+                    const offsetTargetY = edge.y2 - 12 * Math.sin(angle);
+
+                    ctx.moveTo(offsetTargetX, offsetTargetY);
+                    ctx.lineTo(offsetTargetX - headlen * Math.cos(angle - Math.PI / 6), offsetTargetY - headlen * Math.sin(angle - Math.PI / 6));
+                    ctx.moveTo(offsetTargetX, offsetTargetY);
+                    ctx.lineTo(offsetTargetX - headlen * Math.cos(angle + Math.PI / 6), offsetTargetY - headlen * Math.sin(angle + Math.PI / 6));
                 }
 
                 ctx.stroke();
