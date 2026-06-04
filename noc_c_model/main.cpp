@@ -6,6 +6,8 @@
 #include <yaml-cpp/yaml.h>
 #include "Router.h"
 #include "Config.h"
+#include "Routing.h"
+#include "Topology.h"
 
 // Global Simulation Time (全域模擬時間)
 int sim_time = 0;
@@ -18,44 +20,58 @@ int main(int argc, char* argv[]) {
 
     // 0. 讀取 YAML 配置 (Load YAML Config)
     Config global_config;
+    std::string topo_type = "mesh";
+    std::string routing_type = "xy";
     try {
         YAML::Node config = YAML::LoadFile(argv[1]);
         if (config["architecture"]) {
+            if (config["architecture"]["topology"]) topo_type = config["architecture"]["topology"].as<std::string>();
+            if (config["architecture"]["routing"]) routing_type = config["architecture"]["routing"].as<std::string>();
             if (config["architecture"]["width"]) global_config.mesh_width = config["architecture"]["width"].as<int>();
             if (config["architecture"]["height"]) global_config.mesh_height = config["architecture"]["height"].as<int>();
             if (config["architecture"]["buffer_size"]) global_config.buffer_size = config["architecture"]["buffer_size"].as<int>();
-            global_config.num_nodes = global_config.mesh_width * global_config.mesh_height;
+
+            if (topo_type == "ring") {
+                global_config.num_nodes = global_config.mesh_width;
+                global_config.mesh_height = 1;
+            } else {
+                global_config.num_nodes = global_config.mesh_width * global_config.mesh_height;
+            }
         }
     } catch (const YAML::Exception& e) {
         std::cerr << "Error parsing YAML file: " << e.what() << "\nUsing default configuration." << std::endl;
     }
 
-    std::cout << "Configured Mesh: " << global_config.mesh_width << "x" << global_config.mesh_height << std::endl;
+    std::cout << "Configured " << topo_type << ": " << global_config.mesh_width << "x" << global_config.mesh_height << std::endl;
 
-    // 1. Setup Mesh (建立網格)
+    // 1. Instantiating Interfaces (實例化抽象介面)
+    Topology* topology = nullptr;
+    RoutingAlgorithm* routing = nullptr;
+
+    if (topo_type == "mesh") {
+        topology = new MeshTopology(global_config.mesh_width, global_config.mesh_height);
+    } else if (topo_type == "ring") {
+        topology = new RingTopology(global_config.num_nodes);
+    } else {
+        std::cerr << "Unsupported topology: " << topo_type << std::endl;
+        return 1;
+    }
+
+    if (topo_type == "ring") {
+        routing = new RingRouting(global_config.num_nodes);
+    } else {
+        routing = new XYRouting(global_config.mesh_width, global_config.mesh_height); // Default to XY for mesh
+    }
+
+    // 2. Setup Routers & Network (建立路由器與網路)
     std::vector<Router*> routers;
     for (int i = 0; i < global_config.num_nodes; ++i) {
-        routers.push_back(new Router(i, global_config.mesh_width, global_config.mesh_height, global_config.buffer_size));
+        routers.push_back(new Router(i, topology->get_max_ports(), global_config.buffer_size, routing));
     }
 
-    // Connect Mesh (連接網格)
-    for (int y = 0; y < global_config.mesh_height; ++y) {
-        for (int x = 0; x < global_config.mesh_width; ++x) {
-            int id = y * global_config.mesh_width + x;
-            Router* r = routers[id];
+    topology->build_network(routers);
 
-            // North (北)
-            if (y > 0) r->connect(NORTH, routers[(y - 1) * global_config.mesh_width + x]);
-            // South (南)
-            if (y < global_config.mesh_height - 1) r->connect(SOUTH, routers[(y + 1) * global_config.mesh_width + x]);
-            // West (西)
-            if (x > 0) r->connect(WEST, routers[y * global_config.mesh_width + (x - 1)]);
-            // East (東)
-            if (x < global_config.mesh_width - 1) r->connect(EAST, routers[y * global_config.mesh_width + (x + 1)]);
-        }
-    }
-
-    // 2. Read Trace (讀取 Trace)
+    // 3. Read Trace (讀取 Trace)
     // We store pending packets in a list. In a real sim, these would have timestamps.
     // Here we assume they are ready to be injected immediately.
     // 我們將待處理的封包儲存在列表中。真實模擬中，這些封包會有時間戳記。
@@ -76,7 +92,7 @@ int main(int argc, char* argv[]) {
     size_t total_packets = pending_packets.size();
     std::cout << "Loaded " << total_packets << " packets." << std::endl;
 
-    // 3. Simulation Loop (模擬迴圈)
+    // 4. Simulation Loop (模擬迴圈)
     size_t total_received = 0;
     int max_cycles = 10000;
 
@@ -126,7 +142,7 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    // 4. Report (報告)
+    // 5. Report (報告)
     std::cout << "Simulation finished." << std::endl;
     std::cout << "Total Received: " << total_received << "/" << total_packets << std::endl;
 
@@ -165,6 +181,8 @@ int main(int argc, char* argv[]) {
 
     // Clean up (清理)
     for (auto r : routers) delete r;
+    delete topology;
+    delete routing;
 
     return 0;
 }
