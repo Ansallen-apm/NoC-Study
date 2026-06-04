@@ -2,7 +2,7 @@ CXX = g++
 CXXFLAGS = -Wall -std=c++11
 
 TARGET = noc_sim
-SRCS = main.cpp Router.cpp
+SRCS = main.cpp Router.cpp Topology.cpp Routing.cpp
 OBJS = $(SRCS:.cpp=.o)
 
 all: $(TARGET)

@@ -18,11 +18,11 @@
 
 ## 階段 2：C++ 模型重構 (Phase 2)
 
-*   [ ] **重構 `noc_c_model` 架構 (Topology/Routing)**：
+*   [x] **重構 `noc_c_model` 架構 (Topology/Routing)**：
     *   [x] 移除 `Config.h` 中寫死的 `MESH_WIDTH` 和 `MESH_HEIGHT`，以支援 runtime 調整與 DSE 參數掃描。
     *   [x] 整合 `yaml-cpp` 使 C++ 模型能與 Python 共用 `NoC_config.yaml`。
-    *   [ ] 解耦 `Router.cpp` 內嚴重耦合的 Mesh 拓撲與 XY 路由邏輯。
-    *   [ ] 實作抽象的 Router 介面，以支援不同的拓撲 (Torus, Ring) 和路由演算法。
+    *   [x] 解耦 `Router.cpp` 內嚴重耦合的 Mesh 拓撲與 XY 路由邏輯。
+    *   [x] 實作抽象的 Router 介面，以支援不同的拓撲 (Torus, Ring) 和路由演算法。
 *   [x] **修正 C 模型同步與架構問題**：
     *   [x] 解決 `step()` 中同週期寫入鄰居緩衝區的同步與競爭 (Race Condition) 問題。
     *   [x] 實作 Pipeline 階段或 Double Buffering 以正確模擬硬體行為。
