@@ -424,12 +424,33 @@
                     const nodeV = nodes.find(n => n.id === v);
 
                     if (nodeU && nodeV) {
+                        let isWrapAround = false;
+                        if (topo === 'torus' && (Math.abs(nodeU.x - nodeV.x) > drawWidth * 0.8 || Math.abs(nodeU.y - nodeV.y) > drawHeight * 0.8)) {
+                            isWrapAround = true;
+                        }
+
+                        // Calculate orthogonal offset vector to draw parallel lines
+                        const dx = nodeV.x - nodeU.x;
+                        const dy = nodeV.y - nodeU.y;
+                        const length = Math.sqrt(dx * dx + dy * dy);
+
+                        let nx = 0, ny = 0;
+                        if (length > 0) {
+                            nx = -dy / length;
+                            ny = dx / length;
+                        }
+
+                        const offset = 6; // offset by 6 pixels
+                        const shiftX = nx * offset;
+                        const shiftY = ny * offset;
+
                         heatmapEdges.push({
                             u: u, v: v,
-                            x1: nodeU.x, y1: nodeU.y,
-                            x2: nodeV.x, y2: nodeV.y,
+                            x1: nodeU.x + shiftX, y1: nodeU.y + shiftY,
+                            x2: nodeV.x + shiftX, y2: nodeV.y + shiftY,
                             load: load,
-                            color: getColorForLoad(load, maxLoad)
+                            color: getColorForLoad(load, maxLoad),
+                            isWrapAround: isWrapAround
                         });
                     }
                 }
@@ -439,18 +460,60 @@
             ctx.lineWidth = 4;
             for (let edge of heatmapEdges) {
                 ctx.beginPath();
-                ctx.moveTo(edge.x1, edge.y1);
 
                 // For Torus wrap-around, draw curved or broken lines if distance is too large
-                if (topo === 'torus' && (Math.abs(edge.x1 - edge.x2) > drawWidth * 0.8 || Math.abs(edge.y1 - edge.y2) > drawHeight * 0.8)) {
+                if (edge.isWrapAround) {
                     ctx.strokeStyle = edge.color;
                     ctx.setLineDash([5, 5]); // dashed line for wrap-around
-                    // simple curve for wrap around
-                    ctx.quadraticCurveTo(canvas.width/2, canvas.height/2, edge.x2, edge.y2);
+
+                    // Instead of Bezier crossing the center, draw straight lines going outwards
+                    let midX1 = edge.x1;
+                    let midY1 = edge.y1;
+                    let midX2 = edge.x2;
+                    let midY2 = edge.y2;
+
+                    const extend = 40; // extend outwards
+
+                    if (Math.abs(edge.x1 - edge.x2) > drawWidth * 0.8) {
+                        // Horizontal wrap-around
+                        midX1 = edge.x1 > edge.x2 ? edge.x1 + extend : edge.x1 - extend;
+                        midX2 = edge.x2 > edge.x1 ? edge.x2 + extend : edge.x2 - extend;
+                    }
+                    if (Math.abs(edge.y1 - edge.y2) > drawHeight * 0.8) {
+                        // Vertical wrap-around
+                        midY1 = edge.y1 > edge.y2 ? edge.y1 + extend : edge.y1 - extend;
+                        midY2 = edge.y2 > edge.y1 ? edge.y2 + extend : edge.y2 - extend;
+                    }
+
+                    ctx.moveTo(edge.x1, edge.y1);
+                    ctx.lineTo(midX1, midY1);
+                    ctx.moveTo(edge.x2, edge.y2);
+                    ctx.lineTo(midX2, midY2);
+
+                    // Save midpoints for hover detection
+                    edge.mid1 = {x: midX1, y: midY1};
+                    edge.mid2 = {x: midX2, y: midY2};
+
                 } else {
+                    ctx.moveTo(edge.x1, edge.y1);
                     ctx.strokeStyle = edge.color;
                     ctx.setLineDash([]);
                     ctx.lineTo(edge.x2, edge.y2);
+
+                    // Draw arrow head at the end
+                    const dx = edge.x2 - edge.x1;
+                    const dy = edge.y2 - edge.y1;
+                    const angle = Math.atan2(dy, dx);
+                    const headlen = 10;
+
+                    // Position arrow slightly before the actual node center so it doesn't overlap the circle
+                    const offsetTargetX = edge.x2 - 12 * Math.cos(angle);
+                    const offsetTargetY = edge.y2 - 12 * Math.sin(angle);
+
+                    ctx.moveTo(offsetTargetX, offsetTargetY);
+                    ctx.lineTo(offsetTargetX - headlen * Math.cos(angle - Math.PI / 6), offsetTargetY - headlen * Math.sin(angle - Math.PI / 6));
+                    ctx.moveTo(offsetTargetX, offsetTargetY);
+                    ctx.lineTo(offsetTargetX - headlen * Math.cos(angle + Math.PI / 6), offsetTargetY - headlen * Math.sin(angle + Math.PI / 6));
                 }
 
                 ctx.stroke();
@@ -469,6 +532,38 @@
             }
         }
 
+        function pointLineDistance(px, py, x1, y1, x2, y2) {
+            const A = px - x1;
+            const B = py - y1;
+            const C = x2 - x1;
+            const D = y2 - y1;
+
+            const dot = A * C + B * D;
+            const len_sq = C * C + D * D;
+            let param = -1;
+            if (len_sq != 0)
+                param = dot / len_sq;
+
+            let xx, yy;
+
+            if (param < 0) {
+                xx = x1;
+                yy = y1;
+            }
+            else if (param > 1) {
+                xx = x2;
+                yy = y2;
+            }
+            else {
+                xx = x1 + param * C;
+                yy = y1 + param * D;
+            }
+
+            const dx = px - xx;
+            const dy = py - yy;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+
         // Add mousemove listener for tooltip
         document.getElementById('heatmapCanvas').addEventListener('mousemove', function(e) {
             if (currentMode !== 'C') return;
@@ -479,35 +574,15 @@
             let hoveredEdge = null;
             // Check edges (simple line distance)
             for (let edge of heatmapEdges) {
-                const A = mouseX - edge.x1;
-                const B = mouseY - edge.y1;
-                const C = edge.x2 - edge.x1;
-                const D = edge.y2 - edge.y1;
-
-                const dot = A * C + B * D;
-                const len_sq = C * C + D * D;
-                let param = -1;
-                if (len_sq != 0) // in case of 0 length line
-                    param = dot / len_sq;
-
-                let xx, yy;
-
-                if (param < 0) {
-                    xx = edge.x1;
-                    yy = edge.y1;
+                let distance = 9999;
+                if (edge.isWrapAround) {
+                    // Check against the two segments extending outwards
+                    const dist1 = pointLineDistance(mouseX, mouseY, edge.x1, edge.y1, edge.mid1.x, edge.mid1.y);
+                    const dist2 = pointLineDistance(mouseX, mouseY, edge.x2, edge.y2, edge.mid2.x, edge.mid2.y);
+                    distance = Math.min(dist1, dist2);
+                } else {
+                    distance = pointLineDistance(mouseX, mouseY, edge.x1, edge.y1, edge.x2, edge.y2);
                 }
-                else if (param > 1) {
-                    xx = edge.x2;
-                    yy = edge.y2;
-                }
-                else {
-                    xx = edge.x1 + param * C;
-                    yy = edge.y1 + param * D;
-                }
-
-                const dx = mouseX - xx;
-                const dy = mouseY - yy;
-                const distance = Math.sqrt(dx * dx + dy * dy);
 
                 if (distance < 5) { // 5px tolerance
                     hoveredEdge = edge;
