@@ -100,6 +100,20 @@ int main(int argc, char* argv[]) {
     size_t total_received = 0;
     int max_cycles = 10000;
 
+    // Attempt to parse max_cycles from yaml to allow longer tests if specified
+    try {
+        YAML::Node config = YAML::LoadFile(argv[1]);
+        if (config["simulation"] && config["simulation"]["sim_cycles"]) {
+            max_cycles = config["simulation"]["sim_cycles"].as<int>() + 5000; // Add margin for draining
+        }
+    } catch (...) {}
+
+    // Deadlock detection variables
+    size_t last_total_received = 0;
+    int last_progress_cycle = 0;
+    bool is_deadlocked = false;
+    const int DEADLOCK_THRESHOLD = 500; // Cycles without delivery before declaring deadlock
+
     for (sim_time = 0; sim_time < max_cycles; ++sim_time) {
         // Injection Phase (注入階段)
         std::vector<bool> injected_this_cycle(global_config.num_nodes, false);
@@ -133,6 +147,21 @@ int main(int argc, char* argv[]) {
         if (total_received == total_packets && pending_packets.empty()) {
             std::cout << "All packets received at cycle " << sim_time << std::endl;
             break;
+        }
+
+        // Deadlock Detection Logic (死結偵測邏輯)
+        if (total_received > last_total_received) {
+            last_total_received = total_received;
+            last_progress_cycle = sim_time;
+        } else {
+            // Check if packets have been injected but none are coming out
+            // pending_packets.size() is not zero if there are trace packets left, but in DSE trace drops are massive at cycle 0.
+            // We consider the network stalled if time passed threshold since last received and total_received < total_packets.
+            if ((sim_time - last_progress_cycle) > DEADLOCK_THRESHOLD && total_received < total_packets) {
+                std::cerr << "[DEADLOCK DETECTED] at cycle " << sim_time << "!" << std::endl;
+                is_deadlocked = true;
+                break;
+            }
         }
 
         // Evaluate all routers (階段一：評估網路狀態)
@@ -187,7 +216,8 @@ int main(int argc, char* argv[]) {
     out_json << "    \"avg_latency\": " << avg_latency << ",\n";
     out_json << "    \"max_latency\": " << max_latency << ",\n";
     out_json << "    \"throughput_pkts_per_cycle\": " << throughput << ",\n";
-    out_json << "    \"bandwidth_gbps\": " << bw_gbps << "\n";
+    out_json << "    \"bandwidth_gbps\": " << bw_gbps << ",\n";
+    out_json << "    \"is_deadlock\": " << (is_deadlocked ? "true" : "false") << "\n";
     out_json << "  },\n";
     out_json << "  \"routers\": [\n";
     for (size_t i = 0; i < routers.size(); ++i) {
