@@ -45,6 +45,10 @@ public:
     // Update buffers for next cycle (階段二：更新緩衝區狀態)
     void update();
 
+    // Hardware Monitors (硬體監控器)
+    std::vector<int> port_active_cycles;      // 記錄各通道傳輸資料的週期數 (用於計算 uRate)
+    std::vector<long long> port_buffer_depth_acc; // 記錄各通道 Buffer 深度的累加值 (用於計算平均深度)
+    std::vector<int> port_max_buffer_depth;   // 記錄各通道 Buffer 發生過的最大深度
 };
 
 #endif

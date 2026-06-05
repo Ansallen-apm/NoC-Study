@@ -44,24 +44,49 @@ def run_single_simulation(args):
 
     latency = float('inf')
     throughput = 0.0
+    bw_gbps = 0.0
+    router_stats = None
     try:
-        result = subprocess.run([c_model_executable, config_path, trace_path], capture_output=True, text=True, timeout=30)
-        output = result.stdout
+        # Run C++ simulator. It outputs 'router_stats.json' in the current working directory.
+        # To prevent race conditions from parallel executions overriding router_stats.json,
+        # we run it in a temporary directory or capture it securely.
+        import tempfile
+        import shutil
+        import json
 
-        # 解析輸出
-        for line in output.split('\n'):
-            if "Average Latency:" in line:
-                match = re.search(r"Average Latency:\s*([0-9.]+)", line)
-                if match:
-                    latency = float(match.group(1))
-            if "Total Throughput:" in line:
-                match = re.search(r"Total Throughput:\s*([0-9.]+)", line)
-                if match:
-                    throughput = float(match.group(1))
+        with tempfile.TemporaryDirectory() as tmpdir:
+            temp_config_path = os.path.abspath(config_path)
+            temp_trace_path = os.path.join(tmpdir, "trace.txt")
+            shutil.copy(trace_path, temp_trace_path)
 
-        # Check if saturation caused simulation to fail to finish all packets
-        if "Pending Packets:" in output:
-            latency = float('inf') # Consider it saturated/deadlocked if packets get stuck
+            result = subprocess.run([os.path.abspath(c_model_executable), temp_config_path, temp_trace_path],
+                                    capture_output=True, text=True, timeout=30, cwd=tmpdir)
+            output = result.stdout
+
+            # 解析輸出
+            for line in output.split('\n'):
+                if "Average Latency:" in line:
+                    match = re.search(r"Average Latency:\s*([0-9.]+)", line)
+                    if match:
+                        latency = float(match.group(1))
+                if "Total Throughput:" in line:
+                    match = re.search(r"Total Throughput:\s*([0-9.]+)", line)
+                    if match:
+                        throughput = float(match.group(1))
+                if "Total Bandwidth:" in line:
+                    match = re.search(r"Total Bandwidth:\s*([0-9.]+)", line)
+                    if match:
+                        bw_gbps = float(match.group(1))
+
+            # Load the generated JSON stats file
+            stats_file = os.path.join(tmpdir, "router_stats.json")
+            if os.path.exists(stats_file):
+                with open(stats_file, 'r') as f:
+                    router_stats = json.load(f)
+
+            # Check if saturation caused simulation to fail to finish all packets
+            if "Pending Packets:" in output:
+                latency = float('inf') # Consider it saturated/deadlocked if packets get stuck
 
     except subprocess.TimeoutExpired:
         latency = float('inf')
@@ -71,7 +96,7 @@ def run_single_simulation(args):
         if os.path.exists(trace_path):
             os.remove(trace_path)
 
-    return rate, latency, throughput
+    return rate, latency, throughput, bw_gbps, router_stats
 
 def main():
     print("啟動 NoC DSE 階段 2：C++ 功能模型掃描驗證...")
@@ -111,10 +136,10 @@ def main():
     with Pool(processes=multiprocessing.cpu_count()) as pool:
         sim_results = pool.map(run_single_simulation, pool_args)
 
-    for rate, lat, thr in sim_results:
-        results.append({"rate": rate, "latency": lat, "throughput": thr})
+    for rate, lat, thr, bw, stats in sim_results:
+        results.append({"rate": rate, "latency": lat, "throughput": thr, "bandwidth_gbps": bw, "router_stats": stats})
         if lat != float('inf'):
-            print(f"  Rate: {rate:.3f} -> 平均延遲: {lat:.4f} cycles, 吞吐量: {thr:.4f} pkts/cycle")
+            print(f"  Rate: {rate:.3f} -> 平均延遲: {lat:.4f} cycles, 頻寬: {bw:.2f} GB/s")
         else:
             print(f"  Rate: {rate:.3f} -> 網路飽和/不穩定")
 

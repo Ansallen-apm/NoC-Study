@@ -13,10 +13,21 @@ int XYRouting::compute_next_hop(const Router* current_router, int dst_id) {
     int dst_x = dst_id % mesh_width;
     int dst_y = dst_id / mesh_width;
 
-    if (dst_x > src_x) return 2; // EAST
-    if (dst_x < src_x) return 4; // WEST
-    if (dst_y > src_y) return 3; // SOUTH
-    if (dst_y < src_y) return 1; // NORTH
+    int dist_x = dst_x - src_x;
+    int dist_y = dst_y - src_y;
+
+    // Address wrap-around for Torus networks conceptually in XY routing (shortest path)
+    if (std::abs(dist_x) > mesh_width / 2) {
+        dist_x = dist_x > 0 ? dist_x - mesh_width : dist_x + mesh_width;
+    }
+    if (std::abs(dist_y) > mesh_height / 2) {
+        dist_y = dist_y > 0 ? dist_y - mesh_height : dist_y + mesh_height;
+    }
+
+    if (dist_x > 0) return 2; // EAST
+    if (dist_x < 0) return 4; // WEST
+    if (dist_y > 0) return 3; // SOUTH
+    if (dist_y < 0) return 1; // NORTH
 
     return 0; // LOCAL
 }

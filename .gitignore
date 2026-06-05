@@ -1,21 +1,15 @@
-# Ignore C++ build artifacts
-*.o
-*.exe
-noc_c_model/noc_sim
+# Report outputs
+dse_tools/report/*.json
+dse_tools/report/*.html
+dse_tools/report/*.md
+!dse_tools/report/verification_methodology.md
+!dse_tools/report/verification_summary.md
 
-# Ignore Python cache
+# Compiled objects
+noc_c_model/*.o
+noc_c_model/noc_sim
+noc_c_model/router_stats.json
+
+# Python caches
 __pycache__/
 *.pyc
-
-# Ignore SystemC build
-systemc-2.3.3/
-*.tar.gz
-dse_tools/*.png
-dse_tools/*.json
-dse_tools/*.html
-
-# EXPLICITLY ALLOW artifacts inside the report directory so they can be committed
-!dse_tools/report/
-!dse_tools/report/*.json
-!dse_tools/report/*.html
-!dse_tools/report/*.png

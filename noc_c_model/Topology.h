@@ -30,6 +30,16 @@ public:
     void build_network(std::vector<Router*>& routers) override;
 };
 
+class TorusTopology : public Topology {
+private:
+    int width, height;
+public:
+    TorusTopology(int w, int h) : width(w), height(h) {}
+    int get_num_nodes() const override { return width * height; }
+    int get_max_ports() const override { return 5; } // LOCAL, N, E, S, W
+    void build_network(std::vector<Router*>& routers) override;
+};
+
 class RingTopology : public Topology {
 private:
     int num_nodes;
