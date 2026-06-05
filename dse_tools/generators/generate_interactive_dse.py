@@ -113,6 +113,8 @@ def generate_interactive_html():
             <button onclick="setMode('A')" id="btnModeA" style="padding: 10px 20px; font-weight: bold; background-color: #3cb44b; color: white; border: none; border-radius: 5px; cursor: pointer;">模式 A: 效能動態曲線 (Latency Curves)</button>
             <button onclick="setMode('B')" id="btnModeB" style="padding: 10px 20px; font-weight: bold; background-color: #ccc; color: white; border: none; border-radius: 5px; cursor: pointer;">模式 B: 架構交叉比對 (Scatter Plot)</button>
             <button onclick="setMode('C')" id="btnModeC" style="padding: 10px 20px; font-weight: bold; background-color: #ccc; color: white; border: none; border-radius: 5px; cursor: pointer;">模式 C: 通道負載分佈 (Channel Load Bar)</button>
+            <button onclick="setMode('D')" id="btnModeD" style="padding: 10px 20px; font-weight: bold; background-color: #ccc; color: white; border: none; border-radius: 5px; cursor: pointer;">模式 D: 成本與效能權衡 (Pareto Plot)</button>
+            <button onclick="setMode('E')" id="btnModeE" style="padding: 10px 20px; font-weight: bold; background-color: #ccc; color: white; border: none; border-radius: 5px; cursor: pointer;">模式 E: 極限壓力測試 (Radar Chart)</button>
         </div>
 
         <div id="modeAControls" class="controls">
@@ -205,6 +207,57 @@ def generate_interactive_html():
             <span style="color: #666; font-size: 0.9em;">提示：Mode C 會顯示該拓撲下所有通道的熱點分佈圖 (Heatmap)。紅色代表高負載，藍色代表低負載。</span>
         </div>
 
+        <div id="modeDControls" class="controls" style="display: none;">
+            <fieldset style="border: 1px solid #911eb4; padding: 15px; border-radius: 5px; text-align: left; display: inline-block;">
+                <legend><strong>成本權重設定 (Cost Weights)</strong></legend>
+
+                <label>路由器權重 (Router Weight): </label>
+                <input type="number" id="weightRouter" value="1.0" step="0.1" style="width: 60px;" onchange="updateChart()">
+                &nbsp;&nbsp;
+
+                <label>通道權重 (Channel Weight): </label>
+                <input type="number" id="weightChannel" value="0.5" step="0.1" style="width: 60px;" onchange="updateChart()">
+                &nbsp;&nbsp;
+
+                <label>緩衝區權重 (Buffer Weight): </label>
+                <input type="number" id="weightBuffer" value="0.2" step="0.1" style="width: 60px;" onchange="updateChart()">
+                &nbsp;&nbsp;
+
+                <label>Y 軸效能指標 (Y-Axis Performance): </label>
+                <select id="paretoY" onchange="updateChart()">
+                    <option value="booksim_total_throughput" selected>總吞吐量 (Total Throughput, 越高越好)</option>
+                    <option value="booksim_actual_sat_rate">實際飽和點 (Saturation Rate, 越高越好)</option>
+                </select>
+            </fieldset>
+            <br><br>
+            <span style="color: #666; font-size: 0.9em;">提示：總成本 = (Nodes * Router_W) + (Channels * Channel_W) + (Nodes * Ports * Buffers * Buffer_W)。X 軸會將成本對最小值進行正規化 (1.0 = 最低成本)。</span>
+        </div>
+
+        <div id="modeEControls" class="controls" style="display: none;">
+            <fieldset style="border: 1px solid #e6194b; padding: 15px; border-radius: 5px; text-align: left; display: inline-block;">
+                <legend><strong>選擇比較架構 (Select Architectures to Compare)</strong></legend>
+
+                <div style="margin-bottom: 10px;">
+                    <label style="color: rgba(255, 99, 132, 1); font-weight: bold;">架構 1 (Architecture 1): </label>
+                    <select id="radarConfig1" onchange="updateChart()"><option value="none">無 (None)</option></select>
+                </div>
+
+                <div style="margin-bottom: 10px;">
+                    <label style="color: rgba(54, 162, 235, 1); font-weight: bold;">架構 2 (Architecture 2): </label>
+                    <select id="radarConfig2" onchange="updateChart()"><option value="none">無 (None)</option></select>
+                </div>
+
+                <div>
+                    <label style="color: rgba(75, 192, 192, 1); font-weight: bold;">架構 3 (Architecture 3): </label>
+                    <select id="radarConfig3" onchange="updateChart()"><option value="none">無 (None)</option></select>
+                </div>
+            </fieldset>
+            <br><br>
+            <span style="color: #666; font-size: 0.9em;">提示：雷達圖顯示的五項指標皆已進行正規化（分數 0~100）。<br>
+            Hops、Max Load、Zero-Load Latency 越低越好（轉換後分數越高代表表現越好）；<br>
+            Saturation Rate、Throughput 越高越好。雷達圖面積越大代表綜合表現越佳。</span>
+        </div>
+
         <div class="chart-container" id="chartContainer">
             <canvas id="dseChart"></canvas>
             <div id="heatmapContainer" style="display: none; width: 100%; height: 100%; position: relative;">
@@ -229,9 +282,13 @@ def generate_interactive_html():
             document.getElementById('modeAControls').style.display = 'none';
             document.getElementById('modeBControls').style.display = 'none';
             document.getElementById('modeCControls').style.display = 'none';
+            document.getElementById('modeDControls').style.display = 'none';
+            document.getElementById('modeEControls').style.display = 'none';
             document.getElementById('btnModeA').style.backgroundColor = '#ccc';
             document.getElementById('btnModeB').style.backgroundColor = '#ccc';
             document.getElementById('btnModeC').style.backgroundColor = '#ccc';
+            document.getElementById('btnModeD').style.backgroundColor = '#ccc';
+            document.getElementById('btnModeE').style.backgroundColor = '#ccc';
 
             if (mode === 'A') {{
                 document.getElementById('modeAControls').style.display = 'block';
@@ -242,6 +299,12 @@ def generate_interactive_html():
             }} else if (mode === 'C') {{
                 document.getElementById('modeCControls').style.display = 'block';
                 document.getElementById('btnModeC').style.backgroundColor = '#f58231';
+            }} else if (mode === 'D') {{
+                document.getElementById('modeDControls').style.display = 'block';
+                document.getElementById('btnModeD').style.backgroundColor = '#911eb4';
+            }} else if (mode === 'E') {{
+                document.getElementById('modeEControls').style.display = 'block';
+                document.getElementById('btnModeE').style.backgroundColor = '#e6194b';
             }}
             updateChart();
         }}
@@ -261,6 +324,31 @@ def generate_interactive_html():
                 opt.text = val;
                 select.add(opt);
             }});
+        }}
+
+        function populateRadarConfigs() {{
+            let configSet = new Set();
+            allData.forEach(d => {{
+                if(d.theory_avg_hops !== undefined) {{
+                    configSet.add(`${{d.topology}}-${{d.dim}}`);
+                }}
+            }});
+            let configs = Array.from(configSet).sort();
+
+            ['radarConfig1', 'radarConfig2', 'radarConfig3'].forEach(id => {{
+                const select = document.getElementById(id);
+                configs.forEach(c => {{
+                    let opt = document.createElement('option');
+                    opt.value = c;
+                    let parts = c.split('-');
+                    opt.text = `${{parts[0].toUpperCase()}} (Dim: ${{parts[1]}})`;
+                    select.add(opt);
+                }});
+            }});
+
+            // set defaults
+            if (configs.length > 0) document.getElementById('radarConfig1').value = configs[0];
+            if (configs.length > 1) document.getElementById('radarConfig2').value = configs[1];
         }}
 
         // 預設顏色庫
@@ -413,6 +501,190 @@ def generate_interactive_html():
                         }}
                     }}
                 }});
+            }} else if (currentMode === 'D') {{
+                // ===== MODE D: Pareto Plot =====
+                const wRouter = parseFloat(document.getElementById('weightRouter').value);
+                const wChannel = parseFloat(document.getElementById('weightChannel').value);
+                const wBuffer = parseFloat(document.getElementById('weightBuffer').value);
+                const yMetric = document.getElementById('paretoY').value;
+                const yLabel = document.getElementById('paretoY').options[document.getElementById('paretoY').selectedIndex].text;
+
+                // Calculate costs and find min
+                let paretoData = [];
+                let minCost = Infinity;
+
+                for (let i = 0; i < allData.length; i++) {{
+                    const d = allData[i];
+                    if (d[yMetric] !== undefined && d[yMetric] !== null && d.theory_channel_count !== undefined) {{
+                        // Assuming 5 ports per router as a baseline heuristic
+                        const ports = 5;
+                        const cost = (d.nodes * wRouter) + (d.theory_channel_count * wChannel) + (d.nodes * ports * d.buffer_size * wBuffer);
+                        if (cost < minCost) minCost = cost;
+
+                        paretoData.push({{
+                            config: `${{d.topology}} dim:${{d.dim}} nodes:${{d.nodes}} P:${{d.packet_size}} B:${{d.buffer_size}} VC:${{d.vcs}}`,
+                            cost: cost,
+                            yValue: d[yMetric],
+                            topo: d.topology
+                        }});
+                    }}
+                }}
+
+                // Normalize cost
+                paretoData.forEach(p => {{
+                    p.normCost = p.cost / minCost;
+                }});
+
+                // Group by topology for coloring
+                const colors = {{
+                    'mesh': 'rgba(255, 99, 132, 0.7)',
+                    'torus': 'rgba(54, 162, 235, 0.7)',
+                    'ring': 'rgba(75, 192, 192, 0.7)'
+                }};
+
+                const datasets = [];
+                ['mesh', 'torus', 'ring'].forEach(t => {{
+                    const filtered = paretoData.filter(d => d.topo === t);
+                    if(filtered.length > 0) {{
+                        datasets.push({{
+                            label: t.toUpperCase(),
+                            data: filtered.map(d => ({{x: d.normCost, y: d.yValue, _meta: d.config}})),
+                            backgroundColor: colors[t],
+                            pointRadius: 6,
+                            pointHoverRadius: 8
+                        }});
+                    }}
+                }});
+
+                myChart = new Chart(ctx, {{
+                    type: 'scatter',
+                    data: {{ datasets: datasets }},
+                    options: {{
+                        responsive: true, maintainAspectRatio: false,
+                        scales: {{
+                            x: {{
+                                type: 'linear',
+                                title: {{ display: true, text: '正規化硬體成本 (Normalized Cost) [越低越好]', font: {{ size: 14, weight: 'bold' }} }}
+                            }},
+                            y: {{
+                                title: {{ display: true, text: yLabel, font: {{ size: 14, weight: 'bold' }} }}
+                            }}
+                        }},
+                        plugins: {{
+                            tooltip: {{ callbacks: {{ label: function(context) {{ return context.raw._meta + ' | 成本: ' + context.parsed.x.toFixed(2) + 'x, 效能: ' + context.parsed.y.toFixed(2); }} }} }},
+                            legend: {{ position: 'right' }},
+                            title: {{ display: true, text: 'Design Space Pareto Plot (Cost vs Performance)', font: {{size: 16}} }}
+                        }}
+                    }}
+                }});
+
+            }} else if (currentMode === 'E') {{
+                // ===== MODE E: Radar Chart =====
+                const conf1 = document.getElementById('radarConfig1').value;
+                const conf2 = document.getElementById('radarConfig2').value;
+                const conf3 = document.getElementById('radarConfig3').value;
+
+                let selectedConfigs = [conf1, conf2, conf3].filter(c => c !== 'none');
+
+                if (selectedConfigs.length === 0) {{
+                    ctx.font = '20px Arial';
+                    ctx.fillText("請選擇至少一個架構進行比較", 50, 50);
+                    return;
+                }}
+
+                // Gather min/max for normalization
+                let metrics = ['theory_avg_hops', 'theory_max_load', 'booksim_zero_load_lat', 'booksim_actual_sat_rate', 'booksim_total_throughput'];
+                let ranges = {{}};
+                metrics.forEach(m => {{ ranges[m] = {{min: Infinity, max: -Infinity}}; }});
+
+                allData.forEach(d => {{
+                    metrics.forEach(m => {{
+                        if (d[m] !== undefined && d[m] !== null) {{
+                            if (d[m] < ranges[m].min) ranges[m].min = d[m];
+                            if (d[m] > ranges[m].max) ranges[m].max = d[m];
+                        }}
+                    }});
+                }});
+
+                const radarColors = ['rgba(255, 99, 132, 0.5)', 'rgba(54, 162, 235, 0.5)', 'rgba(75, 192, 192, 0.5)'];
+                const borderColors = ['rgba(255, 99, 132, 1)', 'rgba(54, 162, 235, 1)', 'rgba(75, 192, 192, 1)'];
+                let datasets = [];
+
+                selectedConfigs.forEach((confStr, idx) => {{
+                    let parts = confStr.split('-'); // e.g. "mesh-4"
+                    let t = parts[0];
+                    let dim = parseInt(parts[1]);
+
+                    // find the first corresponding data point
+                    let d = allData.find(x => x.topology === t && x.dim === dim && x.theory_avg_hops !== undefined);
+
+                    if (d) {{
+                        // Normalize to 0-100 score.
+                        // Lower is better for Hops, Load, Latency.
+                        let scoreHops = ranges.theory_avg_hops.max !== ranges.theory_avg_hops.min ? 100 * (ranges.theory_avg_hops.max - d.theory_avg_hops) / (ranges.theory_avg_hops.max - ranges.theory_avg_hops.min) : 50;
+                        let scoreLoad = ranges.theory_max_load.max !== ranges.theory_max_load.min ? 100 * (ranges.theory_max_load.max - d.theory_max_load) / (ranges.theory_max_load.max - ranges.theory_max_load.min) : 50;
+                        let scoreLat = ranges.booksim_zero_load_lat.max !== ranges.booksim_zero_load_lat.min ? 100 * (ranges.booksim_zero_load_lat.max - d.booksim_zero_load_lat) / (ranges.booksim_zero_load_lat.max - ranges.booksim_zero_load_lat.min) : 50;
+
+                        // Higher is better for Sat Rate, Throughput
+                        let scoreSat = ranges.booksim_actual_sat_rate.max !== ranges.booksim_actual_sat_rate.min ? 100 * (d.booksim_actual_sat_rate - ranges.booksim_actual_sat_rate.min) / (ranges.booksim_actual_sat_rate.max - ranges.booksim_actual_sat_rate.min) : 50;
+                        let scoreThru = ranges.booksim_total_throughput.max !== ranges.booksim_total_throughput.min ? 100 * (d.booksim_total_throughput - ranges.booksim_total_throughput.min) / (ranges.booksim_total_throughput.max - ranges.booksim_total_throughput.min) : 50;
+
+                        datasets.push({{
+                            label: `${{d.topology.toUpperCase()}} dim:${{d.dim}}`,
+                            data: [scoreHops, scoreLoad, scoreLat, scoreSat, scoreThru],
+                            fill: true,
+                            backgroundColor: radarColors[idx % 3],
+                            borderColor: borderColors[idx % 3],
+                            pointBackgroundColor: borderColors[idx % 3],
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: borderColors[idx % 3],
+                            rawValues: [d.theory_avg_hops, d.theory_max_load, d.booksim_zero_load_lat, d.booksim_actual_sat_rate, d.booksim_total_throughput]
+                        }});
+                    }}
+                }});
+
+                myChart = new Chart(ctx, {{
+                    type: 'radar',
+                    data: {{
+                        labels: [
+                            '理論跳數 (Avg Hops) [越低越好]',
+                            '最大通道負載 (Max Load) [越低越好]',
+                            '零負載延遲 (Zero-load Latency) [越低越好]',
+                            '實際飽和點 (Saturation Rate) [越高越好]',
+                            '總吞吐量 (Throughput) [越高越好]'
+                        ],
+                        datasets: datasets
+                    }},
+                    options: {{
+                        responsive: true, maintainAspectRatio: false,
+                        elements: {{ line: {{ borderWidth: 3 }} }},
+                        scales: {{
+                            r: {{
+                                angleLines: {{ display: true }},
+                                suggestedMin: 0,
+                                suggestedMax: 100,
+                                ticks: {{ display: false }} // hide the 0-100 internal ticks to focus on shape
+                            }}
+                        }},
+                        plugins: {{
+                            tooltip: {{
+                                callbacks: {{
+                                    label: function(context) {{
+                                        let rawLabel = context.dataset.label;
+                                        let rawVal = context.dataset.rawValues[context.dataIndex];
+                                        if (rawVal !== undefined && rawVal !== null) {{
+                                            return `${{rawLabel}}: ${{rawVal.toFixed(2)}} (Score: ${{context.formattedValue}})`;
+                                        }}
+                                        return `${{rawLabel}}: ${{context.formattedValue}}`;
+                                    }}
+                                }}
+                            }},
+                            title: {{ display: true, text: 'NoC 極限壓力測試雷達圖 (Radar Chart)', font: {{size: 16}} }}
+                        }}
+                    }}
+                }});
+
             }} else if (currentMode === 'C') {{
                 // ===== MODE C: JS Canvas Heatmap =====
                 document.getElementById('dseChart').style.display = 'none';
@@ -732,6 +1004,8 @@ def generate_interactive_html():
 
             populateSelect('topoSelectC', allOptions.topology, false);
             populateSelect('dimSelectC', dims, false);
+
+            populateRadarConfigs();
 
             // 設定預設選項並更新
             if(allOptions.topology.includes('ring')) {{
