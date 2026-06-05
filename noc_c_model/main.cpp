@@ -30,6 +30,8 @@ int main(int argc, char* argv[]) {
             if (config["architecture"]["width"]) global_config.mesh_width = config["architecture"]["width"].as<int>();
             if (config["architecture"]["height"]) global_config.mesh_height = config["architecture"]["height"].as<int>();
             if (config["architecture"]["buffer_size"]) global_config.buffer_size = config["architecture"]["buffer_size"].as<int>();
+            if (config["architecture"]["frequency_mhz"]) global_config.frequency_mhz = config["architecture"]["frequency_mhz"].as<int>();
+            if (config["architecture"]["flit_width_bits"]) global_config.flit_width_bits = config["architecture"]["flit_width_bits"].as<int>();
 
             if (topo_type == "ring") {
                 global_config.num_nodes = global_config.mesh_width;
@@ -50,6 +52,8 @@ int main(int argc, char* argv[]) {
 
     if (topo_type == "mesh") {
         topology = new MeshTopology(global_config.mesh_width, global_config.mesh_height);
+    } else if (topo_type == "torus") {
+        topology = new TorusTopology(global_config.mesh_width, global_config.mesh_height);
     } else if (topo_type == "ring") {
         topology = new RingTopology(global_config.num_nodes);
     } else {
@@ -164,9 +168,49 @@ int main(int argc, char* argv[]) {
     double avg_latency = total_received > 0 ? (double)total_latency / total_received : 0.0;
     double throughput = sim_time > 0 ? (double)total_received / sim_time : 0.0;
 
+    // Calculate Bandwidth if frequency and flit width are given
+    // Throughput (packets/cycle) * Flits/packet * Flit_width (bits) * Frequency (MHz) = Bandwidth (Mbits/s)
+    // Assume 1 packet = 1 flit for simplicity in this functional model unless specified otherwise
+    double bw_gbps = (throughput * global_config.flit_width_bits * global_config.frequency_mhz) / (8.0 * 1024.0);
+
     std::cout << "Average Latency: " << avg_latency << " cycles" << std::endl;
     std::cout << "Max Latency: " << max_latency << " cycles" << std::endl;
     std::cout << "Total Throughput: " << throughput << " packets/cycle" << std::endl;
+    std::cout << "Total Bandwidth: " << bw_gbps << " GB/s" << std::endl;
+
+    // Dump hardware monitors to JSON report
+    std::ofstream out_json("router_stats.json");
+    out_json << "{\n";
+    out_json << "  \"system_metrics\": {\n";
+    out_json << "    \"total_cycles\": " << sim_time << ",\n";
+    out_json << "    \"total_packets\": " << total_received << ",\n";
+    out_json << "    \"avg_latency\": " << avg_latency << ",\n";
+    out_json << "    \"max_latency\": " << max_latency << ",\n";
+    out_json << "    \"throughput_pkts_per_cycle\": " << throughput << ",\n";
+    out_json << "    \"bandwidth_gbps\": " << bw_gbps << "\n";
+    out_json << "  },\n";
+    out_json << "  \"routers\": [\n";
+    for (size_t i = 0; i < routers.size(); ++i) {
+        auto r = routers[i];
+        out_json << "    {\n";
+        out_json << "      \"id\": " << r->id << ",\n";
+        out_json << "      \"ports\": [\n";
+        for (int p = 0; p < r->num_ports; ++p) {
+            double uRate = sim_time > 0 ? (double)r->port_active_cycles[p] / sim_time : 0.0;
+            double avg_depth = sim_time > 0 ? (double)r->port_buffer_depth_acc[p] / sim_time : 0.0;
+            out_json << "        {\n";
+            out_json << "          \"port_id\": " << p << ",\n";
+            out_json << "          \"uRate\": " << uRate << ",\n";
+            out_json << "          \"avg_buffer_depth\": " << avg_depth << ",\n";
+            out_json << "          \"max_buffer_depth\": " << r->port_max_buffer_depth[p] << "\n";
+            out_json << "        }" << (p == r->num_ports - 1 ? "" : ",") << "\n";
+        }
+        out_json << "      ]\n";
+        out_json << "    }" << (i == routers.size() - 1 ? "" : ",") << "\n";
+    }
+    out_json << "  ]\n";
+    out_json << "}\n";
+    out_json.close();
 
     // Dump specific reception info (輸出特定接收資訊)
     for (auto r : routers) {

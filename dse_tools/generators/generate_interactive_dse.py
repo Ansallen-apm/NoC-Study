@@ -74,6 +74,22 @@ def generate_interactive_html():
                     }
                     unified_data.append(record)
 
+    # 3. 讀取 c_model_sweep_results.json (C++ 模型的硬體監控指標)
+    c_model_hardware_monitors = []
+    if os.path.exists('dse_tools/report/c_model_sweep_results.json'):
+        with open('dse_tools/report/c_model_sweep_results.json', 'r', encoding='utf-8') as f:
+            c_results = json.load(f)
+
+            # 從第一筆資料抽取出 topology 資訊，因為在掃描過程 config 是固定的
+            # 實際應用中如果 C 模型跑了多個 config，則需要在 json 裡紀錄 config 屬性
+            for r in c_results:
+                if 'router_stats' in r and r['router_stats']:
+                    c_model_hardware_monitors.append({
+                        "rate": r['rate'],
+                        "bandwidth_gbps": r.get('bandwidth_gbps', 0),
+                        "stats": r['router_stats']
+                    })
+
     # 動態產生所有可選的參數列表
     options = {
         "topology": sorted(list(set(r['topology'] for r in unified_data))),
@@ -87,6 +103,7 @@ def generate_interactive_html():
     # 將 Python dict 轉為 JSON string 嵌入 HTML
     chart_data_json = json.dumps(unified_data)
     options_json = json.dumps(options)
+    hw_monitors_json = json.dumps(c_model_hardware_monitors)
 
     html_content = f"""
     <!DOCTYPE html>
@@ -113,6 +130,7 @@ def generate_interactive_html():
             <button onclick="setMode('A')" id="btnModeA" style="padding: 10px 20px; font-weight: bold; background-color: #3cb44b; color: white; border: none; border-radius: 5px; cursor: pointer;">模式 A: 效能動態曲線 (Latency Curves)</button>
             <button onclick="setMode('B')" id="btnModeB" style="padding: 10px 20px; font-weight: bold; background-color: #ccc; color: white; border: none; border-radius: 5px; cursor: pointer;">模式 B: 架構交叉比對 (Scatter Plot)</button>
             <button onclick="setMode('C')" id="btnModeC" style="padding: 10px 20px; font-weight: bold; background-color: #ccc; color: white; border: none; border-radius: 5px; cursor: pointer;">模式 C: 通道負載分佈 (Channel Load Bar)</button>
+            <button onclick="setMode('D')" id="btnModeD" style="padding: 10px 20px; font-weight: bold; background-color: #ccc; color: white; border: none; border-radius: 5px; cursor: pointer;">模式 D: 硬體微觀監控 (Hardware Monitors)</button>
         </div>
 
         <div id="modeAControls" class="controls">
@@ -205,6 +223,17 @@ def generate_interactive_html():
             <span style="color: #666; font-size: 0.9em;">提示：Mode C 會顯示該拓撲下所有通道的熱點分佈圖 (Heatmap)。紅色代表高負載，藍色代表低負載。</span>
         </div>
 
+        <div id="modeDControls" class="controls" style="display: none;">
+            <fieldset style="border: 1px solid #911eb4; padding: 15px; border-radius: 5px; text-align: left; display: inline-block;">
+                <legend><strong>選擇注入率 (Select Injection Rate to Inspect HW Monitors)</strong></legend>
+
+                <label>注入率 (Injection Rate): </label>
+                <select id="rateSelectD" onchange="updateChart()"></select>
+            </fieldset>
+            <br><br>
+            <span style="color: #666; font-size: 0.9em;">提示：Mode D 會顯示 C++ 硬體模型在特定注入率下的各通道硬體監控指標 (如 Utilization Rate, Average Buffer Depth, Max Buffer Depth)。</span>
+        </div>
+
         <div class="chart-container" id="chartContainer">
             <canvas id="dseChart"></canvas>
             <div id="heatmapContainer" style="display: none; width: 100%; height: 100%; position: relative;">
@@ -218,6 +247,7 @@ def generate_interactive_html():
         // 來自 Python 的完整 DSE 曲線資料與選項
         const allData = {chart_data_json};
         const allOptions = {options_json};
+        const hwMonitors = {hw_monitors_json};
 
         let currentMode = 'A';
         let heatmapNodes = [];
@@ -229,9 +259,11 @@ def generate_interactive_html():
             document.getElementById('modeAControls').style.display = 'none';
             document.getElementById('modeBControls').style.display = 'none';
             document.getElementById('modeCControls').style.display = 'none';
+            document.getElementById('modeDControls').style.display = 'none';
             document.getElementById('btnModeA').style.backgroundColor = '#ccc';
             document.getElementById('btnModeB').style.backgroundColor = '#ccc';
             document.getElementById('btnModeC').style.backgroundColor = '#ccc';
+            document.getElementById('btnModeD').style.backgroundColor = '#ccc';
 
             if (mode === 'A') {{
                 document.getElementById('modeAControls').style.display = 'block';
@@ -242,6 +274,9 @@ def generate_interactive_html():
             }} else if (mode === 'C') {{
                 document.getElementById('modeCControls').style.display = 'block';
                 document.getElementById('btnModeC').style.backgroundColor = '#f58231';
+            }} else if (mode === 'D') {{
+                document.getElementById('modeDControls').style.display = 'block';
+                document.getElementById('btnModeD').style.backgroundColor = '#911eb4';
             }}
             updateChart();
         }}
@@ -430,7 +465,66 @@ def generate_interactive_html():
                     }}
                 }}
 
-                drawHeatmap(topo, dim, targetData ? targetData.theory_edge_loads : {{}});
+                drawHeatmap(topo, dim, targetData ? targetData.theory_edge_loads : {{}}, "通道負載熱點圖 (Channel Load Heatmap)");
+            }} else if (currentMode === 'D') {{
+                // ===== MODE D: JS Canvas Hardware Monitors =====
+                document.getElementById('dseChart').style.display = 'none';
+                document.getElementById('heatmapContainer').style.display = 'block';
+
+                const rate = parseFloat(document.getElementById('rateSelectD').value);
+
+                let targetData = null;
+                for (let i = 0; i < hwMonitors.length; i++) {{
+                    if (Math.abs(hwMonitors[i].rate - rate) < 0.001) {{
+                        targetData = hwMonitors[i];
+                        break;
+                    }}
+                }}
+
+                // Construct pseudo edgeLoads mapping based on active C++ routers
+                let hwEdgeLoads = {{}};
+                let topoStr = 'mesh'; // Assume first available topology
+                if (allOptions.topology.includes("mesh")) {{ topoStr = "mesh"; }}
+                else if (allOptions.topology.includes("torus")) {{ topoStr = "torus"; }}
+                else if (allOptions.topology.includes("ring")) {{ topoStr = "ring"; }}
+
+                let dim = 4;
+                if (topoStr === 'ring') dim = 8;
+                if (document.getElementById('topoSelect').options.length > 0) {{
+                    dim = parseInt(document.getElementById('topoSelect').options[0].text.match(/\\d+/)[0] || dim);
+                }}
+
+                if (targetData && targetData.stats) {{
+                    for (let r of targetData.stats) {{
+                        let u = r.id;
+                        for (let port of r.ports) {{
+                            // Extract hardware uRate or average buffer depth
+                            // Use uRate for visualization. (Alternatively we can plot avg_buffer_depth)
+                            let load = port.uRate;
+                            if (load > 0) {{
+                                // Maps port id to generic node id logically (Assuming 1=N, 2=E, 3=S, 4=W in typical 2D Mesh/Torus layout)
+                                // We skip LOCAL (0) because heatmaps draw physical inter-router wires
+                                let v = -1;
+                                if (topoStr === 'ring') {{
+                                    if (port.port_id === 1) v = (u + 1) % dim;
+                                    if (port.port_id === 2) v = (u - 1 + dim) % dim;
+                                }} else {{
+                                    let x = u % dim;
+                                    let y = Math.floor(u / dim);
+                                    if (port.port_id === 1) v = ((y - 1 + dim) % dim) * dim + x; // North
+                                    if (port.port_id === 2) v = y * dim + ((x + 1) % dim); // East
+                                    if (port.port_id === 3) v = ((y + 1) % dim) * dim + x; // South
+                                    if (port.port_id === 4) v = y * dim + ((x - 1 + dim) % dim); // West
+                                }}
+
+                                if (v !== -1) {{
+                                    hwEdgeLoads[`${{u}}->${{v}}`] = load;
+                                }}
+                            }}
+                        }}
+                    }}
+                }}
+                drawHeatmap(topoStr, dim, hwEdgeLoads, `硬體利用率 uRate (Hardware Channel Utilization) at Rate=${{rate}}`);
             }}
         }}
 
@@ -442,7 +536,7 @@ def generate_interactive_html():
             return `hsla(${{hue}}, 100%, 50%, 0.8)`;
         }}
 
-        function drawHeatmap(topo, dim, edgeLoads) {{
+        function drawHeatmap(topo, dim, edgeLoads, titleStr = "") {{
             const canvas = document.getElementById('heatmapCanvas');
             const container = document.getElementById('heatmapContainer');
             canvas.width = container.clientWidth;
@@ -459,6 +553,10 @@ def generate_interactive_html():
                 ctx.fillText("尚無該拓撲的通道負載資料 (No edge load data available)", 50, 50);
                 return;
             }}
+
+            ctx.fillStyle = 'black';
+            ctx.font = '16px Arial';
+            ctx.fillText(titleStr, 20, 30);
 
             let maxLoad = 0;
             for (let key in edgeLoads) {{
@@ -732,6 +830,9 @@ def generate_interactive_html():
 
             populateSelect('topoSelectC', allOptions.topology, false);
             populateSelect('dimSelectC', dims, false);
+
+            let rateArray = hwMonitors.map(m => m.rate).sort();
+            populateSelect('rateSelectD', rateArray, false);
 
             // 設定預設選項並更新
             if(allOptions.topology.includes('ring')) {{
