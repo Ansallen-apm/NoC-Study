@@ -22,6 +22,10 @@ public:
     // 雙重緩衝區：儲存預計在下一個週期到達的封包，避免同週期競爭
     std::vector<std::queue<Packet>> next_input_buffers;
 
+    // Track how many packets to pop from input_buffers at the end of the cycle
+    // 追蹤在此週期結束時，需要從輸入緩衝區移除多少封包 (避免執行順序依賴)
+    std::vector<int> pending_pops;
+
     // To store packets that have arrived at this destination (Local Ejection)
     // 儲存已到達此目的地的封包 (本地彈出)
     std::vector<Packet> ejected_packets;

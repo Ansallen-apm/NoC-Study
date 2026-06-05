@@ -1,9 +1,11 @@
 #include "Routing.h"
+#include "Router.h"
 #include <cstdlib>
 #include <algorithm>
 
 // Enum matching original implementation for Mesh: LOCAL=0, NORTH=1, EAST=2, SOUTH=3, WEST=4
-int XYRouting::compute_next_hop(int router_id, int dst_id) {
+int XYRouting::compute_next_hop(const Router* current_router, int dst_id) {
+    int router_id = current_router->id;
     if (router_id == dst_id) return 0; // LOCAL
 
     int src_x = router_id % mesh_width;
@@ -19,7 +21,8 @@ int XYRouting::compute_next_hop(int router_id, int dst_id) {
     return 0; // LOCAL
 }
 
-int RingRouting::compute_next_hop(int router_id, int dst_id) {
+int RingRouting::compute_next_hop(const Router* current_router, int dst_id) {
+    int router_id = current_router->id;
     if (router_id == dst_id) return 0; // LOCAL
 
     // Find shortest path direction on a ring

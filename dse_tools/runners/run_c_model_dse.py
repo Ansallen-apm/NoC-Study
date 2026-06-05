@@ -6,23 +6,41 @@ import subprocess
 import re
 from multiprocessing import Pool
 import random
+from core.metrics import get_traffic_destinations
 
-def generate_trace(num_nodes, injection_rate, sim_cycles, trace_file):
+def generate_trace(num_nodes, injection_rate, sim_cycles, trace_file, pattern, width, height):
     with open(trace_file, 'w') as f:
         for cycle in range(sim_cycles):
             for src in range(num_nodes):
                 if random.random() < injection_rate:
-                    dst = random.randint(0, num_nodes - 1)
-                    while dst == src:
-                        dst = random.randint(0, num_nodes - 1)
-                    payload = random.randint(100, 999)
-                    f.write(f"{src} {dst} {payload} {cycle}\n")
+                    # Get probability distribution for this source under the specified pattern
+                    dests = get_traffic_destinations(src, num_nodes, pattern, width, height)
+
+                    if not dests: continue
+
+                    # Choose destination based on probabilities
+                    r = random.random()
+                    cumulative = 0.0
+                    chosen_dst = -1
+                    for dst, prob in dests:
+                        cumulative += prob
+                        if r <= cumulative:
+                            chosen_dst = dst
+                            break
+
+                    # Fallback in case of rounding errors
+                    if chosen_dst == -1:
+                        chosen_dst = dests[-1][0]
+
+                    if chosen_dst != src:
+                        payload = random.randint(100, 999)
+                        f.write(f"{src} {chosen_dst} {payload} {cycle}\n")
 
 def run_single_simulation(args):
-    rate, num_nodes, sim_cycles, config_path, c_model_executable = args
+    rate, num_nodes, sim_cycles, config_path, c_model_executable, pattern, width, height = args
 
     trace_path = f"temp_trace_{rate}.txt"
-    generate_trace(num_nodes, rate, sim_cycles, trace_path)
+    generate_trace(num_nodes, rate, sim_cycles, trace_path, pattern, width, height)
 
     latency = float('inf')
     throughput = 0.0
@@ -62,10 +80,17 @@ def main():
     with open(config_path, 'r', encoding='utf-8') as f:
         master_config = yaml.safe_load(f)
 
+    topo = master_config.get('architecture', {}).get('topology', 'mesh')
     width = master_config.get('architecture', {}).get('width', 4)
     height = master_config.get('architecture', {}).get('height', 4)
-    num_nodes = width * height
+    if topo == 'ring':
+        num_nodes = width
+        height = 1
+    else:
+        num_nodes = width * height
+
     sim_cycles = master_config.get('simulation', {}).get('sim_cycles', 5000)
+    traffic_pattern = master_config.get('simulation', {}).get('traffic_pattern', 'uniform')
 
     sweep_range = master_config.get('simulation', {}).get('sweep_range', {'start': 0.05, 'end': 0.50, 'step': 0.05})
     start = int(sweep_range.get('start', 0.05) * 1000)
@@ -79,8 +104,8 @@ def main():
         print(f"錯誤：找不到 C++ 執行檔於 {c_model_executable}，請先編譯。")
         return
 
-    print(f"開始平行模擬，共 {len(injection_rates)} 個注入率點...")
-    pool_args = [(rate, num_nodes, sim_cycles, config_path, c_model_executable) for rate in injection_rates]
+    print(f"開始平行模擬 (Pattern: {traffic_pattern})，共 {len(injection_rates)} 個注入率點...")
+    pool_args = [(rate, num_nodes, sim_cycles, config_path, c_model_executable, traffic_pattern, width, height) for rate in injection_rates]
 
     results = []
     with Pool(processes=multiprocessing.cpu_count()) as pool:
