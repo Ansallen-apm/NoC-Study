@@ -84,8 +84,12 @@ def run_single_simulation(args):
                 with open(stats_file, 'r') as f:
                     router_stats = json.load(f)
 
+            is_deadlock = False
+            if router_stats and router_stats.get('system_metrics', {}).get('is_deadlock', False):
+                is_deadlock = True
+
             # Check if saturation caused simulation to fail to finish all packets
-            if "Pending Packets:" in output:
+            if "Pending Packets:" in output or is_deadlock:
                 latency = float('inf') # Consider it saturated/deadlocked if packets get stuck
 
     except subprocess.TimeoutExpired:
@@ -137,11 +141,18 @@ def main():
         sim_results = pool.map(run_single_simulation, pool_args)
 
     for rate, lat, thr, bw, stats in sim_results:
-        results.append({"rate": rate, "latency": lat, "throughput": thr, "bandwidth_gbps": bw, "router_stats": stats})
+        is_deadlock = False
+        if stats and stats.get('system_metrics', {}).get('is_deadlock', False):
+            is_deadlock = True
+
+        results.append({"rate": rate, "latency": lat, "throughput": thr, "bandwidth_gbps": bw, "router_stats": stats, "is_deadlock": is_deadlock})
         if lat != float('inf'):
             print(f"  Rate: {rate:.3f} -> 平均延遲: {lat:.4f} cycles, 頻寬: {bw:.2f} GB/s")
         else:
-            print(f"  Rate: {rate:.3f} -> 網路飽和/不穩定")
+            if is_deadlock:
+                print(f"  Rate: {rate:.3f} -> 死結發生 (DEADLOCK DETECTED)")
+            else:
+                print(f"  Rate: {rate:.3f} -> 網路飽和/不穩定")
 
     import json
     os.makedirs("report", exist_ok=True)
