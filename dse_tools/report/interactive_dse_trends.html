@@ -440,7 +440,7 @@
                             ny = dx / length;
                         }
 
-                        const offset = 6; // offset by 6 pixels
+                        const offset = 12; // offset by 12 pixels to clearly separate bidirectional lines
                         const shiftX = nx * offset;
                         const shiftY = ny * offset;
 
@@ -472,7 +472,7 @@
                     let midX2 = edge.x2;
                     let midY2 = edge.y2;
 
-                    const extend = 40; // extend outwards
+                    const extend = 80; // extend outwards more visibly
 
                     if (Math.abs(edge.x1 - edge.x2) > drawWidth * 0.8) {
                         // Horizontal wrap-around
@@ -487,8 +487,32 @@
 
                     ctx.moveTo(edge.x1, edge.y1);
                     ctx.lineTo(midX1, midY1);
-                    ctx.moveTo(edge.x2, edge.y2);
-                    ctx.lineTo(midX2, midY2);
+
+                    // Draw arrowhead for outgoing line
+                    let dxOut = midX1 - edge.x1;
+                    let dyOut = midY1 - edge.y1;
+                    let angleOut = Math.atan2(dyOut, dxOut);
+                    const headlen = 10;
+                    ctx.moveTo(midX1, midY1);
+                    ctx.lineTo(midX1 - headlen * Math.cos(angleOut - Math.PI / 6), midY1 - headlen * Math.sin(angleOut - Math.PI / 6));
+                    ctx.moveTo(midX1, midY1);
+                    ctx.lineTo(midX1 - headlen * Math.cos(angleOut + Math.PI / 6), midY1 - headlen * Math.sin(angleOut + Math.PI / 6));
+
+                    ctx.moveTo(midX2, midY2);
+                    ctx.lineTo(edge.x2, edge.y2);
+
+                    // Draw arrowhead for incoming line (pointing towards node V)
+                    let dxIn = edge.x2 - midX2;
+                    let dyIn = edge.y2 - midY2;
+                    let angleIn = Math.atan2(dyIn, dxIn);
+
+                    const offsetTargetX = edge.x2 - 12 * Math.cos(angleIn);
+                    const offsetTargetY = edge.y2 - 12 * Math.sin(angleIn);
+
+                    ctx.moveTo(offsetTargetX, offsetTargetY);
+                    ctx.lineTo(offsetTargetX - headlen * Math.cos(angleIn - Math.PI / 6), offsetTargetY - headlen * Math.sin(angleIn - Math.PI / 6));
+                    ctx.moveTo(offsetTargetX, offsetTargetY);
+                    ctx.lineTo(offsetTargetX - headlen * Math.cos(angleIn + Math.PI / 6), offsetTargetY - headlen * Math.sin(angleIn + Math.PI / 6));
 
                     // Save midpoints for hover detection
                     edge.mid1 = {x: midX1, y: midY1};
