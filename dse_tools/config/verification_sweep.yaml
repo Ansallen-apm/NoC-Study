@@ -13,7 +13,7 @@ sweep:
     vcs: 2  # Torus 需要至少 2 個 VC 避免死結
 
   - topology: ring
-    dimensions: [4, 8, 12, 16, 24] # 對應總節點數
+    dimensions: [4, 5, 6, 7, 8, 12, 16, 24] # 對應總節點數
     routing: dim_order
     vcs: 2  # Ring 需要至少 2 個 VC 避免死結
 
