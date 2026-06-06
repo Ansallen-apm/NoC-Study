@@ -74,22 +74,6 @@ def generate_interactive_html():
                     }
                     unified_data.append(record)
 
-    # 3. 讀取 c_model_sweep_results.json (C++ 模型的硬體監控指標)
-    c_model_hardware_monitors = []
-    if os.path.exists('dse_tools/report/c_model_sweep_results.json'):
-        with open('dse_tools/report/c_model_sweep_results.json', 'r', encoding='utf-8') as f:
-            c_results = json.load(f)
-
-            # 從第一筆資料抽取出 topology 資訊，因為在掃描過程 config 是固定的
-            # 實際應用中如果 C 模型跑了多個 config，則需要在 json 裡紀錄 config 屬性
-            for r in c_results:
-                if 'router_stats' in r and r['router_stats']:
-                    c_model_hardware_monitors.append({
-                        "rate": r['rate'],
-                        "bandwidth_gbps": r.get('bandwidth_gbps', 0),
-                        "stats": r['router_stats']
-                    })
-
     # 動態產生所有可選的參數列表
     options = {
         "topology": sorted(list(set(r['topology'] for r in unified_data))),
@@ -103,7 +87,6 @@ def generate_interactive_html():
     # 將 Python dict 轉為 JSON string 嵌入 HTML
     chart_data_json = json.dumps(unified_data)
     options_json = json.dumps(options)
-    hw_monitors_json = json.dumps(c_model_hardware_monitors)
 
     html_content = f"""
     <!DOCTYPE html>
@@ -173,13 +156,30 @@ def generate_interactive_html():
                     <option value="buffer_size">緩衝區大小 (Buffer Size)</option>
                     <option value="vcs">虛擬通道數 (VCs)</option>
                 </select>
+
+                <br><br>
+                <label><input type="checkbox" id="keepCurves" onchange="updateChart()"> 保留歷史曲線 (Keep Previous Curves)</label>
+                &nbsp;&nbsp;
+                <button onclick="clearHistory()" style="padding: 5px 10px; background-color: #f44336; color: white; border: none; border-radius: 3px; cursor: pointer;">清除歷史曲線 (Clear)</button>
             </fieldset>
         </div>
 
         <div id="modeBControls" class="controls" style="display: none;">
             <fieldset style="border: 1px solid #4363d8; padding: 15px; border-radius: 5px; text-align: left; display: inline-block;">
-                <legend><strong>散佈圖維度設定 (Scatter Plot Axes)</strong></legend>
+                <legend><strong>散佈圖維度設定 (Scatter Plot Axes & Filters)</strong></legend>
 
+                <label>封包長度 (Packet Size): </label>
+                <select id="pSelectB" onchange="updateChart()"></select>
+                &nbsp;&nbsp;
+
+                <label>緩衝區大小 (Buffer Size): </label>
+                <select id="bSelectB" onchange="updateChart()"></select>
+                &nbsp;&nbsp;
+
+                <label>虛擬通道數 (VCs): </label>
+                <select id="vSelectB" onchange="updateChart()"></select>
+
+                <br><br>
                 <label>X 軸 (X-Axis): </label>
                 <select id="scatterX" onchange="updateChart()">
                     <option value="nodes">節點數 (Nodes)</option>
@@ -206,7 +206,7 @@ def generate_interactive_html():
                 </select>
             </fieldset>
             <br><br>
-            <span style="color: #666; font-size: 0.9em;">提示：在 Mode B 中，我們只繪製具有完整架構參數分析的資料點 (P=1, B=8)。</span>
+            <span style="color: #666; font-size: 0.9em;">提示：Mode B 可以透過上方過濾器選擇不同硬體配置下的拓撲效能分佈。</span>
         </div>
 
         <div id="modeCControls" class="controls" style="display: none;">
@@ -219,9 +219,12 @@ def generate_interactive_html():
 
                 <label>節點維度 (Dimension): </label>
                 <select id="dimSelectC" onchange="updateChart()"></select>
+
+                <br><br>
+                <label><input type="checkbox" id="toggleAnim" onchange="toggleAnimation()"> 啟用流量粒子動畫 (Enable Traffic Animation)</label>
             </fieldset>
             <br><br>
-            <span style="color: #666; font-size: 0.9em;">提示：Mode C 會顯示該拓撲下所有通道的熱點分佈圖 (Heatmap)。紅色代表高負載，藍色代表低負載。</span>
+            <span style="color: #666; font-size: 0.9em;">提示：Mode C 會顯示該拓撲下所有通道的熱點分佈圖 (Heatmap)。紅色代表高負載，藍色代表低負載。啟用動畫可以直觀感受網路擁塞狀態。</span>
         </div>
 
         <div id="modeDControls" class="controls" style="display: none;">
@@ -288,7 +291,6 @@ def generate_interactive_html():
         // 來自 Python 的完整 DSE 曲線資料與選項
         const allData = {chart_data_json};
         const allOptions = {options_json};
-        const hwMonitors = {hw_monitors_json};
 
         let currentMode = 'A';
         let heatmapNodes = [];
@@ -376,6 +378,12 @@ def generate_interactive_html():
         ];
 
         let myChart = null;
+        let modeA_historyDatasets = []; // Store history curves for Mode A
+
+        function clearHistory() {{
+            modeA_historyDatasets = [];
+            updateChart();
+        }}
 
         function updateChart() {{
             const ctx = document.getElementById('dseChart').getContext('2d');
@@ -413,25 +421,43 @@ def generate_interactive_html():
                 }}
 
                 let datasets = [];
-                filteredData.forEach((d, index) => {{
-                    let label = `Nodes: ${{d.nodes}}`;
-                    if (compareBy === 'routing') label = `Routing: ${{d.routing}} (Nodes: ${{d.nodes}})`;
-                    if (compareBy === 'traffic') label = `Traffic: ${{d.traffic}} (Nodes: ${{d.nodes}})`;
-                    if (compareBy === 'packet_size') label = `Packet: ${{d.packet_size}} flits (Nodes: ${{d.nodes}})`;
-                    if (compareBy === 'buffer_size') label = `Buffer: ${{d.buffer_size}} flits (Nodes: ${{d.nodes}})`;
-                    if (compareBy === 'vcs') label = `VCs: ${{d.vcs}} (Nodes: ${{d.nodes}})`;
-                    if (compareBy === 'dim') label = `Nodes: ${{d.nodes}} (R:${{d.routing}}, P:${{d.packet_size}}, B:${{d.buffer_size}}, V:${{d.vcs}})`;
 
-                    datasets.push({{
+                // Add historical datasets if keep curves is checked
+                const keepCurves = document.getElementById('keepCurves').checked;
+                if (keepCurves) {{
+                    datasets = [...modeA_historyDatasets];
+                }} else {{
+                    modeA_historyDatasets = []; // reset if unchecked
+                }}
+
+                // calculate color offset based on existing datasets
+                const colorOffset = datasets.length;
+
+                filteredData.forEach((d, index) => {{
+                    let label = `${{topo.toUpperCase()}} - `;
+                    if (compareBy === 'routing') label += `Routing: ${{d.routing}} (Nodes: ${{d.nodes}})`;
+                    else if (compareBy === 'traffic') label += `Traffic: ${{d.traffic}} (Nodes: ${{d.nodes}})`;
+                    else if (compareBy === 'packet_size') label += `Packet: ${{d.packet_size}} flits (Nodes: ${{d.nodes}})`;
+                    else if (compareBy === 'buffer_size') label += `Buffer: ${{d.buffer_size}} flits (Nodes: ${{d.nodes}})`;
+                    else if (compareBy === 'vcs') label += `VCs: ${{d.vcs}} (Nodes: ${{d.nodes}})`;
+                    else if (compareBy === 'dim') label += `Nodes: ${{d.nodes}} (R:${{d.routing}}, P:${{d.packet_size}}, B:${{d.buffer_size}}, V:${{d.vcs}})`;
+                    else label += `Nodes: ${{d.nodes}}`;
+
+                    const newDs = {{
                         label: label,
                         data: d.curve,
-                        borderColor: colors[index % colors.length],
-                        backgroundColor: colors[index % colors.length],
+                        borderColor: colors[(index + colorOffset) % colors.length],
+                        backgroundColor: colors[(index + colorOffset) % colors.length],
                         fill: false,
                         tension: 0.1,
                         pointRadius: 5,
                         pointHoverRadius: 8
-                    }});
+                    }};
+                    datasets.push(newDs);
+
+                    if (keepCurves) {{
+                        modeA_historyDatasets.push(newDs);
+                    }}
                 }});
 
                 if (datasets.length === 0) datasets = [{{ label: '無符合資料 (No Data)', data: [] }}];
@@ -465,9 +491,14 @@ def generate_interactive_html():
                 // ===== MODE B: Scatter Plot =====
                 const xKey = document.getElementById('scatterX').value;
                 const yKey = document.getElementById('scatterY').value;
+                const pSizeB = document.getElementById('pSelectB').value;
+                const bSizeB = document.getElementById('bSelectB').value;
+                const vcsB = document.getElementById('vSelectB').value;
 
-                // 為了比較理論極限，Mode B 我們過濾出 packet=1, buffer=8 的結果 (與 verification script 一致)
-                const baseData = allData.filter(d => d.packet_size === 1 && d.buffer_size === 8 && d.theory_avg_hops > 0);
+                let baseData = allData;
+                if (pSizeB !== 'all') baseData = baseData.filter(d => d.packet_size == parseInt(pSizeB));
+                if (bSizeB !== 'all') baseData = baseData.filter(d => d.buffer_size == parseInt(bSizeB));
+                if (vcsB !== 'all') baseData = baseData.filter(d => d.vcs == parseInt(vcsB));
 
                 // 把拓撲分開成不同的 dataset
                 const topos = ['mesh', 'torus', 'ring'];
@@ -481,7 +512,11 @@ def generate_interactive_html():
                         let yVal = d[yKey];
                         // 過濾不合法數值
                         if(xVal !== undefined && yVal !== undefined && xVal !== null && yVal !== null && xVal !== Infinity && yVal !== Infinity) {{
-                            points.push({{ x: xVal, y: yVal, _meta: `Nodes: ${{d.nodes}}` }});
+                            points.push({{
+                                x: xVal,
+                                y: yVal,
+                                _meta: `Nodes: ${{d.nodes}} (Dim:${{d.dim}}, P:${{d.packet_size}}, B:${{d.buffer_size}}, VC:${{d.vcs}})`
+                            }});
                         }}
                     }});
 
@@ -514,7 +549,7 @@ def generate_interactive_html():
                             }}
                         }},
                         plugins: {{
-                            tooltip: {{ callbacks: {{ label: function(context) {{ return context.dataset.label + ' ' + context.raw._meta + ' | X: ' + context.parsed.x + ', Y: ' + context.parsed.y; }} }} }},
+                            tooltip: {{ callbacks: {{ label: function(context) {{ return context.dataset.label + ' ' + context.raw._meta + ' | X: ' + context.parsed.x.toFixed(2) + ', Y: ' + context.parsed.y.toFixed(2); }} }} }},
                             legend: {{ position: 'right' }}
                         }}
                     }}
@@ -720,66 +755,7 @@ def generate_interactive_html():
                     }}
                 }}
 
-                drawHeatmap(topo, dim, targetData ? targetData.theory_edge_loads : {{}}, "通道負載熱點圖 (Channel Load Heatmap)");
-            }} else if (currentMode === 'D') {{
-                // ===== MODE D: JS Canvas Hardware Monitors =====
-                document.getElementById('dseChart').style.display = 'none';
-                document.getElementById('heatmapContainer').style.display = 'block';
-
-                const rate = parseFloat(document.getElementById('rateSelectD').value);
-
-                let targetData = null;
-                for (let i = 0; i < hwMonitors.length; i++) {{
-                    if (Math.abs(hwMonitors[i].rate - rate) < 0.001) {{
-                        targetData = hwMonitors[i];
-                        break;
-                    }}
-                }}
-
-                // Construct pseudo edgeLoads mapping based on active C++ routers
-                let hwEdgeLoads = {{}};
-                let topoStr = 'mesh'; // Assume first available topology
-                if (allOptions.topology.includes("mesh")) {{ topoStr = "mesh"; }}
-                else if (allOptions.topology.includes("torus")) {{ topoStr = "torus"; }}
-                else if (allOptions.topology.includes("ring")) {{ topoStr = "ring"; }}
-
-                let dim = 4;
-                if (topoStr === 'ring') dim = 8;
-                if (document.getElementById('topoSelect').options.length > 0) {{
-                    dim = parseInt(document.getElementById('topoSelect').options[0].text.match(/\\d+/)[0] || dim);
-                }}
-
-                if (targetData && targetData.stats) {{
-                    for (let r of targetData.stats) {{
-                        let u = r.id;
-                        for (let port of r.ports) {{
-                            // Extract hardware uRate or average buffer depth
-                            // Use uRate for visualization. (Alternatively we can plot avg_buffer_depth)
-                            let load = port.uRate;
-                            if (load > 0) {{
-                                // Maps port id to generic node id logically (Assuming 1=N, 2=E, 3=S, 4=W in typical 2D Mesh/Torus layout)
-                                // We skip LOCAL (0) because heatmaps draw physical inter-router wires
-                                let v = -1;
-                                if (topoStr === 'ring') {{
-                                    if (port.port_id === 1) v = (u + 1) % dim;
-                                    if (port.port_id === 2) v = (u - 1 + dim) % dim;
-                                }} else {{
-                                    let x = u % dim;
-                                    let y = Math.floor(u / dim);
-                                    if (port.port_id === 1) v = ((y - 1 + dim) % dim) * dim + x; // North
-                                    if (port.port_id === 2) v = y * dim + ((x + 1) % dim); // East
-                                    if (port.port_id === 3) v = ((y + 1) % dim) * dim + x; // South
-                                    if (port.port_id === 4) v = y * dim + ((x - 1 + dim) % dim); // West
-                                }}
-
-                                if (v !== -1) {{
-                                    hwEdgeLoads[`${{u}}->${{v}}`] = load;
-                                }}
-                            }}
-                        }}
-                    }}
-                }}
-                drawHeatmap(topoStr, dim, hwEdgeLoads, `硬體利用率 uRate (Hardware Channel Utilization) at Rate=${{rate}}`);
+                drawHeatmap(topo, dim, targetData ? targetData.theory_edge_loads : {{}});
             }}
         }}
 
@@ -791,7 +767,160 @@ def generate_interactive_html():
             return `hsla(${{hue}}, 100%, 50%, 0.8)`;
         }}
 
-        function drawHeatmap(topo, dim, edgeLoads, titleStr = "") {{
+        let animId = null;
+        let particles = [];
+        let globalMaxLoad = 0;
+
+        function toggleAnimation() {{
+            if (!document.getElementById('toggleAnim').checked) {{
+                if (animId) cancelAnimationFrame(animId);
+                animId = null;
+                particles = [];
+                // Redraw static
+                if(currentMode === 'C') updateChart();
+            }} else {{
+                if(currentMode === 'C' && heatmapEdges.length > 0) {{
+                    animateHeatmap();
+                }}
+            }}
+        }}
+
+        function animateHeatmap() {{
+            const canvas = document.getElementById('heatmapCanvas');
+            const ctx = canvas.getContext('2d');
+
+            // Randomly spawn particles based on edge load
+            heatmapEdges.forEach(edge => {{
+                // Probability of spawning proportional to its load relative to max
+                const spawnProb = (edge.load / globalMaxLoad) * 0.1; // adjust scalar as needed
+                if (Math.random() < spawnProb) {{
+                    particles.push({{
+                        edge: edge,
+                        progress: 0,
+                        speed: 0.01 + (Math.random() * 0.02)
+                    }});
+                }}
+            }});
+
+            // Update particles
+            for (let i = particles.length - 1; i >= 0; i--) {{
+                particles[i].progress += particles[i].speed;
+                if (particles[i].progress >= 1) {{
+                    particles.splice(i, 1);
+                }}
+            }}
+
+            // Redraw base heatmap
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            renderHeatmapBase(ctx);
+
+            // Draw particles
+            ctx.fillStyle = 'yellow';
+            particles.forEach(p => {{
+                let x, y;
+                if (p.edge.isWrapAround) {{
+                    // Wrap-around paths are split into two segments: start->mid1 and mid2->end
+                    if (p.progress < 0.5) {{
+                        let subProgress = p.progress * 2;
+                        x = p.edge.x1 + (p.edge.mid1.x - p.edge.x1) * subProgress;
+                        y = p.edge.y1 + (p.edge.mid1.y - p.edge.y1) * subProgress;
+                    }} else {{
+                        let subProgress = (p.progress - 0.5) * 2;
+                        x = p.edge.mid2.x + (p.edge.x2 - p.edge.mid2.x) * subProgress;
+                        y = p.edge.mid2.y + (p.edge.y2 - p.edge.mid2.y) * subProgress;
+                    }}
+                }} else {{
+                    x = p.edge.x1 + (p.edge.x2 - p.edge.x1) * p.progress;
+                    y = p.edge.y1 + (p.edge.y2 - p.edge.y1) * p.progress;
+                }}
+
+                ctx.beginPath();
+                ctx.arc(x, y, 4, 0, 2 * Math.PI);
+                ctx.fill();
+            }});
+
+            if (document.getElementById('toggleAnim').checked) {{
+                animId = requestAnimationFrame(animateHeatmap);
+            }}
+        }}
+
+        function renderHeatmapBase(ctx) {{
+            // Draw edges
+            ctx.lineWidth = 4;
+            for (let edge of heatmapEdges) {{
+                ctx.beginPath();
+
+                // For Torus wrap-around, draw curved or broken lines if distance is too large
+                if (edge.isWrapAround) {{
+                    ctx.strokeStyle = edge.color;
+                    ctx.setLineDash([5, 5]); // dashed line for wrap-around
+
+                    ctx.moveTo(edge.x1, edge.y1);
+                    ctx.lineTo(edge.mid1.x, edge.mid1.y);
+
+                    // Draw arrowhead for outgoing line
+                    let dxOut = edge.mid1.x - edge.x1;
+                    let dyOut = edge.mid1.y - edge.y1;
+                    let angleOut = Math.atan2(dyOut, dxOut);
+                    const headlen = 10;
+                    ctx.moveTo(edge.mid1.x, edge.mid1.y);
+                    ctx.lineTo(edge.mid1.x - headlen * Math.cos(angleOut - Math.PI / 6), edge.mid1.y - headlen * Math.sin(angleOut - Math.PI / 6));
+                    ctx.moveTo(edge.mid1.x, edge.mid1.y);
+                    ctx.lineTo(edge.mid1.x - headlen * Math.cos(angleOut + Math.PI / 6), edge.mid1.y - headlen * Math.sin(angleOut + Math.PI / 6));
+
+                    ctx.moveTo(edge.mid2.x, edge.mid2.y);
+                    ctx.lineTo(edge.x2, edge.y2);
+
+                    // Draw arrowhead for incoming line (pointing towards node V)
+                    let dxIn = edge.x2 - edge.mid2.x;
+                    let dyIn = edge.y2 - edge.mid2.y;
+                    let angleIn = Math.atan2(dyIn, dxIn);
+
+                    const offsetTargetX = edge.x2 - 12 * Math.cos(angleIn);
+                    const offsetTargetY = edge.y2 - 12 * Math.sin(angleIn);
+
+                    ctx.moveTo(offsetTargetX, offsetTargetY);
+                    ctx.lineTo(offsetTargetX - headlen * Math.cos(angleIn - Math.PI / 6), offsetTargetY - headlen * Math.sin(angleIn - Math.PI / 6));
+                    ctx.moveTo(offsetTargetX, offsetTargetY);
+                    ctx.lineTo(offsetTargetX - headlen * Math.cos(angleIn + Math.PI / 6), offsetTargetY - headlen * Math.sin(angleIn + Math.PI / 6));
+
+                }} else {{
+                    ctx.moveTo(edge.x1, edge.y1);
+                    ctx.strokeStyle = edge.color;
+                    ctx.setLineDash([]);
+                    ctx.lineTo(edge.x2, edge.y2);
+
+                    // Draw arrow head at the end
+                    const dx = edge.x2 - edge.x1;
+                    const dy = edge.y2 - edge.y1;
+                    const angle = Math.atan2(dy, dx);
+                    const headlen = 10;
+
+                    const offsetTargetX = edge.x2 - 12 * Math.cos(angle);
+                    const offsetTargetY = edge.y2 - 12 * Math.sin(angle);
+
+                    ctx.moveTo(offsetTargetX, offsetTargetY);
+                    ctx.lineTo(offsetTargetX - headlen * Math.cos(angle - Math.PI / 6), offsetTargetY - headlen * Math.sin(angle - Math.PI / 6));
+                    ctx.moveTo(offsetTargetX, offsetTargetY);
+                    ctx.lineTo(offsetTargetX - headlen * Math.cos(angle + Math.PI / 6), offsetTargetY - headlen * Math.sin(angle + Math.PI / 6));
+                }}
+                ctx.stroke();
+            }}
+            ctx.setLineDash([]); // reset
+
+            // Draw nodes
+            for (let node of heatmapNodes) {{
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, 8, 0, 2 * Math.PI);
+                ctx.fillStyle = '#333';
+                ctx.fill();
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }}
+        }}
+
+        function drawHeatmap(topo, dim, edgeLoads) {{
             const canvas = document.getElementById('heatmapCanvas');
             const container = document.getElementById('heatmapContainer');
             canvas.width = container.clientWidth;
@@ -801,6 +930,11 @@ def generate_interactive_html():
 
             heatmapNodes = [];
             heatmapEdges = [];
+            particles = [];
+            if (animId) {
+                cancelAnimationFrame(animId);
+                animId = null;
+            }
 
             if (!edgeLoads || Object.keys(edgeLoads).length === 0) {{
                 ctx.fillStyle = 'black';
@@ -809,14 +943,11 @@ def generate_interactive_html():
                 return;
             }}
 
-            ctx.fillStyle = 'black';
-            ctx.font = '16px Arial';
-            ctx.fillText(titleStr, 20, 30);
-
             let maxLoad = 0;
             for (let key in edgeLoads) {{
                 if (edgeLoads[key] > maxLoad) maxLoad = edgeLoads[key];
             }}
+            globalMaxLoad = maxLoad;
 
             const padding = 50;
             const drawWidth = canvas.width - padding * 2;
@@ -899,103 +1030,33 @@ def generate_interactive_html():
                 }}
             }}
 
-            // Draw edges
-            ctx.lineWidth = 4;
+            // Pre-calculate wrap-around midpoints for the animation
             for (let edge of heatmapEdges) {{
-                ctx.beginPath();
-
-                // For Torus wrap-around, draw curved or broken lines if distance is too large
                 if (edge.isWrapAround) {{
-                    ctx.strokeStyle = edge.color;
-                    ctx.setLineDash([5, 5]); // dashed line for wrap-around
-
-                    // Instead of Bezier crossing the center, draw straight lines going outwards
                     let midX1 = edge.x1;
                     let midY1 = edge.y1;
                     let midX2 = edge.x2;
                     let midY2 = edge.y2;
-
-                    const extend = 80; // extend outwards more visibly
+                    const extend = 80;
 
                     if (Math.abs(edge.x1 - edge.x2) > drawWidth * 0.8) {{
-                        // Horizontal wrap-around
                         midX1 = edge.x1 > edge.x2 ? edge.x1 + extend : edge.x1 - extend;
                         midX2 = edge.x2 > edge.x1 ? edge.x2 + extend : edge.x2 - extend;
                     }}
                     if (Math.abs(edge.y1 - edge.y2) > drawHeight * 0.8) {{
-                        // Vertical wrap-around
                         midY1 = edge.y1 > edge.y2 ? edge.y1 + extend : edge.y1 - extend;
                         midY2 = edge.y2 > edge.y1 ? edge.y2 + extend : edge.y2 - extend;
                     }}
-
-                    ctx.moveTo(edge.x1, edge.y1);
-                    ctx.lineTo(midX1, midY1);
-
-                    // Draw arrowhead for outgoing line
-                    let dxOut = midX1 - edge.x1;
-                    let dyOut = midY1 - edge.y1;
-                    let angleOut = Math.atan2(dyOut, dxOut);
-                    const headlen = 10;
-                    ctx.moveTo(midX1, midY1);
-                    ctx.lineTo(midX1 - headlen * Math.cos(angleOut - Math.PI / 6), midY1 - headlen * Math.sin(angleOut - Math.PI / 6));
-                    ctx.moveTo(midX1, midY1);
-                    ctx.lineTo(midX1 - headlen * Math.cos(angleOut + Math.PI / 6), midY1 - headlen * Math.sin(angleOut + Math.PI / 6));
-
-                    ctx.moveTo(midX2, midY2);
-                    ctx.lineTo(edge.x2, edge.y2);
-
-                    // Draw arrowhead for incoming line (pointing towards node V)
-                    let dxIn = edge.x2 - midX2;
-                    let dyIn = edge.y2 - midY2;
-                    let angleIn = Math.atan2(dyIn, dxIn);
-
-                    const offsetTargetX = edge.x2 - 12 * Math.cos(angleIn);
-                    const offsetTargetY = edge.y2 - 12 * Math.sin(angleIn);
-
-                    ctx.moveTo(offsetTargetX, offsetTargetY);
-                    ctx.lineTo(offsetTargetX - headlen * Math.cos(angleIn - Math.PI / 6), offsetTargetY - headlen * Math.sin(angleIn - Math.PI / 6));
-                    ctx.moveTo(offsetTargetX, offsetTargetY);
-                    ctx.lineTo(offsetTargetX - headlen * Math.cos(angleIn + Math.PI / 6), offsetTargetY - headlen * Math.sin(angleIn + Math.PI / 6));
-
-                    // Save midpoints for hover detection
                     edge.mid1 = {{x: midX1, y: midY1}};
                     edge.mid2 = {{x: midX2, y: midY2}};
-
-                }} else {{
-                    ctx.moveTo(edge.x1, edge.y1);
-                    ctx.strokeStyle = edge.color;
-                    ctx.setLineDash([]);
-                    ctx.lineTo(edge.x2, edge.y2);
-
-                    // Draw arrow head at the end
-                    const dx = edge.x2 - edge.x1;
-                    const dy = edge.y2 - edge.y1;
-                    const angle = Math.atan2(dy, dx);
-                    const headlen = 10;
-
-                    // Position arrow slightly before the actual node center so it doesn't overlap the circle
-                    const offsetTargetX = edge.x2 - 12 * Math.cos(angle);
-                    const offsetTargetY = edge.y2 - 12 * Math.sin(angle);
-
-                    ctx.moveTo(offsetTargetX, offsetTargetY);
-                    ctx.lineTo(offsetTargetX - headlen * Math.cos(angle - Math.PI / 6), offsetTargetY - headlen * Math.sin(angle - Math.PI / 6));
-                    ctx.moveTo(offsetTargetX, offsetTargetY);
-                    ctx.lineTo(offsetTargetX - headlen * Math.cos(angle + Math.PI / 6), offsetTargetY - headlen * Math.sin(angle + Math.PI / 6));
                 }}
-
-                ctx.stroke();
             }}
-            ctx.setLineDash([]); // reset
 
-            // Draw nodes
-            for (let node of nodes) {{
-                ctx.beginPath();
-                ctx.arc(node.x, node.y, 8, 0, 2 * Math.PI);
-                ctx.fillStyle = '#333';
-                ctx.fill();
-                ctx.strokeStyle = 'white';
-                ctx.lineWidth = 2;
-                ctx.stroke();
+            // Start animation or just draw base
+            if (document.getElementById('toggleAnim').checked) {{
+                if (!animId) animateHeatmap();
+            }} else {{
+                renderHeatmapBase(ctx);
             }}
         }}
 
@@ -1083,6 +1144,10 @@ def generate_interactive_html():
             populateSelect('bSelect', allOptions.buffer_size, true);
             populateSelect('vSelect', allOptions.vcs, true);
 
+            populateSelect('pSelectB', allOptions.packet_size, true);
+            populateSelect('bSelectB', allOptions.buffer_size, true);
+            populateSelect('vSelectB', allOptions.vcs, true);
+
             populateSelect('topoSelectC', allOptions.topology, false);
             populateSelect('dimSelectC', dims, false);
 
@@ -1093,6 +1158,8 @@ def generate_interactive_html():
                 document.getElementById('topoSelect').value = 'ring';
                 document.getElementById('topoSelectC').value = 'ring';
             }}
+            document.getElementById('pSelectB').value = '1';
+            document.getElementById('bSelectB').value = '8';
             updateChart();
         }};
     </script>
