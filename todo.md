@@ -11,7 +11,7 @@
 
 ### 階段 1.5：進階微觀分析與二階理論 (Advanced Micro-Metrics Modeling)
 *(目的：將尚未與 BookSim 進行深度交叉驗證的微觀指標納入 Python 理論模型)*
-*   [ ] **精確熱點空間分佈比對 (Spatial Correlation)**：解析 BookSim 的單一通道流量日誌，並與 Python 算出的 `theory_edge_loads` 進行 1:1 的相關性比對，確保熱點位置完全一致。
+*   [x] **精確熱點空間分佈比對 (Spatial Correlation)**：解析 BookSim 的單一通道流量日誌 (`print_activity=1`)，並與 Python 算出的 `theory_edge_loads` 進行 1:1 的相關性比對，確保熱點位置完全一致 (Correlation ~0.999)。
 *   [ ] **引入排隊理論 (Queueing Theory)**：在 Python 中加入 M/M/1 或 M/D/1 排隊模型，以推算最大延遲 (Max Latency) 與延遲變異數 (Variance)，藉此與 BookSim 的 QoS 數據比對。
 *   [ ] **非線性延遲曲線擬合 (Curve Fitting)**：使用非線性迴歸分析 BookSim 的延遲攀升曲線，驗證其是否符合排隊理論的 $L = Base + \frac{Queue}{1 - (Rate/Max\_Rate)}$ 數學模型。
 *   [ ] **緩衝區佔用率建模 (Buffer Occupancy Modeling)**：在 Python 建立馬可夫鏈 (Markov Chain) 模型，預估 Credit 回傳延遲對有限 Buffer 滿載率的影響，並與 BookSim 的 Buffer Stats 進行比對。
