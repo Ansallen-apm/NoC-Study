@@ -9,6 +9,10 @@ Router::Router(int _id, int num_ports, int buf_size, RoutingAlgorithm* algo)
     pending_pops.resize(num_ports, 0);
     neighbors.resize(num_ports, nullptr);
     neighbor_ingress_ports.resize(num_ports, -1);
+
+    port_active_cycles.resize(num_ports, 0);
+    port_buffer_depth_acc.resize(num_ports, 0);
+    port_max_buffer_depth.resize(num_ports, 0);
 }
 
 void Router::connect(int my_port, Router* neighbor, int neighbor_ingress_port) {
@@ -60,6 +64,8 @@ void Router::evaluate(int current_time) {
             if (success) {
                 // 標記要移除，但不立刻 pop() 以避免破壞同週期的 Buffer size 同步性
                 pending_pops[i] = 1;
+                // 有成功傳送資料，紀錄這個輸出埠為 Active (這裡簡化紀錄為來源 Input Port 的活動狀態)
+                port_active_cycles[out_port]++;
             }
         }
     }
@@ -77,6 +83,13 @@ void Router::update() {
         while (!next_input_buffers[i].empty()) {
             input_buffers[i].push(next_input_buffers[i].front());
             next_input_buffers[i].pop();
+        }
+
+        // 3. 收集 Buffer Depth 統計數據
+        int current_depth = input_buffers[i].size();
+        port_buffer_depth_acc[i] += current_depth;
+        if (current_depth > port_max_buffer_depth[i]) {
+            port_max_buffer_depth[i] = current_depth;
         }
     }
 }
