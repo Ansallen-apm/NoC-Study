@@ -43,6 +43,12 @@
     *   [ ] 實作 `NoximConverter` (`dse_tools/converters/other_converters.py`)。
     *   [ ] 實作 `PronocConverter` (`dse_tools/converters/other_converters.py`)。
     *   [ ] 實作 `ConstellationConverter` (`dse_tools/converters/other_converters.py`)。
+*   [x] **整合 Ratatoskr 模擬器 (3D/PPA)**：
+    *   [x] **(1) Submodule 初始化**：將 `jmjos/ratatoskr` 新增至 `third_party/ratatoskr`。
+    *   [x] **(2) 編譯環境建置**：確認依賴套件並撰寫腳本編譯 Ratatoskr。
+    *   [x] **(3) Converter 開發**：撰寫 `dse_tools/converters/ratatoskr_converter.py`，負責將 `NoC_config.yaml` 轉譯為 Ratatoskr 專用的 XML 或 CLI 引數。
+    *   [x] **(4) Runner 開發**：撰寫 `dse_tools/runners/run_ratatoskr_dse.py`，負責啟動模擬、解析效能數據 (Avg Latency, Throughput 等) 並匯出為 JSON。
+    *   [x] **(5) 交叉比對驗證 (Review Action)**：執行一個微型參數掃描，將 Ratatoskr 的模擬結果與 Python 理論/BookSim 的數據一起放到 DSE 報告中進行 review 比對。
 *   [x] **開發自動化執行器 (Runners)**：建立封裝腳本，自動讀取配置並執行 BookSim。
 *   [x] **擴充驗證資料集 (Comprehensive Sweep)**：掃描涵蓋完整注入率 (Injection Rates) 陣列，以完整記錄 Latency 曲線資料。
 *   [x] **開發互動式 DSE 報告產生器 (Interactive HTML Report)**：利用 Chart.js 產生可切換拓撲與節點數、並能動態呈現效能趨勢與飽和點的互動式網頁報告。

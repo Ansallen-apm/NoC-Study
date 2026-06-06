@@ -10,3 +10,6 @@
 [submodule "third_party/constellation"]
 	path = third_party/constellation
 	url = https://github.com/ucb-bar/constellation.git
+[submodule "third_party/ratatoskr"]
+	path = third_party/ratatoskr
+	url = https://github.com/jmjos/ratatoskr.git
