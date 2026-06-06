@@ -64,13 +64,13 @@
 
 ## 視覺化進階 (Future Visualizations)
 *   [x] **動態互動式拓撲熱點圖 (Interactive JS Heatmaps)**：將目前產生的靜態 Topology Heatmap (.png) 升級為純 JavaScript (HTML5 Canvas) 實作的動態視窗，支援滑鼠懸停顯示具體 Edge Load 數值。
-*   [ ] **Mode A (效能動態曲線) UI 改善**：加入「保存曲線/鎖定對比」功能，將舊曲線半透明化，並重構下拉選單分類。
-*   [ ] **Mode B (架構交叉比對) UI 改善**：加入過濾器 (Filters) 讓使用者自由篩選資料點，並加入 Tooltip 顯示每個點的具體架構配置。
-*   [ ] **Mode C (通道負載分佈) 擴充**：結合路由演算法的流量動畫或實際 Buffer Occupancy 呈現。
-*   [ ] **實作 Mode D (架構成本與效能權衡 / Pareto Plot)**：
+*   [x] **Mode A (效能動態曲線) UI 改善**：加入「保存曲線/鎖定對比」功能，將舊曲線半透明化，並重構下拉選單分類。
+*   [x] **Mode B (架構交叉比對) UI 改善**：加入過濾器 (Filters) 讓使用者自由篩選資料點，並加入 Tooltip 顯示每個點的具體架構配置。
+*   [x] **Mode C (通道負載分佈) 擴充**：結合路由演算法的流量動畫或實際 Buffer Occupancy 呈現。
+*   [x] **實作 Mode D (架構成本與效能權衡 / Pareto Plot)**：
     *   計算綜合成本（Nodes、Channels、Buffers），並支援使用者動態調整各項目的權重 (Weights)。
     *   X 軸顯示相對於最小 Base 的正規化成本，Y 軸顯示吞吐量或飽和點，繪製柏拉圖前沿 (Pareto Frontier)。
-*   [ ] **實作 Mode E (極限壓力測試雷達圖 / Radar Chart)**：
+*   [x] **實作 Mode E (極限壓力測試雷達圖 / Radar Chart)**：
     *   顯示五個核心指標（Hops, Max Load, Zero-Load Latency, Saturation Rate, Throughput），並標示「越高越好」或「越低越好」。
     *   支援同時選擇 3 個不同拓撲架構進行雷達圖疊加比對。
 
