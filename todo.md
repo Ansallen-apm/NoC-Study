@@ -11,7 +11,7 @@
 
 ### 階段 1.5：進階微觀分析與二階理論 (Advanced Micro-Metrics Modeling)
 *(目的：將尚未與 BookSim 進行深度交叉驗證的微觀指標納入 Python 理論模型)*
-*   [ ] **精確熱點空間分佈比對 (Spatial Correlation)**：解析 BookSim 的單一通道流量日誌，並與 Python 算出的 `theory_edge_loads` 進行 1:1 的相關性比對，確保熱點位置完全一致。
+*   [x] **精確熱點空間分佈比對 (Spatial Correlation)**：解析 BookSim 的單一通道流量日誌 (`print_activity=1`)，並與 Python 算出的 `theory_edge_loads` 進行 1:1 的相關性比對，確保熱點位置完全一致 (Correlation ~0.999)。
 *   [ ] **引入排隊理論 (Queueing Theory)**：在 Python 中加入 M/M/1 或 M/D/1 排隊模型，以推算最大延遲 (Max Latency) 與延遲變異數 (Variance)，藉此與 BookSim 的 QoS 數據比對。
 *   [ ] **非線性延遲曲線擬合 (Curve Fitting)**：使用非線性迴歸分析 BookSim 的延遲攀升曲線，驗證其是否符合排隊理論的 $L = Base + \frac{Queue}{1 - (Rate/Max\_Rate)}$ 數學模型。
 *   [ ] **緩衝區佔用率建模 (Buffer Occupancy Modeling)**：在 Python 建立馬可夫鏈 (Markov Chain) 模型，預估 Credit 回傳延遲對有限 Buffer 滿載率的影響，並與 BookSim 的 Buffer Stats 進行比對。
@@ -47,6 +47,12 @@
     *   [ ] 實作 `NoximConverter` (`dse_tools/converters/other_converters.py`)。
     *   [ ] 實作 `PronocConverter` (`dse_tools/converters/other_converters.py`)。
     *   [ ] 實作 `ConstellationConverter` (`dse_tools/converters/other_converters.py`)。
+*   [x] **整合 Ratatoskr 模擬器 (3D/PPA)**：
+    *   [x] **(1) Submodule 初始化**：將 `jmjos/ratatoskr` 新增至 `third_party/ratatoskr`。
+    *   [x] **(2) 編譯環境建置**：確認依賴套件並撰寫腳本編譯 Ratatoskr。
+    *   [x] **(3) Converter 開發**：撰寫 `dse_tools/converters/ratatoskr_converter.py`，負責將 `NoC_config.yaml` 轉譯為 Ratatoskr 專用的 XML 或 CLI 引數。
+    *   [x] **(4) Runner 開發**：撰寫 `dse_tools/runners/run_ratatoskr_dse.py`，負責啟動模擬、解析效能數據 (Avg Latency, Throughput 等) 並匯出為 JSON。
+    *   [x] **(5) 交叉比對驗證 (Review Action)**：執行一個微型參數掃描，將 Ratatoskr 的模擬結果與 Python 理論/BookSim 的數據一起放到 DSE 報告中進行 review 比對。
 *   [x] **開發自動化執行器 (Runners)**：建立封裝腳本，自動讀取配置並執行 BookSim。
 *   [x] **擴充驗證資料集 (Comprehensive Sweep)**：掃描涵蓋完整注入率 (Injection Rates) 陣列，以完整記錄 Latency 曲線資料。
 *   [x] **開發互動式 DSE 報告產生器 (Interactive HTML Report)**：利用 Chart.js 產生可切換拓撲與節點數、並能動態呈現效能趨勢與飽和點的互動式網頁報告。
