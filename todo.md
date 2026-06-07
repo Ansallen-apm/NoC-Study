@@ -26,14 +26,10 @@
 *   [x] **修正 C 模型同步與架構問題**：
     *   [x] 解決 `step()` 中同週期寫入鄰居緩衝區的同步與競爭 (Race Condition) 問題。
     *   [x] 實作 Pipeline 階段或 Double Buffering 以正確模擬硬體行為。
-*   [ ] **實作硬體流控與避免死結 (Flow Control & Deadlock Avoidance)**：
-    *   [x] 在 `main.cpp` 中加入死結偵測 (Deadlock Detection) 與日誌追蹤，以識別網路飽和。
-    *   [ ] 實作虛擬通道 (Virtual Channels) 與 Switch Allocator，以解決 Ring 拓撲在最短路徑下的死結問題。
-    *   [ ] 實作 Credit-based Flow Control 機制，精確模擬硬體反壓 (Backpressure) 行為。
-*   [x] **新增統計數據追蹤 (Statistics Collection)**：
+*   [ ] **新增統計數據追蹤 (Statistics Collection)**：
     *   [x] 在 C++ 模型中實作追蹤每封包的延遲 (Latency)。
     *   [x] 計算整體的吞吐量 (Throughput)。
-    *   [x] 監控與記錄每個連結的使用率 (Link Load / uRate) 與 Buffer Depth，以利與 Python 理論分析進行交叉驗證。
+    *   [ ] 監控與記錄每個連結的使用率 (Link Load)，以利與 Python 理論分析進行交叉驗證。
 *   [x] **開發 C++ 自動化掃描與驗證管線 (C++ Benchmarking)**：
     *   [x] 開發 `run_c_model_dse.py` 執行與 BookSim 相同的注入率參數掃描。
     *   [x] 開發 `generate_c_model_report.py` 產生 C++ 理論與 BookSim 的交叉比較分析報告 (`c_model_report.md`)。
@@ -74,13 +70,13 @@
 
 ## 視覺化進階 (Future Visualizations)
 *   [x] **動態互動式拓撲熱點圖 (Interactive JS Heatmaps)**：將目前產生的靜態 Topology Heatmap (.png) 升級為純 JavaScript (HTML5 Canvas) 實作的動態視窗，支援滑鼠懸停顯示具體 Edge Load 數值。
-*   [ ] **Mode A (效能動態曲線) UI 改善**：加入「保存曲線/鎖定對比」功能，將舊曲線半透明化，並重構下拉選單分類。
-*   [ ] **Mode B (架構交叉比對) UI 改善**：加入過濾器 (Filters) 讓使用者自由篩選資料點，並加入 Tooltip 顯示每個點的具體架構配置。
-*   [ ] **Mode C (通道負載分佈) 擴充**：結合路由演算法的流量動畫或實際 Buffer Occupancy 呈現。
-*   [ ] **實作 Mode D (架構成本與效能權衡 / Pareto Plot)**：
+*   [x] **Mode A (效能動態曲線) UI 改善**：加入「保存曲線/鎖定對比」功能，將舊曲線半透明化，並重構下拉選單分類。
+*   [x] **Mode B (架構交叉比對) UI 改善**：加入過濾器 (Filters) 讓使用者自由篩選資料點，並加入 Tooltip 顯示每個點的具體架構配置。
+*   [x] **Mode C (通道負載分佈) 擴充**：結合路由演算法的流量動畫或實際 Buffer Occupancy 呈現。
+*   [x] **實作 Mode D (架構成本與效能權衡 / Pareto Plot)**：
     *   計算綜合成本（Nodes、Channels、Buffers），並支援使用者動態調整各項目的權重 (Weights)。
     *   X 軸顯示相對於最小 Base 的正規化成本，Y 軸顯示吞吐量或飽和點，繪製柏拉圖前沿 (Pareto Frontier)。
-*   [ ] **實作 Mode E (極限壓力測試雷達圖 / Radar Chart)**：
+*   [x] **實作 Mode E (極限壓力測試雷達圖 / Radar Chart)**：
     *   顯示五個核心指標（Hops, Max Load, Zero-Load Latency, Saturation Rate, Throughput），並標示「越高越好」或「越低越好」。
     *   支援同時選擇 3 個不同拓撲架構進行雷達圖疊加比對。
 

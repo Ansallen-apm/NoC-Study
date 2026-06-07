@@ -7,10 +7,6 @@ architecture:
   buffer_size: 8        # 每個虛擬通道(VC)/輸入埠的緩衝區深度 (flits)
   num_vcs: 1            # 虛擬通道(Virtual Channels)數量
 
-  # 硬體特性與數位評估參數 (Digital Architecture/RTL Evaluation Metrics)
-  frequency_mhz: 1000   # 運作時脈 (MHz)
-  flit_width_bits: 128  # 單一通道匯流排寬度 (bits)
-
 # 通用流量與模擬設定 (Universal Traffic and Simulation Settings)
 simulation:
   traffic_pattern: uniform # 流量模式 (uniform, transpose, bitcomp 等)

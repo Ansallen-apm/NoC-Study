@@ -113,6 +113,11 @@ void Router::evaluate(int current_time) {
                     }
                 }
             }
+
+            if (success) {
+                // 標記要移除，但不立刻 pop() 以避免破壞同週期的 Buffer size 同步性
+                pending_pops[i] = 1;
+            }
         }
     }
 }

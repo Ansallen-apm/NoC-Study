@@ -5,15 +5,15 @@ import networkx as nx
 
 def calculate_channel_count(G):
     """
-    計算網路中的實體連線數量 (即圖形的雙向邊總數)。
+    計算網路中的實體連線數量 (即圖形的無向邊總數)。
 
     參數:
         G (nx.Graph): 代表網路拓撲的 NetworkX 圖形物件。
 
     回傳:
-        int: 實體連線數 (Channels)。每個無向邊對應兩個單向實體連線。
+        int: 實體連線數 (Channels)。
     """
-    return G.number_of_edges() * 2
+    return G.number_of_edges()
 
 import math
 
@@ -166,11 +166,9 @@ def analyze_channel_load(G, routing_algorithm='xy', traffic_pattern='uniform'):
     回傳:
         dict: 包含 'max_load' (最大負載期望量) 與 'hot_spots' (熱點邊的列表)。
     """
-    # 建立一個字典來計算每條有向邊 (單向實體通道) 期望經過的次數
-    edge_loads = {}
-    for u, v in G.edges():
-        edge_loads[(u, v)] = 0.0
-        edge_loads[(v, u)] = 0.0
+    # 建立一個字典來計算每條邊期望經過的次數
+    # 初始化所有邊的計數為 0.0
+    edge_loads = {edge: 0.0 for edge in G.edges()}
 
     width = G.graph.get('width', 0)
     height = G.graph.get('height', 0)
@@ -180,145 +178,68 @@ def analyze_channel_load(G, routing_algorithm='xy', traffic_pattern='uniform'):
         dests = get_traffic_destinations(src, num_nodes, traffic_pattern, width, height)
         for dst, prob in dests:
             if src != dst:
-                if routing_algorithm == 'xy' and G.graph.get('type') in ['mesh', 'torus', 'ring']:
+                if routing_algorithm == 'xy' and G.graph.get('type') in ['mesh', 'torus']:
+                    # 實作 XY Routing 計算路徑
+                    path = []
+                    curr = src
+                    src_x, src_y = src % width, src // width
+                    dst_x, dst_y = dst % width, dst // width
+                    curr_x, curr_y = src_x, src_y
+
                     topo_type = G.graph.get('type')
                     height = G.graph.get('height', 1)
 
-                    # 實作 XY Routing 計算路徑 (可能因平手有兩條路徑)
-                    paths_and_probs = []
-
-                    # 收集所有的 X 和 Y 拆分邏輯
-                    src_x, src_y = src % width, src // width
-                    dst_x, dst_y = dst % width, dst // width
-
-                    # X 方向
-                    x_paths = []
-                    dist_x = dst_x - src_x
-                    if (topo_type == 'torus' or topo_type == 'ring') and width > 0:
-                        # 處理跨越邊界最短距離
-                        if dist_x > width / 2.0:
-                            dist_x -= width
-                        elif dist_x < -width / 2.0:
-                            dist_x += width
-
-                        if abs(dist_x) == width / 2.0:
-                            # 剛好一半距離，兵分兩路
-                            path_pos = []
-                            curr_x = src_x
-                            while curr_x != dst_x:
-                                next_x = (curr_x + 1) % width
-                                path_pos.append(next_x)
-                                curr_x = next_x
-
-                            path_neg = []
-                            curr_x = src_x
-                            while curr_x != dst_x:
-                                next_x = (curr_x - 1) % width
-                                path_neg.append(next_x)
-                                curr_x = next_x
-                            x_paths.append((path_pos, 0.5))
-                            x_paths.append((path_neg, 0.5))
+                    # 先走 X 方向
+                    while curr_x != dst_x:
+                        dist_x = dst_x - curr_x
+                        if topo_type == 'torus' or topo_type == 'ring':
+                            # 判斷是否跨越邊界比較近
+                            if abs(dist_x) > width / 2.0:
+                                step = 1 if dist_x < 0 else -1
+                            else:
+                                step = 1 if dist_x > 0 else -1
                         else:
                             step = 1 if dist_x > 0 else -1
-                            path = []
-                            curr_x = src_x
-                            while curr_x != dst_x:
-                                next_x = (curr_x + step) % width
-                                path.append(next_x)
-                                curr_x = next_x
-                            x_paths.append((path, 1.0))
-                    else:
-                        step = 1 if dist_x > 0 else -1
-                        path = []
-                        curr_x = src_x
-                        while curr_x != dst_x:
-                            next_x = curr_x + step
-                            path.append(next_x)
-                            curr_x = next_x
-                        x_paths.append((path, 1.0))
 
-                    # Y 方向
-                    y_paths = []
-                    dist_y = dst_y - src_y
-                    if topo_type == 'torus' and height > 0:
-                        if dist_y > height / 2.0:
-                            dist_y -= height
-                        elif dist_y < -height / 2.0:
-                            dist_y += height
+                        next_x = (curr_x + step) % width
+                        next_node = curr_y * width + next_x
+                        path.append((curr, next_node))
+                        curr_x = next_x
+                        curr = next_node
 
-                        if abs(dist_y) == height / 2.0:
-                            path_pos = []
-                            curr_y = src_y
-                            while curr_y != dst_y:
-                                next_y = (curr_y + 1) % height
-                                path_pos.append(next_y)
-                                curr_y = next_y
-
-                            path_neg = []
-                            curr_y = src_y
-                            while curr_y != dst_y:
-                                next_y = (curr_y - 1) % height
-                                path_neg.append(next_y)
-                                curr_y = next_y
-                            y_paths.append((path_pos, 0.5))
-                            y_paths.append((path_neg, 0.5))
+                    # 再走 Y 方向
+                    while curr_y != dst_y:
+                        dist_y = dst_y - curr_y
+                        if topo_type == 'torus':
+                            if abs(dist_y) > height / 2.0:
+                                step = 1 if dist_y < 0 else -1
+                            else:
+                                step = 1 if dist_y > 0 else -1
                         else:
                             step = 1 if dist_y > 0 else -1
-                            path = []
-                            curr_y = src_y
-                            while curr_y != dst_y:
-                                next_y = (curr_y + step) % height
-                                path.append(next_y)
-                                curr_y = next_y
-                            y_paths.append((path, 1.0))
-                    else:
-                        if src_y != dst_y:
-                            step = 1 if dist_y > 0 else -1
-                            path = []
-                            curr_y = src_y
-                            while curr_y != dst_y:
-                                next_y = curr_y + step
-                                path.append(next_y)
-                                curr_y = next_y
-                            y_paths.append((path, 1.0))
-                        else:
-                            y_paths.append(([], 1.0))
 
-                    # 組合 XY 路徑
-                    for x_path, x_prob in x_paths:
-                        for y_path, y_prob in y_paths:
-                            full_path = []
-                            curr_node = src
-                            curr_y_val = src_y
-
-                            # 走 X
-                            for nx in x_path:
-                                next_node = curr_y_val * width + nx
-                                full_path.append((curr_node, next_node))
-                                curr_node = next_node
-
-                            # 走 Y
-                            curr_x_val = dst_x
-                            for ny in y_path:
-                                next_node = ny * width + curr_x_val
-                                full_path.append((curr_node, next_node))
-                                curr_node = next_node
-
-                            paths_and_probs.append((full_path, x_prob * y_prob))
+                        next_y = (curr_y + step) % height
+                        next_node = next_y * width + curr_x
+                        path.append((curr, next_node))
+                        curr_y = next_y
+                        curr = next_node
 
                     # 將路徑上的每一條邊計數加上機率值 (期望負載)
-                    for full_path, p in paths_and_probs:
-                        for u, v in full_path:
-                            if (u, v) in edge_loads:
-                                edge_loads[(u, v)] += prob * p
-
+                    for u, v in path:
+                        # 找到圖形中對應的邊 (無向圖中 u,v 或 v,u)
+                        if (u, v) in edge_loads:
+                            edge_loads[(u, v)] += prob
+                        elif (v, u) in edge_loads:
+                            edge_loads[(v, u)] += prob
                 else:
-                    # 如果不是 XY 路由，使用 NetworkX 最短路徑近似 (單一路徑)
+                    # 如果不是 XY 路由，使用 NetworkX 最短路徑近似
                     path = nx.shortest_path(G, source=src, target=dst)
                     for i in range(len(path) - 1):
                         u, v = path[i], path[i+1]
                         if (u, v) in edge_loads:
                             edge_loads[(u, v)] += prob
+                        elif (v, u) in edge_loads:
+                            edge_loads[(v, u)] += prob
 
     # 找出最大負載
     if not edge_loads:

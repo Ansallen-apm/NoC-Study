@@ -50,14 +50,13 @@ def generate_report():
     md += f"- **Traffic Pattern**: Uniform Random\n\n"
 
     md += f"## Comparison: C++ Model vs BookSim vs Theory\n\n"
-    md += f"| Injection Rate | C++ Model Latency | C++ Model Throughput | Absolute Bandwidth (GB/s) | BookSim Latency |\n"
-    md += f"|---|---|---|---|---|\n"
+    md += f"| Injection Rate | C++ Model Latency | C++ Model Throughput | BookSim Latency |\n"
+    md += f"|---|---|---|---|\n"
 
     for c_entry in c_model_data:
         rate = c_entry['rate']
         c_lat = c_entry['latency']
         c_thr = c_entry['throughput']
-        c_bw = c_entry.get('bandwidth_gbps', 0.0)
 
         bs_lat = "N/A"
         if bs_data:
@@ -68,10 +67,7 @@ def generate_report():
 
         c_lat_str = f"{c_lat:.4f}" if c_lat != float('inf') else "Saturation"
 
-        md += f"| {rate:.3f} | {c_lat_str} | {c_thr:.4f} | {c_bw:.2f} | {bs_lat} |\n"
-
-    md += f"\n## Hardware Micro-Metrics (Digital/RTL Perspective)\n"
-    md += "The C++ functional model includes cycle-level monitors checking every single buffer and router port locally tracking its utilization rate (`uRate`), `avg_buffer_depth`, and `max_buffer_depth` to reveal bottlenecks and hardware implementation requirements.\n"
+        md += f"| {rate:.3f} | {c_lat_str} | {c_thr:.4f} | {bs_lat} |\n"
 
     md += f"\n## Analysis\n"
     md += f"1. **Zero-Load Latency**: The C++ model shows a significantly lower zero-load latency compared to BookSim. This is because the C++ prototype currently abstracts routing and arbitration into a single ideal cycle (`evaluate` + `update`), whereas BookSim accurately models pipeline stages (routing calculation, switch allocation, VC allocation, crossbar traversal).\n"
