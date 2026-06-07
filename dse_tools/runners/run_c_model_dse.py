@@ -76,7 +76,7 @@ def run_single_simulation(args):
 def main():
     print("啟動 NoC DSE 階段 2：C++ 功能模型掃描驗證...")
 
-    config_path = "config/NoC_config.yaml"
+    config_path = "dse_tools/config/NoC_config.yaml"
     with open(config_path, 'r', encoding='utf-8') as f:
         master_config = yaml.safe_load(f)
 
@@ -99,7 +99,7 @@ def main():
 
     injection_rates = [float(i) / 1000.0 for i in range(start, end + step, step)]
 
-    c_model_executable = "../noc_c_model/noc_sim"
+    c_model_executable = "noc_c_model/noc_sim"
     if not os.path.exists(c_model_executable):
         print(f"錯誤：找不到 C++ 執行檔於 {c_model_executable}，請先編譯。")
         return
