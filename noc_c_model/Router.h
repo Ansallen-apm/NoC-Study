@@ -27,9 +27,12 @@ public:
     // 追蹤在此週期結束時，需要從輸入緩衝區移除多少 Flit (避免執行順序依賴)
     std::vector<std::vector<int>> pending_pops;
 
-    // To store flits that have arrived at this destination (Local Ejection)
-    // 儲存已到達此目的地的 Flit (本地彈出)
-    std::vector<Flit> ejected_flits;
+    // Local ejection statistics to save memory instead of storing all ejected flits
+    // 本地彈出統計，節省儲存所有 Flit 的記憶體
+    int received_flits = 0;
+    int received_packets = 0;
+    long long total_latency = 0;
+    int max_latency = 0;
 
     // Neighbor pointers and their corresponding ingress ports
     // 相鄰路由器指標與其對應的入口埠
@@ -46,9 +49,20 @@ public:
     // Update buffers for next cycle (階段二：更新緩衝區狀態)
     void update();
 
+    // Credit-based Flow Control
+    // 記錄下游各輸出埠與虛擬通道的可用緩衝區空間 (Credits)
+    std::vector<std::vector<int>> downstream_credits;
+
+    // 還原上游 Credit 的輔助函數
+    void increment_credit(int ingress_port, int vc);
+
     // Switch Allocator State: Which input port gets priority next for each output port
     // 仲裁器狀態：針對每個輸出埠，追蹤下一個擁有優先權的輸入埠 (Round-Robin)
     std::vector<int> arbiter_priority;
+
+    // VC Allocator State: Which VC gets priority next for each output port and input port
+    // VC 仲裁狀態：針對每個 (輸出埠, 輸入埠) 組合，追蹤下一個優先的 VC (Round-Robin)
+    std::vector<std::vector<int>> vc_arbiter_priority;
 
     // Hardware Monitors (硬體監控器)
     std::vector<int> port_active_cycles;      // 記錄各通道傳輸資料的週期數 (用於計算 uRate)
