@@ -15,7 +15,16 @@ Router::Router(int _id, int num_ports, int num_vcs, int buf_size, RoutingAlgorit
     port_buffer_depth_acc.resize(num_ports, 0);
     port_max_buffer_depth.resize(num_ports, 0);
 
+    downstream_credits.resize(num_ports, std::vector<int>(num_vcs, buffer_size));
+
     arbiter_priority.resize(num_ports, 0);
+    vc_arbiter_priority.resize(num_ports, std::vector<int>(num_ports, 0));
+}
+
+void Router::increment_credit(int ingress_port, int vc) {
+    if (ingress_port >= 0 && ingress_port < num_ports && vc >= 0 && vc < num_vcs) {
+        downstream_credits[ingress_port][vc]++;
+    }
 }
 
 void Router::connect(int my_port, Router* neighbor, int neighbor_ingress_port) {
@@ -60,9 +69,9 @@ void Router::evaluate(int current_time) {
         for (int offset = 0; offset < num_ports && !port_allocated; ++offset) {
             int in_port = (arbiter_priority[out_port] + offset) % num_ports;
 
-            // Loop through VCs on this input port
-            // VC priority could also be round-robin, but for simplicity we take the first ready VC
-            for (int v = 0; v < num_vcs && !port_allocated; ++v) {
+            // Loop through VCs on this input port with Round-Robin priority
+            for (int v_offset = 0; v_offset < num_vcs && !port_allocated; ++v_offset) {
+                int v = (vc_arbiter_priority[out_port][in_port] + v_offset) % num_vcs;
                 if (!input_buffers[in_port][v].empty()) {
                     Flit f = input_buffers[in_port][v].front();
 
@@ -75,7 +84,15 @@ void Router::evaluate(int current_time) {
                         if (out_port == 0) {
                             // Eject (彈出 Flit, Port 0 is LOCAL)
                             f.ejection_time = current_time;
-                            ejected_flits.push_back(f);
+                            received_flits++;
+                            if (f.type == TAIL || f.type == HEAD_TAIL) {
+                                received_packets++;
+                                int lat = f.ejection_time - f.creation_time;
+                                total_latency += lat;
+                                if (lat > max_latency) {
+                                    max_latency = lat;
+                                }
+                            }
                             success = true;
                         } else {
                             // Forward (轉發 Flit)
@@ -93,7 +110,8 @@ void Router::evaluate(int current_time) {
                                 // 為求單純化並支援通用性，我們讓它保持目前 v。真正的 Dateline 實作需要配合路由演算法。
 
                                 // Check Flow Control (Credit based equivalent)
-                                if ((next_router->input_buffers[neighbor_ingress][target_vc].size() + next_router->next_input_buffers[neighbor_ingress][target_vc].size()) < (size_t)next_router->buffer_size) {
+                                if (downstream_credits[out_port][target_vc] > 0) {
+                                    downstream_credits[out_port][target_vc]--; // Consume credit
                                     f.vc_id = target_vc;
                                     next_router->next_input_buffers[neighbor_ingress][target_vc].push(f);
                                     success = true;
@@ -108,16 +126,13 @@ void Router::evaluate(int current_time) {
 
                             // Update round-robin priority for this output port
                             arbiter_priority[out_port] = (in_port + 1) % num_ports;
+                            vc_arbiter_priority[out_port][in_port] = (v + 1) % num_vcs;
                             port_allocated = true; // Move to the next output port
                         }
                     }
                 }
             }
 
-            if (success) {
-                // 標記要移除，但不立刻 pop() 以避免破壞同週期的 Buffer size 同步性
-                pending_pops[i] = 1;
-            }
         }
     }
 }
@@ -131,6 +146,14 @@ void Router::update() {
             // 1. 執行真正移除封包的操作
             if (pending_pops[i][v] > 0) {
                 input_buffers[i][v].pop();
+
+                // 返回 credit 給上游
+                // i 為此 Router 的輸入埠
+                Router* upstream_router = neighbors[i];
+                int upstream_out_port = neighbor_ingress_ports[i];
+                if (upstream_router && upstream_out_port != -1) {
+                    upstream_router->increment_credit(upstream_out_port, v);
+                }
             }
 
             // 2. 寫入新到達的封包

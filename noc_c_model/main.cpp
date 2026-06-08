@@ -3,6 +3,7 @@
 #include <vector>
 #include <list>
 #include <sstream>
+#include <memory>
 #include <yaml-cpp/yaml.h>
 #include "Router.h"
 #include "Config.h"
@@ -22,8 +23,14 @@ int main(int argc, char* argv[]) {
     Config global_config;
     std::string topo_type = "mesh";
     std::string routing_type = "xy";
+    constexpr int DEFAULT_MAX_CYCLES = 10000;
+    int max_cycles = DEFAULT_MAX_CYCLES;
+
     try {
         YAML::Node config = YAML::LoadFile(argv[1]);
+        if (config["simulation"] && config["simulation"]["max_cycles"]) {
+            max_cycles = config["simulation"]["max_cycles"].as<int>();
+        }
         if (config["architecture"]) {
             if (config["architecture"]["topology"]) topo_type = config["architecture"]["topology"].as<std::string>();
             if (config["architecture"]["routing"]) routing_type = config["architecture"]["routing"].as<std::string>();
@@ -36,10 +43,7 @@ int main(int argc, char* argv[]) {
             if (config["architecture"]["packet_size"]) global_config.packet_size_flits = config["architecture"]["packet_size"].as<int>();
 
             if (topo_type == "ring") {
-                global_config.num_nodes = global_config.mesh_width;
                 global_config.mesh_height = 1;
-            } else {
-                global_config.num_nodes = global_config.mesh_width * global_config.mesh_height;
             }
         }
     } catch (const YAML::Exception& e) {
@@ -49,31 +53,34 @@ int main(int argc, char* argv[]) {
     std::cout << "Configured " << topo_type << ": " << global_config.mesh_width << "x" << global_config.mesh_height << std::endl;
 
     // 1. Instantiating Interfaces (實例化抽象介面)
-    Topology* topology = nullptr;
-    RoutingAlgorithm* routing = nullptr;
+    std::unique_ptr<Topology> topology;
+    std::unique_ptr<RoutingAlgorithm> routing;
 
     if (topo_type == "mesh") {
-        topology = new MeshTopology(global_config.mesh_width, global_config.mesh_height);
+        topology.reset(new MeshTopology(global_config.mesh_width, global_config.mesh_height));
     } else if (topo_type == "ring") {
-        topology = new RingTopology(global_config.num_nodes);
+        topology.reset(new RingTopology(global_config.get_num_nodes()));
     } else {
         std::cerr << "Unsupported topology: " << topo_type << std::endl;
         return 1;
     }
 
     if (topo_type == "ring") {
-        routing = new RingRouting(global_config.num_nodes);
+        routing.reset(new RingRouting(global_config.get_num_nodes()));
     } else {
-        routing = new XYRouting(global_config.mesh_width, global_config.mesh_height); // Default to XY for mesh
+        routing.reset(new XYRouting(global_config.mesh_width, global_config.mesh_height)); // Default to XY for mesh
     }
 
     // 2. Setup Routers & Network (建立路由器與網路)
-    std::vector<Router*> routers;
-    for (int i = 0; i < global_config.num_nodes; ++i) {
-        routers.push_back(new Router(i, topology->get_max_ports(), global_config.num_vcs, global_config.buffer_size, routing));
+    std::vector<std::unique_ptr<Router>> routers;
+    std::vector<Router*> raw_routers; // For build_network which expects raw pointers
+
+    for (int i = 0; i < global_config.get_num_nodes(); ++i) {
+        routers.push_back(std::unique_ptr<Router>(new Router(i, topology->get_max_ports(), global_config.num_vcs, global_config.buffer_size, routing.get())));
+        raw_routers.push_back(routers.back().get());
     }
 
-    topology->build_network(routers);
+    topology->build_network(raw_routers);
 
     // 3. Read Trace (讀取 Trace)
     // We store pending packets in a list. In a real sim, these would have timestamps.
@@ -99,11 +106,14 @@ int main(int argc, char* argv[]) {
 
     // We need a queue at the source node to store flits that have been broken down from packets
     // but haven't been injected into the network yet.
-    std::vector<std::queue<Flit>> source_queues(global_config.num_nodes);
+    std::vector<std::queue<Flit>> source_queues(global_config.get_num_nodes());
 
     // 4. Simulation Loop (模擬迴圈)
     size_t total_received = 0;
-    int max_cycles = 10000;
+    size_t last_total_received = 0;
+    int last_progress_cycle = 0;
+    bool is_deadlocked = false;
+    constexpr int DEADLOCK_THRESHOLD = 500;
 
     for (sim_time = 0; sim_time < max_cycles; ++sim_time) {
         // Packet Generation Phase: Move from trace to source node queues (Packet -> Flits)
@@ -127,11 +137,13 @@ int main(int argc, char* argv[]) {
         }
 
         // Injection Phase: Move from source queue into Router port 0
-        for (int i = 0; i < global_config.num_nodes; ++i) {
-            if (!source_queues[i].empty()) {
+        for (int i = 0; i < global_config.get_num_nodes(); ++i) {
+            while (!source_queues[i].empty()) {
                 Flit f = source_queues[i].front();
                 if (routers[i]->inject_flit(f)) {
                     source_queues[i].pop();
+                } else {
+                    break;
                 }
             }
         }
@@ -139,17 +151,13 @@ int main(int argc, char* argv[]) {
         // Check completion (檢查是否完成: 所有 Tail Flit 抵達)
         total_received = 0;
         size_t total_injected_pkts = total_packets - pending_packets.size();
-        for (auto r : routers) {
-            for (const auto& f : r->ejected_flits) {
-                if (f.type == TAIL || f.type == HEAD_TAIL) {
-                    total_received++;
-                }
-            }
+        for (const auto& r : routers) {
+            total_received += r->received_packets;
         }
 
         if (total_received == total_packets && pending_packets.empty()) {
             bool all_queues_empty = true;
-            for (int i = 0; i < global_config.num_nodes; ++i) {
+            for (int i = 0; i < global_config.get_num_nodes(); ++i) {
                 if (!source_queues[i].empty()) all_queues_empty = false;
             }
             if (all_queues_empty) {
@@ -169,7 +177,7 @@ int main(int argc, char* argv[]) {
             // However, we only assert deadlock if there are actually injected packets waiting to be received.
             bool packets_in_flight = false;
             if (total_received < total_injected_pkts) packets_in_flight = true;
-            for (int i = 0; i < global_config.num_nodes; ++i) {
+            for (int i = 0; i < global_config.get_num_nodes(); ++i) {
                 if (!source_queues[i].empty()) packets_in_flight = true;
             }
 
@@ -181,12 +189,12 @@ int main(int argc, char* argv[]) {
         }
 
         // Evaluate all routers (階段一：評估網路狀態)
-        for (auto r : routers) {
+        for (const auto& r : routers) {
             r->evaluate(sim_time);
         }
 
         // Update all routers (階段二：更新緩衝區)
-        for (auto r : routers) {
+        for (const auto& r : routers) {
             r->update();
         }
     }
@@ -202,13 +210,10 @@ int main(int argc, char* argv[]) {
     // Calculate latency and throughput (計算延遲與吞吐量)
     long long total_latency = 0;
     int max_latency = 0;
-    for (auto r : routers) {
-        for (const auto& f : r->ejected_flits) {
-            if (f.type == TAIL || f.type == HEAD_TAIL) {
-                int lat = f.ejection_time - f.creation_time;
-                total_latency += lat;
-                if (lat > max_latency) max_latency = lat;
-            }
+    for (const auto& r : routers) {
+        total_latency += r->total_latency;
+        if (r->max_latency > max_latency) {
+            max_latency = r->max_latency;
         }
     }
 
@@ -225,16 +230,11 @@ int main(int argc, char* argv[]) {
     std::cout << "Total Throughput: " << throughput << " packets/cycle" << std::endl;
 
     // Dump specific reception info (輸出特定接收資訊)
-    for (auto r : routers) {
-        if (!r->ejected_flits.empty()) {
-            std::cout << "Router " << r->id << " received " << r->ejected_flits.size() << " flits." << std::endl;
+    for (const auto& r : routers) {
+        if (r->received_flits > 0) {
+            std::cout << "Router " << r->id << " received " << r->received_flits << " flits." << std::endl;
         }
     }
-
-    // Clean up (清理)
-    for (auto r : routers) delete r;
-    delete topology;
-    delete routing;
 
     return 0;
 }
