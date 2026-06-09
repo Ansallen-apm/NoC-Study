@@ -1,7 +1,7 @@
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import networkx as nx
+import math
 
 def calculate_channel_count(G):
     """
@@ -14,8 +14,6 @@ def calculate_channel_count(G):
         int: 實體連線數 (Channels)。
     """
     return G.number_of_edges()
-
-import math
 
 def get_traffic_destinations(src, num_nodes, traffic_pattern='uniform', width=None, height=None):
     """
@@ -178,7 +176,29 @@ def analyze_channel_load(G, routing_algorithm='xy', traffic_pattern='uniform'):
         dests = get_traffic_destinations(src, num_nodes, traffic_pattern, width, height)
         for dst, prob in dests:
             if src != dst:
-                if routing_algorithm == 'xy' and G.graph.get('type') in ['mesh', 'torus']:
+                topo_type = G.graph.get('type')
+
+                if routing_algorithm == 'xy' and topo_type == 'ring':
+                    path = []
+                    curr = src
+                    while curr != dst:
+                        dist = dst - curr
+                        if abs(dist) > num_nodes / 2.0:
+                            step = 1 if dist < 0 else -1
+                        else:
+                            step = 1 if dist > 0 else -1
+                        next_node = (curr + step) % num_nodes
+                        path.append((curr, next_node))
+                        curr = next_node
+
+                    # 將路徑上的每一條邊計數加上機率值 (期望負載)
+                    for u, v in path:
+                        if (u, v) in edge_loads:
+                            edge_loads[(u, v)] += prob
+                        elif (v, u) in edge_loads:
+                            edge_loads[(v, u)] += prob
+
+                elif routing_algorithm == 'xy' and topo_type in ['mesh', 'torus']:
                     # 實作 XY Routing 計算路徑
                     path = []
                     curr = src
@@ -186,13 +206,12 @@ def analyze_channel_load(G, routing_algorithm='xy', traffic_pattern='uniform'):
                     dst_x, dst_y = dst % width, dst // width
                     curr_x, curr_y = src_x, src_y
 
-                    topo_type = G.graph.get('type')
                     height = G.graph.get('height', 1)
 
                     # 先走 X 方向
                     while curr_x != dst_x:
                         dist_x = dst_x - curr_x
-                        if topo_type == 'torus' or topo_type == 'ring':
+                        if topo_type == 'torus':
                             # 判斷是否跨越邊界比較近
                             if abs(dist_x) > width / 2.0:
                                 step = 1 if dist_x < 0 else -1

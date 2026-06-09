@@ -1,6 +1,5 @@
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import yaml
 import subprocess
 import multiprocessing
@@ -10,7 +9,7 @@ import json
 from core.topology import generate_mesh_topology, generate_torus_topology
 from core.metrics import calculate_average_hop_count, analyze_channel_load
 
-BOOKSIM_EXEC = "../third_party/booksim/src/booksim"
+BOOKSIM_EXEC = os.path.join(os.path.dirname(__file__), '..', '..', 'third_party', 'booksim', 'src', 'booksim')
 
 def get_theoretical_metrics(topo_type, width, height, traffic_pattern):
     """取得 Python 計算的理論指標"""
@@ -51,7 +50,11 @@ def run_booksim_single(config_path):
 
 def process_booksim_sweep(args):
     """平行執行單一組態的所有注入率"""
-    config, topo, width, height, pattern, rates = args
+    if len(args) == 7:
+        config, topo, width, height, pattern, rates, num_vcs = args
+    else:
+        config, topo, width, height, pattern, rates = args
+        num_vcs = 2
     results = {}
 
     # 建立暫時設定檔
@@ -65,27 +68,30 @@ def process_booksim_sweep(args):
         booksim_topo = 'mesh'
 
     for rate in rates:
-        with open(temp_config, 'w') as f:
+        import tempfile
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=".txt") as f:
             f.write(f"topology = {booksim_topo};\n")
             f.write(f"k = {width};\n")
             f.write(f"n = 2;\n")
             f.write(f"routing_function = dim_order;\n")
             f.write(f"traffic = {pattern};\n")
             f.write(f"injection_rate = {rate};\n")
-            f.write(f"vcs = 2;\n")
+            f.write(f"num_vcs = {num_vcs};\n")
             f.write(f"sim_count = 1;\n")
+            temp_config_path = f.name
 
-        latency = run_booksim_single(temp_config)
-        results[rate] = latency
+        try:
+            latency = run_booksim_single(temp_config_path)
+            results[rate] = latency
 
-        # Early stop if saturated
-        if latency >= 1000.0:
-            for remaining_rate in [r for r in rates if r > rate]:
-                results[remaining_rate] = 10000.0
-            break
-
-    if os.path.exists(temp_config):
-        os.remove(temp_config)
+            # Early stop if saturated
+            if latency >= 1000.0:
+                for remaining_rate in [r for r in rates if r > rate]:
+                    results[remaining_rate] = 10000.0
+                break
+        finally:
+            if os.path.exists(temp_config_path):
+                os.remove(temp_config_path)
 
     return topo, width, height, pattern, results
 
@@ -115,12 +121,13 @@ def main():
 
     # 準備平行執行任務
     tasks = []
+    num_vcs = sweep_cfg.get("common", {}).get("num_vcs", 2)
     for arch in architectures:
         topo = arch['topology']
         width = arch['width']
         height = arch['height']
         for pattern in patterns:
-            tasks.append((arch, topo, width, height, pattern, rates))
+            tasks.append((arch, topo, width, height, pattern, rates, num_vcs))
 
     print(f"總共有 {len(tasks)} 組不同流量模式與拓撲配置需要掃描...")
 

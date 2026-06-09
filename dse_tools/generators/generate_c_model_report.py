@@ -1,6 +1,5 @@
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import json
 import yaml
 
@@ -26,8 +25,10 @@ def generate_report():
     try:
         with open(c_model_results_path, 'r', encoding='utf-8') as f:
             c_model_data = json.load(f)
-    except:
-        return "Error loading C model results"
+    except FileNotFoundError as e:
+        return f"錯誤：找不到報告檔案 {e.filename}，請先執行對應的模擬腳本。"
+    except json.JSONDecodeError as e:
+        return f"錯誤：報告檔案 {c_model_results_path} 格式損壞 ({e})。"
 
     # Load BookSim & Theory results
     bs_data = None
@@ -39,8 +40,8 @@ def generate_report():
                 if entry['topology'] == topo and entry['nodes'] == nodes:
                     bs_data = entry
                     break
-    except:
-        pass
+    except Exception as e:
+        print(f"警告：讀取 {booksim_results_path} 失敗 ({e})。忽略 BookSim 資料。")
 
     # Generate Markdown
     md = f"# C++ Model (Phase 2) Verification Report\n\n"

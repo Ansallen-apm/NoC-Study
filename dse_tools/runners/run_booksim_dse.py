@@ -1,11 +1,12 @@
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import yaml
 import subprocess
 import re
+import multiprocessing
 from multiprocessing import Pool
 import copy
+import tempfile
 from converters.booksim_converter import BookSimConverter
 
 def parse_booksim_output(output):
@@ -27,7 +28,9 @@ def run_single_simulation(args):
     config = copy.deepcopy(master_config)
     config['simulation']['injection_rate'] = rate
 
-    temp_config_path = f"dse_tools/runners/temp_booksim_config_{rate}.txt"
+    with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=".txt") as temp_file:
+        temp_config_path = temp_file.name
+
     converter = BookSimConverter(config)
     converter.convert(temp_config_path)
 
@@ -54,7 +57,7 @@ def main():
     print("啟動 NoC DSE 階段 3：BookSim 交叉驗證掃描 (平行化重構版)...")
 
     # 讀取主設定檔
-    config_path = "dse_tools/config/NoC_config.yaml"
+    config_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'NoC_config.yaml')
     with open(config_path, 'r', encoding='utf-8') as f:
         master_config = yaml.safe_load(f)
 
@@ -68,7 +71,7 @@ def main():
 
     injection_rates = [float(i) / 1000.0 for i in range(start, end + step, step)]
 
-    booksim_executable = "third_party/booksim/src/booksim"
+    booksim_executable = os.path.join(os.path.dirname(__file__), '..', '..', 'third_party', 'booksim', 'src', 'booksim')
     if not os.path.exists(booksim_executable):
         print(f"錯誤：找不到 BookSim 執行檔於 {booksim_executable}，請先執行 make。")
         return
@@ -89,7 +92,6 @@ def main():
             print(f"  Rate: {rate:.3f} -> 網路飽和/不穩定")
 
 if __name__ == "__main__":
-    import multiprocessing
     # For safe multiprocessing in scripts
     multiprocessing.freeze_support()
     main()

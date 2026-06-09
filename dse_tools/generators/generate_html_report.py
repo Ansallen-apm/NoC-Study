@@ -1,6 +1,5 @@
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import json
 import os
 
@@ -127,11 +126,19 @@ def generate_html(theory_data, booksim_data, output_filepath):
 def main():
     print("產生 HTML 報告...")
 
-    with open('report/report_theory_ring.json', 'r', encoding='utf-8') as f:
-        theory_data = json.load(f)
+    try:
+        with open('report/report_theory_ring.json', 'r', encoding='utf-8') as f:
+            theory_data = json.load(f)
+    except Exception as e:
+        print(f"錯誤：讀取 report_theory_ring.json 失敗 ({e})。")
+        theory_data = {}
 
-    with open('report/report_full_booksim_ring.json', 'r', encoding='utf-8') as f:
-        booksim_data = json.load(f)
+    try:
+        with open('report/report_full_booksim_ring.json', 'r', encoding='utf-8') as f:
+            booksim_data = json.load(f)
+    except Exception as e:
+        print(f"錯誤：讀取 report_full_booksim_ring.json 失敗 ({e})。")
+        booksim_data = {}
 
     generate_html(theory_data, booksim_data, 'report/full_ring_dse_comparison.html')
     print("報告產生完畢：report/full_ring_dse_comparison.html")

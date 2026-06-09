@@ -1,6 +1,5 @@
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import yaml
 import os
 import subprocess
@@ -12,7 +11,7 @@ import numpy as np
 from core.topology import generate_mesh_topology, generate_torus_topology, generate_ring_topology
 from core.metrics import calculate_average_hop_count, analyze_channel_load, calculate_channel_count, calculate_bisection_bandwidth
 
-BOOKSIM_EXEC = "../third_party/booksim/src/booksim"
+BOOKSIM_EXEC = os.path.join(os.path.dirname(__file__), '..', '..', 'third_party', 'booksim', 'src', 'booksim')
 
 def get_theoretical_metrics(topo_type, dim):
     """取得 Python 計算的理論指標"""
@@ -98,7 +97,12 @@ def run_booksim_single(config_str, filename):
 
 def run_task(task):
     """在子行程執行的單一驗證任務"""
-    task_id, topo_type, dim, vcs, p_size, b_size = task
+    # 如果 task tuple 長度為 7，代表包含 saturation_threshold_multiplier
+    if len(task) == 7:
+        task_id, topo_type, dim, vcs, p_size, b_size, saturation_multiplier = task
+    else:
+        task_id, topo_type, dim, vcs, p_size, b_size = task
+        saturation_multiplier = 5.0
 
     # 1. 計算理論值
     channel_count, bisection_bw, max_load, edge_loads, avg_hops, theo_max_rate = get_theoretical_metrics(topo_type, dim)
@@ -125,7 +129,7 @@ def run_task(task):
         latency_curve.append({"rate": r, "latency": lat})
 
         # 判斷飽和
-        if lat == float('inf') or (zero_lat and lat > (zero_lat * 5)):
+        if lat == float('inf') or (zero_lat and lat > (zero_lat * saturation_multiplier)):
             is_saturated = True
         else:
             actual_sat_rate = r
@@ -161,11 +165,13 @@ def main():
         return
 
     # 讀取 Sweep Config
-    with open('config/verification_sweep.yaml', 'r') as f:
+    config_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'verification_sweep.yaml')
+    with open(config_path, 'r') as f:
         sweep_cfg = yaml.safe_load(f)
 
     common = sweep_cfg.get('common', {})
     p_size = common.get('packet_size', 1)
+    saturation_multiplier = common.get('saturation_threshold_multiplier', 5.0)
     b_size = common.get('buffer_size', 8)
 
     tasks = []
@@ -174,7 +180,7 @@ def main():
         topo = group['topology']
         vcs = group['vcs']
         for dim in group['dimensions']:
-            tasks.append((task_id, topo, dim, vcs, p_size, b_size))
+            tasks.append((task_id, topo, dim, vcs, p_size, b_size, saturation_multiplier))
             task_id += 1
 
     print(f"產生了 {len(tasks)} 組拓撲設定，開始平行驗證...")
