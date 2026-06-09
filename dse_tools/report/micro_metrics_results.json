@@ -1,0 +1,51 @@
+[
+    {
+        "rate": 0.05,
+        "latency": 25.9357,
+        "variance": 0.0,
+        "max_latency": 0,
+        "avg_buffer_writes": 4211.15
+    },
+    {
+        "rate": 0.1,
+        "latency": 56.9401,
+        "variance": 0.0,
+        "max_latency": 0,
+        "avg_buffer_writes": 9837.2
+    },
+    {
+        "rate": 0.15,
+        "latency": 651.971,
+        "variance": 0.0,
+        "max_latency": 0,
+        "avg_buffer_writes": 1526.8
+    },
+    {
+        "rate": 0.2,
+        "latency": 1112.98,
+        "variance": 0.0,
+        "max_latency": 0,
+        "avg_buffer_writes": 1512.525
+    },
+    {
+        "rate": 0.25,
+        "latency": 1401.11,
+        "variance": 0.0,
+        "max_latency": 0,
+        "avg_buffer_writes": 1541.45
+    },
+    {
+        "rate": 0.3,
+        "latency": 1593.26,
+        "variance": 0.0,
+        "max_latency": 0,
+        "avg_buffer_writes": 1516.6125
+    },
+    {
+        "rate": 0.4,
+        "latency": 1814.87,
+        "variance": 0.0,
+        "max_latency": 0,
+        "avg_buffer_writes": 1542.0125
+    }
+]
