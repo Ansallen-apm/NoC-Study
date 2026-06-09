@@ -91,3 +91,12 @@
 *   [ ] **統一設定檔解析**：確保 C++, TLM, RTL 各階層模型與 Testbench 皆能動態讀取 `NoC_config.yaml` 進行初始化。
 *   [ ] **單元測試與 CI/CD**：為 Python 工具與 C++ 元件撰寫單元測試。整合 GitHub Actions 等 CI/CD 流程以自動編譯模型並執行測試。
 *   [ ] **端到端黃金驗證 (End-to-End Golden Verification)**：建立自動化管線，將相同的流量 Trace 注入所有模型中，並精確比對它們的週期級行為是否完全一致。
+
+## 階段 5：統一綜合報告平台 (Unified HTML Dashboard)
+*(目的：將散落的各階段報告整合為一個專業、多頁籤的視覺化儀表板)*
+*   [x] **整合框架設計**：建立一個基於 HTML/CSS/JS 的 SPA (Single Page Application) 或多頁籤結構，作為所有報告的統一入口。
+*   [x] **頁籤 1：巨觀設計空間探索 (Macro DSE)**：將目前的 `interactive_dse_trends.html` 納入，提供 5 種模式 (Latency Curves, Scatter, Channel Load Bar, Pareto, Radar) 的互動式查詢。
+*   [x] **頁籤 2：微觀排隊與緩衝區理論 (Micro [ ] **頁籤 2：微觀排隊與緩衝區理論 (Micro & Queueing Theory)** Queueing Theory)**：納入 Phase 1.5 的 `advanced_micro_metrics_report.html`，展示非線性曲線擬合、M/D/1 預測對比、以及 Buffer Occupancy / Congestion Collapse 分析。
+*   [x] **頁籤 3：跨引擎交叉驗證 (Cross-Engine Verification)**：將 `verification_summary.md` 轉為動態可排序的資料表 (DataTables)，對齊展示 Python 理論、BookSim、以及 Ratatoskr 等引擎的 bisection BW 與 saturation rate 誤差。
+*   [x] **頁籤 4：C++ 模型精準度分析 (C-Model Evaluation)**：將 Phase 2 的 `c_model_report.md` 視覺化，疊加對比 C++ 模型的吞吐量/延遲曲線與 BookSim 基準，並視覺化 Pipeline/Double-Buffering 的影響。
+*   [x] **一鍵產出自動化**：開發一個總匯腳本 (如 `make_full_dashboard.py`)，自動抓取 `report/` 目錄下的所有 JSON 產出最終的 `Unified_NoC_Dashboard.html`。
