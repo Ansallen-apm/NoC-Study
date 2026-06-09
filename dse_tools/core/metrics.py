@@ -277,3 +277,84 @@ def analyze_channel_load(G, routing_algorithm='xy', traffic_pattern='uniform'):
         'hot_spots': hot_spots,
         'all_edge_loads': serializable_edge_loads
     }
+
+def calculate_md1_queueing_metrics(rate, max_rate, base_latency, packet_size=1):
+    """
+    使用 M/D/1 排隊模型預測網路延遲指標。
+    M/D/1 假設到達率為 Poisson 分佈 (M)，服務時間為固定常數 (D)，單一伺服器 (1)。
+    在 NoC 中，若封包大小固定，則傳輸時間固定，適合此模型。
+
+    參數:
+        rate (float): 目前注入率 (Injection Rate)。
+        max_rate (float): 網路的理論最大注入率 (Saturation Point)。
+        base_latency (float): 零負載時的基礎延遲 (Zero-load Latency)。
+        packet_size (int): 封包長度。
+
+    回傳:
+        dict: 包含 'avg_latency', 'variance', 'max_latency_estimate'
+    """
+    if rate >= max_rate:
+        return {'avg_latency': float('inf'), 'variance': float('inf'), 'max_latency_estimate': float('inf')}
+
+    rho = rate / max_rate  # 利用率 (Utilization)
+    service_time = packet_size # 固定服務時間
+
+    # M/D/1 平均排隊等待時間 (Wq) 公式: Wq = rho * service_time / (2 * (1 - rho))
+    wq = (rho * service_time) / (2.0 * (1.0 - rho))
+
+    avg_latency = base_latency + wq
+
+    # M/D/1 等待時間變異數 (Variance of wait time):
+    # Var(Wq) = (service_time^2 * rho * (4 - rho)) / (12 * (1 - rho)^2)
+    # 總延遲變異數 = 等待時間變異數 (因為服務時間是固定的，變異數為 0)
+    variance = ( (service_time**2) * rho * (4.0 - rho) ) / (12.0 * ((1.0 - rho)**2))
+
+    # 預估最大延遲: 使用 99.9% 或更高百分位數來估計 (粗略以 avg + 3*std_dev 估計)
+    max_latency_estimate = avg_latency + 3 * math.sqrt(max(0, variance))
+
+    return {
+        'avg_latency': avg_latency,
+        'variance': variance,
+        'max_latency_estimate': max_latency_estimate
+    }
+
+def calculate_buffer_occupancy(rate, max_rate, buffer_size):
+    """
+    使用 M/M/1/K 馬可夫鏈模型預估有限 Buffer 的狀態機率與溢位機率。
+    此模型假設到達為 Poisson，服務時間為指數分佈，系統容量為 K (Buffer size)。
+
+    參數:
+        rate (float): 目前注入率 (Injection Rate)。
+        max_rate (float): 網路的最大服務率 (Max Service Rate)。
+        buffer_size (int): 緩衝區大小 (K)。
+
+    回傳:
+        dict: 包含 'state_probabilities' (list), 'full_probability', 'avg_occupancy'
+    """
+    if max_rate <= 0:
+        return {'state_probabilities': [0]*(buffer_size+1), 'full_probability': 1.0, 'avg_occupancy': buffer_size}
+
+    rho = rate / max_rate
+
+    probs = []
+    if abs(rho - 1.0) < 1e-6:
+        # rho = 1 的特例
+        p0 = 1.0 / (buffer_size + 1)
+        probs = [p0] * (buffer_size + 1)
+    else:
+        # P0 = (1 - rho) / (1 - rho^(K+1))
+        p0 = (1.0 - rho) / (1.0 - math.pow(rho, buffer_size + 1))
+        for k in range(buffer_size + 1):
+            probs.append(p0 * math.pow(rho, k))
+
+    # 平均佔用率 (Average Occupancy) = sum(k * Pk)
+    avg_occ = sum(k * p for k, p in enumerate(probs))
+
+    # 滿載機率 (Blocking / Full Probability) = P_K
+    p_full = probs[-1]
+
+    return {
+        'state_probabilities': probs,
+        'full_probability': p_full,
+        'avg_occupancy': avg_occ
+    }
