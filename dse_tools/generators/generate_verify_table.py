@@ -1,12 +1,15 @@
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import json
 import numpy as np
 
 def generate_markdown_table():
-    with open('dse_tools/report/verification_results.json', 'r', encoding='utf-8') as f:
-        results = json.load(f)
+    try:
+        with open('report/verification_results.json', 'r', encoding='utf-8') as f:
+            results = json.load(f)
+    except Exception as e:
+        print(f"錯誤：讀取 verification_results.json 失敗 ({e})。請先執行模擬。")
+        return
 
     # Sort results by topology then by dimension
     results.sort(key=lambda x: (x['topology'], x['dim']))
@@ -86,9 +89,10 @@ def generate_markdown_table():
     md += f"   - **相關係數:** `{corr_bw:.4f}`\n"
     md += "   - **物理意義:** 即使在 Uniform Random 流量而非特定跨界流量下，當網路全面飽和時，整體吞吐量 (總節點數 × 每個節點的極限注入率) 仍然受到網路中央截面的二分頻寬所限制，兩者呈現高度正相關。\n"
 
-    with open('dse_tools/report/verification_summary.md', 'w', encoding='utf-8') as f:
+    os.makedirs('report', exist_ok=True)
+    with open('report/verification_summary.md', 'w', encoding='utf-8') as f:
         f.write(md)
 
 if __name__ == "__main__":
     generate_markdown_table()
-    print("Markdown 報告產生完畢：dse_tools/report/verification_summary.md")
+    print("Markdown 報告產生完畢：report/verification_summary.md")

@@ -1,6 +1,5 @@
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import json
 import os
 
@@ -9,9 +8,14 @@ def generate_interactive_html():
 
     # 1. 讀取 verification_results.json (主要是 Mesh/Torus/Ring 固定參數的掃描)
     if os.path.exists('dse_tools/report/verification_results.json'):
-        with open('dse_tools/report/verification_results.json', 'r', encoding='utf-8') as f:
-            v_results = json.load(f)
-            for r in v_results:
+        try:
+            with open('dse_tools/report/verification_results.json', 'r', encoding='utf-8') as f:
+                v_results = json.load(f)
+        except Exception as e:
+            print(f"錯誤：讀取 verification_results.json 失敗 ({e})。")
+            v_results = []
+
+        for r in v_results:
                 vcs = r.get('vcs') if 'vcs' in r else (1 if r['topology'] == 'mesh' else 2)
                 routing = r.get('routing', 'xy' if r['topology'] == 'mesh' else 'dim_order')
                 traffic = r.get('traffic', 'uniform')
@@ -40,39 +44,44 @@ def generate_interactive_html():
 
     # 2. 讀取 report_full_booksim_ring.json (Ring 拓撲的龐大參數矩陣掃描)
     if os.path.exists('dse_tools/report/report_full_booksim_ring.json'):
-        with open('dse_tools/report/report_full_booksim_ring.json', 'r', encoding='utf-8') as f:
-            r_results = json.load(f)
-            for key, runs in r_results.items():
-                dim = int(key.split('_')[1])
-                # 因為這份資料是離散點，我們需要把它依照相同的組合聚集成曲線
-                grouped_runs = {}
-                for run in runs:
-                    if run.get('latency', float('inf')) == float('inf'):
-                        continue
+        try:
+            with open('dse_tools/report/report_full_booksim_ring.json', 'r', encoding='utf-8') as f:
+                r_results = json.load(f)
+        except Exception as e:
+            print(f"錯誤：讀取 report_full_booksim_ring.json 失敗 ({e})。")
+            r_results = {}
 
-                    routing = run.get('routing', 'dim_order')
-                    traffic = run.get('traffic', 'uniform')
+        for key, runs in r_results.items():
+            dim = int(key.split('_')[1])
+            # 因為這份資料是離散點，我們需要把它依照相同的組合聚集成曲線
+            grouped_runs = {}
+            for run in runs:
+                if run.get('latency', float('inf')) == float('inf'):
+                    continue
 
-                    group_key = (routing, traffic, run['packet_size'], run['buffer_size'], run['num_vcs'])
-                    if group_key not in grouped_runs:
-                        grouped_runs[group_key] = []
-                    grouped_runs[group_key].append({"x": run['injection_rate'], "y": run['latency']})
+                routing = run.get('routing', 'dim_order')
+                traffic = run.get('traffic', 'uniform')
 
-                for (rt, tr, p, b, v), points in grouped_runs.items():
-                    # 排序點位，確保畫線正確
-                    points.sort(key=lambda pt: pt['x'])
-                    record = {
-                        "topology": "ring",
-                        "dim": dim,
-                        "nodes": dim, # 對 Ring 來說 dim 即為 nodes
-                        "routing": rt,
-                        "traffic": tr,
-                        "packet_size": p,
-                        "buffer_size": b,
-                        "vcs": v,
-                        "curve": points
-                    }
-                    unified_data.append(record)
+                group_key = (routing, traffic, run['packet_size'], run['buffer_size'], run['num_vcs'])
+                if group_key not in grouped_runs:
+                    grouped_runs[group_key] = []
+                grouped_runs[group_key].append({"x": run['injection_rate'], "y": run['latency']})
+
+            for (rt, tr, p, b, v), points in grouped_runs.items():
+                # 排序點位，確保畫線正確
+                points.sort(key=lambda pt: pt['x'])
+                record = {
+                    "topology": "ring",
+                    "dim": dim,
+                    "nodes": dim, # 對 Ring 來說 dim 即為 nodes
+                    "routing": rt,
+                    "traffic": tr,
+                    "packet_size": p,
+                    "buffer_size": b,
+                    "vcs": v,
+                    "curve": points
+                }
+                unified_data.append(record)
 
     # 動態產生所有可選的參數列表
     options = {
@@ -931,10 +940,10 @@ def generate_interactive_html():
             heatmapNodes = [];
             heatmapEdges = [];
             particles = [];
-            if (animId) {
+            if (animId) {{
                 cancelAnimationFrame(animId);
                 animId = null;
-            }
+            }}
 
             if (!edgeLoads || Object.keys(edgeLoads).length === 0) {{
                 ctx.fillStyle = 'black';
@@ -1167,7 +1176,8 @@ def generate_interactive_html():
     </html>
     """
 
-    output_path = 'dse_tools/report/interactive_dse_trends.html'
+    output_path = 'report/interactive_dse_trends.html'
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write(html_content)
     print(f"互動式 HTML 報告已產生：{output_path}")

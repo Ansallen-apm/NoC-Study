@@ -1,13 +1,12 @@
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import json
 import os
 import subprocess
 import multiprocessing
 import re
 
-BOOKSIM_EXEC = "../third_party/booksim/src/booksim"
+BOOKSIM_EXEC = os.path.join(os.path.dirname(__file__), '..', '..', 'third_party', 'booksim', 'src', 'booksim')
 
 def generate_config_string(width, packet_size, buffer_size, num_vcs, injection_rate):
     """

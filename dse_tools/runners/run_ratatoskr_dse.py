@@ -4,9 +4,17 @@ import json
 import subprocess
 import yaml
 import uuid
+import glob
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from converters.ratatoskr_converter import RatatoskrConverter
+
+def cleanup_files(*files_and_patterns):
+    for fp in files_and_patterns:
+        for f in glob.glob(fp):
+            try:
+                os.remove(f)
+            except OSError:
+                pass
 
 def run_ratatoskr(config):
     uid = str(uuid.uuid4())[:8]
@@ -26,7 +34,7 @@ def run_ratatoskr(config):
     try:
         subprocess.run([ratatoskr_path, sim_name], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
     except subprocess.CalledProcessError as e:
-        subprocess.run(f"rm -rf {yaml_name} {net_name} {sim_name} {report_name}*", shell=True)
+        cleanup_files(yaml_name, net_name, sim_name, f"{report_name}*")
         return float('inf'), 0
 
     avg_latency = float('inf')
@@ -38,7 +46,11 @@ def run_ratatoskr(config):
     except FileNotFoundError:
         pass
 
-    subprocess.run(f"rm -rf {yaml_name} {net_name} {sim_name} {report_name}* BuffUsage VCUsage", shell=True)
+    cleanup_files(yaml_name, net_name, sim_name, f"{report_name}*")
+    import shutil
+    for d in ["BuffUsage", "VCUsage"]:
+        if os.path.exists(d) and os.path.isdir(d):
+            shutil.rmtree(d, ignore_errors=True)
 
     return avg_latency, 0
 

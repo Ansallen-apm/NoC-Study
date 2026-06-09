@@ -1,6 +1,5 @@
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 class ConfigConverterBase:
     """
     通用設定檔轉換器的基礎類別 (Base Interface for Configuration Converters)。

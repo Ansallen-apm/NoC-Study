@@ -1,13 +1,17 @@
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import json
 
 def generate_summary():
-    with open('report/report_theory_ring.json', 'r', encoding='utf-8') as f:
-        theory = json.load(f)
-    with open('report/report_full_booksim_ring.json', 'r', encoding='utf-8') as f:
-        booksim = json.load(f)
+    try:
+        with open('report/report_theory_ring.json', 'r', encoding='utf-8') as f:
+            theory = json.load(f)
+        with open('report/report_full_booksim_ring.json', 'r', encoding='utf-8') as f:
+            booksim = json.load(f)
+    except FileNotFoundError as e:
+        return f"錯誤：找不到報告檔案 {e.filename}，請先執行對應的模擬腳本。"
+    except json.JSONDecodeError as e:
+        return f"錯誤：報告檔案格式損壞 ({e})。"
 
     summary = "=== Ring Topology DSE (BookSim) 結果總結 ===\n\n"
     summary += "1. 理論天花板 (Bisection BW / Max Injection Rate):\n"

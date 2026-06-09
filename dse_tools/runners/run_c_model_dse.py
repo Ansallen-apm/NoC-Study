@@ -1,11 +1,12 @@
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import yaml
 import subprocess
 import re
+import multiprocessing
 from multiprocessing import Pool
 import random
+import tempfile
 from core.metrics import get_traffic_destinations
 
 def generate_trace(num_nodes, injection_rate, sim_cycles, trace_file, pattern, width, height):
@@ -39,7 +40,9 @@ def generate_trace(num_nodes, injection_rate, sim_cycles, trace_file, pattern, w
 def run_single_simulation(args):
     rate, num_nodes, sim_cycles, config_path, c_model_executable, pattern, width, height = args
 
-    trace_path = f"temp_trace_{rate}.txt"
+    with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=".txt") as temp_file:
+        trace_path = temp_file.name
+
     generate_trace(num_nodes, rate, sim_cycles, trace_path, pattern, width, height)
 
     latency = float('inf')
@@ -76,7 +79,7 @@ def run_single_simulation(args):
 def main():
     print("啟動 NoC DSE 階段 2：C++ 功能模型掃描驗證...")
 
-    config_path = "dse_tools/config/NoC_config.yaml"
+    config_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'NoC_config.yaml')
     with open(config_path, 'r', encoding='utf-8') as f:
         master_config = yaml.safe_load(f)
 
@@ -99,7 +102,7 @@ def main():
 
     injection_rates = [float(i) / 1000.0 for i in range(start, end + step, step)]
 
-    c_model_executable = "noc_c_model/noc_sim"
+    c_model_executable = os.path.join(os.path.dirname(__file__), '..', '..', 'noc_c_model', 'noc_sim')
     if not os.path.exists(c_model_executable):
         print(f"錯誤：找不到 C++ 執行檔於 {c_model_executable}，請先編譯。")
         return
@@ -127,6 +130,5 @@ def main():
     print(f"結果已儲存至 {report_file}")
 
 if __name__ == "__main__":
-    import multiprocessing
     multiprocessing.freeze_support()
     main()

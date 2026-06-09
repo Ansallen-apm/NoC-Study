@@ -14,12 +14,13 @@ class RatatoskrConverter:
     def generate_network_xml(self, output_network_path):
         root = ET.Element("network-on-chip")
 
-        topo_type = self.config.get("topology", "mesh")
-        width = self.config.get("mesh_width", 4)
-        height = self.config.get("mesh_height", 4)
-        vcs = self.config.get("num_vcs", 4)
-        buf_size = self.config.get("buffer_size", 8)
-        routing = self.config.get("routing_algorithm", "xy").upper()
+        arch_config = self.config.get("architecture", {})
+        topo_type = arch_config.get("topology", "mesh")
+        width = arch_config.get("width", 4)
+        height = arch_config.get("height", 4)
+        vcs = arch_config.get("num_vcs", 4)
+        buf_size = arch_config.get("buffer_size", 8)
+        routing = arch_config.get("routing", "xy").upper()
         if routing == "XY": routing = "XYZ" # Ratatoskr XYZ routing
 
         ET.SubElement(root, "bufferDepthType").set("value", "single")
@@ -140,27 +141,30 @@ class RatatoskrConverter:
     def generate_sim_xml(self, net_path, out_path, report_name):
         root = ET.Element("configuration", {"xmlns:xsi":"http://www.w3.org/2001/XMLSchema-instance"})
 
+        sim_config = self.config.get("simulation", {})
+        arch_config = self.config.get("architecture", {})
+
         gen = ET.SubElement(root, "general")
-        sim_cycles = self.config.get("simulation_cycles", 15000)
+        sim_cycles = sim_config.get("sim_cycles", 15000)
         ET.SubElement(gen, "simulationTime").set("value", str(sim_cycles))
         ET.SubElement(gen, "outputToFile", {"value":"true"}).text = report_name
 
         noc = ET.SubElement(root, "noc")
         ET.SubElement(noc, "nocFile").text = net_path
-        ET.SubElement(noc, "flitsPerPacket").set("value", str(self.config.get("packet_size", 1)))
+        ET.SubElement(noc, "flitsPerPacket").set("value", str(arch_config.get("packet_size", 1)))
 
         app = ET.SubElement(root, "application")
         ET.SubElement(app, "benchmark").text = "synthetic"
         syn = ET.SubElement(app, "synthetic")
 
         warm = ET.SubElement(syn, "phase", {"name":"warmup"})
-        t_pattern = self.config.get("traffic_pattern", "uniform")
+        t_pattern = sim_config.get("traffic_pattern", "uniform")
         ET.SubElement(warm, "distribution").set("value", t_pattern)
         ET.SubElement(warm, "start", {"max":"100", "min":"100"})
         ET.SubElement(warm, "duration", {"max":"900", "min":"900"})
         ET.SubElement(warm, "repeat", {"max":"-1", "min":"-1"})
         ET.SubElement(warm, "delay", {"max":"0", "min":"0"})
-        inj_rate = self.config.get("injection_rate", 0.1)
+        inj_rate = sim_config.get("injection_rate", 0.1)
         ET.SubElement(warm, "injectionRate").set("value", str(inj_rate))
         ET.SubElement(warm, "count", {"max":"1", "min":"1"})
 

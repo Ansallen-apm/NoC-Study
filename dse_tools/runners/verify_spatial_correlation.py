@@ -1,9 +1,9 @@
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import subprocess
 import re
 import numpy as np
+import tempfile
 from core.topology import generate_mesh_topology
 from core.metrics import analyze_channel_load
 
@@ -39,21 +39,26 @@ sample_period = 100000;
 sim_type = latency;
 print_activity = 1;
 """
-    with open("test_booksim_config", "w") as f:
+    with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".txt") as f:
         f.write(config_content)
+        temp_config_path = f.name
 
     print(f"Running Booksim for {k}x{k} Mesh...")
 
     booksim_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "third_party", "booksim", "src", "booksim")
 
-    result = subprocess.run(
-        [booksim_path, "test_booksim_config"],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True
-    )
+    try:
+        result = subprocess.run(
+            [booksim_path, temp_config_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
 
-    out_lines = result.stdout.splitlines()
+        out_lines = result.stdout.splitlines()
+    finally:
+        if os.path.exists(temp_config_path):
+            os.remove(temp_config_path)
 
     actual_edge_loads = {}
     in_monitor = False
