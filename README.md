@@ -39,12 +39,13 @@ To ensure our theoretical models and eventual hardware implementations are accur
 *   [**To-Do List (`todo.md`)**](./todo.md): Actionable tasks and upcoming milestones.
 
 ## Directory Structure
-*   `noc_arch_trace/`: Architecture tools and trace analyzers.
+*   `noc_python_model/`: Pure Python theoretical model (Queueing Theory, Markov Chains, NetworkX Topologies) for mathematical limit predictions.
 *   `noc_c_model/`: Refactored C++ functional model with dynamic yaml loading and double-buffering.
 *   `noc_tlm_model/`: SystemC Transaction Level Modeling (Phase 4).
 *   `noc_rtl/`: Verilog implementation (Phase 4).
-*   `third_party/`: Integrated open-source standalone simulators (`booksim`, `noxim`, `pronoc`, `constellation`).
-*   `dse_tools/`: Core Python toolkit for NoC Design Space Exploration, orchestration, and HTML/Markdown report generation.
+*   `third_party/`: Integrated open-source standalone simulators (`booksim`, `noxim`, `pronoc`, `constellation`, `ratatoskr`).
+*   `dse_tools/`: Core Python orchestration toolkit for simulation execution, trace generation, and HTML/Markdown report aggregation.
+*   `reports/`: Centralized directory for all generated JSON results, Markdown summaries, and the Unified HTML Dashboard.
 
 <br>
 
@@ -85,9 +86,10 @@ To ensure our theoretical models and eventual hardware implementations are accur
 *   [**待辦事項 (`todo.md`)**](./todo.md): 待辦事項和即將到來的里程碑，包含尚未完成的模組細節。
 
 ## 目錄結構
-*   `noc_arch_trace/`: 架構工具與 Trace 分析器。
+*   `noc_python_model/`: 純 Python 實作的數學理論模型（排隊理論、馬可夫鏈、NetworkX 圖論），用於推算網路效能極限。
 *   `noc_c_model/`: 重構後的 C++ 功能性模型（支援動態 yaml 讀取與雙重緩衝機制）。
 *   `noc_tlm_model/`: SystemC 交易層級建模 (Phase 4)。
 *   `noc_rtl/`: Verilog 實作 (Phase 4)。
-*   `third_party/`: 包含用於交叉驗證的獨立開源模擬器 (`booksim`, `noxim`, `pronoc`, `constellation`)。
-*   `dse_tools/`: 核心 Python 工具包，負責理論計算、模擬器調度、以及 HTML/Markdown 報告的自動生成。
+*   `third_party/`: 包含用於交叉驗證的獨立開源模擬器 (`booksim`, `noxim`, `pronoc`, `constellation`, `ratatoskr`)。
+*   `dse_tools/`: DSE 核心調度大腦，負責驅動各階層模型、跨引擎模擬器調度、以及互動式統一儀表板 (HTML/Markdown) 的自動生成。
+*   `reports/`: 集中存放所有產出的 JSON 數據結果、Markdown 比較表以及視覺化網頁報告。

@@ -7,7 +7,7 @@ import multiprocessing
 from multiprocessing import Pool
 import random
 import tempfile
-from core.metrics import get_traffic_destinations
+from noc_python_model.metrics import get_traffic_destinations
 
 def generate_trace(num_nodes, injection_rate, sim_cycles, trace_file, pattern, width, height):
     with open(trace_file, 'w') as f:
@@ -122,8 +122,8 @@ def main():
             print(f"  Rate: {rate:.3f} -> 網路飽和/不穩定")
 
     import json
-    os.makedirs("report", exist_ok=True)
-    report_file = "report/c_model_sweep_results.json"
+    os.makedirs(os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports"), exist_ok=True)
+    report_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports", "c_model_sweep_results.json")
     with open(report_file, 'w') as f:
         json.dump(results, f, indent=4)
 

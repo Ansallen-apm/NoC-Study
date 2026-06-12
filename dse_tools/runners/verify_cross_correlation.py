@@ -8,8 +8,8 @@ import re
 import json
 import numpy as np
 
-from core.topology import generate_mesh_topology, generate_torus_topology, generate_ring_topology
-from core.metrics import calculate_average_hop_count, analyze_channel_load, calculate_channel_count, calculate_bisection_bandwidth
+from noc_python_model.topology import generate_mesh_topology, generate_torus_topology, generate_ring_topology
+from noc_python_model.metrics import calculate_average_hop_count, analyze_channel_load, calculate_channel_count, calculate_bisection_bandwidth
 
 BOOKSIM_EXEC = os.path.join(os.path.dirname(__file__), '..', '..', 'third_party', 'booksim', 'src', 'booksim')
 
@@ -193,8 +193,8 @@ def main():
             print(f"進度: {i+1}/{len(tasks)} 完成.")
 
     # 儲存 JSON
-    os.makedirs('report', exist_ok=True)
-    with open('report/verification_results.json', 'w') as f:
+    os.makedirs(os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports"), exist_ok=True)
+    with open(os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports", "verification_results.json"), 'w') as f:
         json.dump(results, f, indent=4)
 
     # 數據分析與畫圖 (Correlation)

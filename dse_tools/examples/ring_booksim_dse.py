@@ -140,10 +140,10 @@ def main():
             "is_deadlock": r["is_deadlock"]
         })
 
-    with open('report/report_booksim_ring.json', 'w', encoding='utf-8') as f:
+    with open(os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports", "report_booksim_ring.json"), 'w', encoding='utf-8') as f:
         json.dump(structured_results, f, ensure_ascii=False, indent=4)
 
-    print("模擬掃描完成，已匯出至 report/report_booksim_ring.json")
+    print("模擬掃描完成，已匯出至 reports/report_booksim_ring.json")
 
 if __name__ == "__main__":
     main()
