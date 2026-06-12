@@ -100,3 +100,13 @@
 *   [x] **頁籤 3：跨引擎交叉驗證 (Cross-Engine Verification)**：將 `verification_summary.md` 轉為動態可排序的資料表 (DataTables)，對齊展示 Python 理論、BookSim、以及 Ratatoskr 等引擎的 bisection BW 與 saturation rate 誤差。
 *   [x] **頁籤 4：C++ 模型精準度分析 (C-Model Evaluation)**：將 Phase 2 的 `c_model_report.md` 視覺化，疊加對比 C++ 模型的吞吐量/延遲曲線與 BookSim 基準，並視覺化 Pipeline/Double-Buffering 的影響。
 *   [x] **一鍵產出自動化**：開發一個總匯腳本 (如 `make_full_dashboard.py`)，自動抓取 `report/` 目錄下的所有 JSON 產出最終的 `Unified_NoC_Dashboard.html`。
+
+## 階段 6：多模型互動比較分析儀表板 (Multi-Model Comparison Dashboard)
+*(目的：開發 `multi_model_cmp.html`，讓使用者能針對單一配置，在同一視圖內疊加比對所有支援之模擬器與模型的 DSE 結果)*
+*   [x] **資料源標準化與整併 (Data Aggregation [ ] **資料源標準化與整併 (Data Aggregation & Normalization)** Normalization)**：撰寫資料處理腳本，將 `verification_results.json` (BookSim & Theory)、`c_model_sweep_results.json` (C-Model)、`micro_metrics_results.json` 等離散的資料來源，依據 `(Topology, Dim, Traffic, Routing, VCs)` 作為 Key 進行關聯式合併。
+*   [x] **動態過濾器設計 (Dynamic Filters)**：在網頁前端建立全域的選擇器，包含 Topology (Mesh, Torus, Ring)、Dimension (網路大小)、Traffic Pattern (Uniform, Transpose 等) 及 Routing Algorithm。
+*   [x] **視覺化疊加圖表 (Overlay Charts)**：
+    *   **Latency vs. Injection Rate 曲線圖**：在同一張 Chart.js 圖表中繪製不同引擎的延遲曲線。例如：同時顯示 BookSim (實線)、C-Model (虛線)、Python M/D/1 預估 (點線)，直觀看出各模型的準確度落差。
+    *   **Throughput vs. Injection Rate 曲線圖**：對比不同模型在飽和點後的吞吐量衰減或穩定情況。
+*   [x] **誤差分析表格 (Error Analysis Table)**：針對選定配置，顯示各個模型在零負載延遲 (Zero-load Latency) 與極限吞吐量 (Saturation Rate) 相對於黃金模型 (BookSim) 的誤差百分比 (%)。
+*   [x] **產生器開發**：撰寫 `dse_tools/generators/generate_multi_model_cmp.py`，自動從 `reports/` 抓取資料並生成 `reports/multi_model_cmp.html` 網頁。
