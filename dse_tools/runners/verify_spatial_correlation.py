@@ -4,8 +4,8 @@ import subprocess
 import re
 import numpy as np
 import tempfile
-from core.topology import generate_mesh_topology
-from core.metrics import analyze_channel_load
+from noc_python_model.topology import generate_mesh_topology
+from noc_python_model.metrics import analyze_channel_load
 
 # BookSim Port Mapping for Mesh:
 # 0 = Right (+x)

@@ -7,9 +7,9 @@ def generate_interactive_html():
     unified_data = []
 
     # 1. 讀取 verification_results.json (主要是 Mesh/Torus/Ring 固定參數的掃描)
-    if os.path.exists('dse_tools/report/verification_results.json'):
+    if os.path.exists(os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports", "verification_results.json")):
         try:
-            with open('dse_tools/report/verification_results.json', 'r', encoding='utf-8') as f:
+            with open(os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports", "verification_results.json"), 'r', encoding='utf-8') as f:
                 v_results = json.load(f)
         except Exception as e:
             print(f"錯誤：讀取 verification_results.json 失敗 ({e})。")
@@ -43,9 +43,9 @@ def generate_interactive_html():
                     unified_data.append(record)
 
     # 2. 讀取 report_full_booksim_ring.json (Ring 拓撲的龐大參數矩陣掃描)
-    if os.path.exists('dse_tools/report/report_full_booksim_ring.json'):
+    if os.path.exists(os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports", "report_full_booksim_ring.json")):
         try:
-            with open('dse_tools/report/report_full_booksim_ring.json', 'r', encoding='utf-8') as f:
+            with open(os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports", "report_full_booksim_ring.json"), 'r', encoding='utf-8') as f:
                 r_results = json.load(f)
         except Exception as e:
             print(f"錯誤：讀取 report_full_booksim_ring.json 失敗 ({e})。")
@@ -1176,7 +1176,7 @@ def generate_interactive_html():
     </html>
     """
 
-    output_path = 'report/interactive_dse_trends.html'
+    output_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports", "interactive_dse_trends.html")
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write(html_content)

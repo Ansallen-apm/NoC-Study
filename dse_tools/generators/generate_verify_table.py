@@ -5,7 +5,7 @@ import numpy as np
 
 def generate_markdown_table():
     try:
-        with open('report/verification_results.json', 'r', encoding='utf-8') as f:
+        with open(os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports", "verification_results.json"), 'r', encoding='utf-8') as f:
             results = json.load(f)
     except Exception as e:
         print(f"錯誤：讀取 verification_results.json 失敗 ({e})。請先執行模擬。")
@@ -89,10 +89,10 @@ def generate_markdown_table():
     md += f"   - **相關係數:** `{corr_bw:.4f}`\n"
     md += "   - **物理意義:** 即使在 Uniform Random 流量而非特定跨界流量下，當網路全面飽和時，整體吞吐量 (總節點數 × 每個節點的極限注入率) 仍然受到網路中央截面的二分頻寬所限制，兩者呈現高度正相關。\n"
 
-    os.makedirs('report', exist_ok=True)
-    with open('report/verification_summary.md', 'w', encoding='utf-8') as f:
+    os.makedirs(os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports"), exist_ok=True)
+    with open(os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports", "verification_summary.md"), 'w', encoding='utf-8') as f:
         f.write(md)
 
 if __name__ == "__main__":
     generate_markdown_table()
-    print("Markdown 報告產生完畢：report/verification_summary.md")
+    print("Markdown 報告產生完畢：reports/verification_summary.md")

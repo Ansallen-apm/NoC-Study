@@ -2,8 +2,8 @@ import sys
 import os
 import json
 import yaml
-from core.topology import generate_mesh_topology, generate_torus_topology, generate_ring_topology
-from core.metrics import calculate_average_hop_count, calculate_bisection_bandwidth, analyze_channel_load
+from noc_python_model.topology import generate_mesh_topology, generate_torus_topology, generate_ring_topology
+from noc_python_model.metrics import calculate_average_hop_count, calculate_bisection_bandwidth, analyze_channel_load
 
 def analyze_topology(name, graph, channel_bandwidth, traffic_pattern='uniform'):
     """

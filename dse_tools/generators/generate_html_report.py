@@ -127,21 +127,21 @@ def main():
     print("產生 HTML 報告...")
 
     try:
-        with open('report/report_theory_ring.json', 'r', encoding='utf-8') as f:
+        with open(os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports", "report_theory_ring.json"), 'r', encoding='utf-8') as f:
             theory_data = json.load(f)
     except Exception as e:
         print(f"錯誤：讀取 report_theory_ring.json 失敗 ({e})。")
         theory_data = {}
 
     try:
-        with open('report/report_full_booksim_ring.json', 'r', encoding='utf-8') as f:
+        with open(os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports", "report_full_booksim_ring.json"), 'r', encoding='utf-8') as f:
             booksim_data = json.load(f)
     except Exception as e:
         print(f"錯誤：讀取 report_full_booksim_ring.json 失敗 ({e})。")
         booksim_data = {}
 
-    generate_html(theory_data, booksim_data, 'report/full_ring_dse_comparison.html')
-    print("報告產生完畢：report/full_ring_dse_comparison.html")
+    generate_html(theory_data, booksim_data, os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports", "full_ring_dse_comparison.html"))
+    print("報告產生完畢：reports/full_ring_dse_comparison.html")
 
 if __name__ == "__main__":
     main()

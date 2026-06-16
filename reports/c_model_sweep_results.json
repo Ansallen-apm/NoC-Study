@@ -1,0 +1,52 @@
+[
+    {
+        "rate": 0.05,
+        "latency": 7.65022,
+        "throughput": 0.80999
+    },
+    {
+        "rate": 0.1,
+        "latency": 12.0366,
+        "throughput": 1.59518
+    },
+    {
+        "rate": 0.15,
+        "latency": 158.301,
+        "throughput": 2.19634
+    },
+    {
+        "rate": 0.2,
+        "latency": 952.822,
+        "throughput": 2.22129
+    },
+    {
+        "rate": 0.25,
+        "latency": 1765.15,
+        "throughput": 2.20795
+    },
+    {
+        "rate": 0.3,
+        "latency": Infinity,
+        "throughput": 2.3173
+    },
+    {
+        "rate": 0.35,
+        "latency": Infinity,
+        "throughput": 2.3412
+    },
+    {
+        "rate": 0.4,
+        "latency": Infinity,
+        "throughput": 2.3626
+    },
+    {
+        "rate": 0.45,
+        "latency": Infinity,
+        "throughput": 2.3276
+    },
+    {
+        "rate": 0.5,
+        "latency": Infinity,
+        "throughput": 2.357
+    }
+]

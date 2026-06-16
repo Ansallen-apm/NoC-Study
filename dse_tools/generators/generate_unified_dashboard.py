@@ -22,10 +22,10 @@ def load_json(filepath, default_val=None):
 def generate_dashboard():
     # --- 1. Load Data ---
     print("Loading data...")
-    v_results = load_json('report/verification_results.json', [])
-    r_results = load_json('report/report_full_booksim_ring.json', {})
-    micro_data = load_json('report/micro_metrics_results.json', [])
-    c_model_data = load_json('report/c_model_sweep_results.json', [])
+    v_results = load_json(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "..", "reports", "verification_results.json"), [])
+    r_results = load_json(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "..", "reports", "report_full_booksim_ring.json"), {})
+    micro_data = load_json(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "..", "reports", "micro_metrics_results.json"), [])
+    c_model_data = load_json(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "..", "reports", "c_model_sweep_results.json"), [])
 
     # --- 2. Process Macro DSE Data (Tab 1) ---
     unified_data = []
@@ -419,10 +419,10 @@ def generate_dashboard():
 </html>
 """
 
-    os.makedirs('report', exist_ok=True)
-    with open('report/Unified_NoC_Dashboard.html', 'w', encoding='utf-8') as f:
+    os.makedirs(os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports"), exist_ok=True)
+    with open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "..", "reports", "Unified_NoC_Dashboard.html"), 'w', encoding='utf-8') as f:
         f.write(html)
-    print("Unified Dashboard successfully generated at report/Unified_NoC_Dashboard.html")
+    print("Unified Dashboard successfully generated at reports/Unified_NoC_Dashboard.html")
 
 if __name__ == "__main__":
     generate_dashboard()

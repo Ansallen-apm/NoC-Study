@@ -4,9 +4,9 @@ import json
 
 def generate_summary():
     try:
-        with open('report/report_theory_ring.json', 'r', encoding='utf-8') as f:
+        with open(os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports", "report_theory_ring.json"), 'r', encoding='utf-8') as f:
             theory = json.load(f)
-        with open('report/report_full_booksim_ring.json', 'r', encoding='utf-8') as f:
+        with open(os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports", "report_full_booksim_ring.json"), 'r', encoding='utf-8') as f:
             booksim = json.load(f)
     except FileNotFoundError as e:
         return f"錯誤：找不到報告檔案 {e.filename}，請先執行對應的模擬腳本。"

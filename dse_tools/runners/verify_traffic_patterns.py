@@ -6,8 +6,8 @@ import multiprocessing
 import re
 import json
 
-from core.topology import generate_mesh_topology, generate_torus_topology
-from core.metrics import calculate_average_hop_count, analyze_channel_load
+from noc_python_model.topology import generate_mesh_topology, generate_torus_topology
+from noc_python_model.metrics import calculate_average_hop_count, analyze_channel_load
 
 BOOKSIM_EXEC = os.path.join(os.path.dirname(__file__), '..', '..', 'third_party', 'booksim', 'src', 'booksim')
 
@@ -157,7 +157,7 @@ def main():
         print(f"[{topo} {width}x{height}] Pattern: {pattern:10} | Theory Sat: {theory_sat:.4f} | BookSim Sat: {actual_sat:.4f}")
 
     # 輸出成 JSON 檔案
-    out_dir = "../dse_tools/report"
+    out_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports")
     os.makedirs(out_dir, exist_ok=True)
     out_file = os.path.join(out_dir, "traffic_verification_results.json")
     with open(out_file, 'w') as f:
