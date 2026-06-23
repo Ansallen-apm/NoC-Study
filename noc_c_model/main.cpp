@@ -58,6 +58,8 @@ int main(int argc, char* argv[]) {
 
     if (topo_type == "mesh") {
         topology.reset(new MeshTopology(global_config.mesh_width, global_config.mesh_height));
+    } else if (topo_type == "torus") {
+        topology.reset(new TorusTopology(global_config.mesh_width, global_config.mesh_height));
     } else if (topo_type == "ring") {
         topology.reset(new RingTopology(global_config.get_num_nodes()));
     } else {

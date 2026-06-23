@@ -1,0 +1,122 @@
+[
+    {
+        "topology": "ring",
+        "frequency_GHz": 2.5,
+        "python": {
+            "bisection_bw_GBps": 640.0,
+            "avg_hops": 4.26666666666667
+        },
+        "c_model": {
+            "latency": 17.1135,
+            "throughput_packets_per_cycle": 0.255435,
+            "bw_GBps": 40.869600000000005,
+            "deadlock": false
+        },
+        "booksim": {
+            "latency": Infinity,
+            "throughput_flits_per_cycle": 0.0,
+            "bw_GBps": 0.0,
+            "deadlock": true
+        }
+    },
+    {
+        "topology": "mesh",
+        "frequency_GHz": 2.5,
+        "python": {
+            "bisection_bw_GBps": 1280.0,
+            "avg_hops": 2.6666666666666665
+        },
+        "c_model": {
+            "latency": 300.873,
+            "throughput_packets_per_cycle": 9.14808,
+            "bw_GBps": 1463.6928,
+            "deadlock": false
+        },
+        "booksim": {
+            "latency": 502.85,
+            "throughput_flits_per_cycle": 4.128576,
+            "bw_GBps": 660.5721599999999,
+            "deadlock": false
+        }
+    },
+    {
+        "topology": "torus",
+        "frequency_GHz": 2.5,
+        "python": {
+            "bisection_bw_GBps": 2560.0,
+            "avg_hops": 2.13333333333333
+        },
+        "c_model": {
+            "latency": 305.914,
+            "throughput_packets_per_cycle": 9.34579,
+            "bw_GBps": 1495.3264,
+            "deadlock": false
+        },
+        "booksim": {
+            "latency": Infinity,
+            "throughput_flits_per_cycle": 0.0,
+            "bw_GBps": 0.0,
+            "deadlock": true
+        }
+    },
+    {
+        "topology": "ring",
+        "frequency_GHz": 1.5,
+        "python": {
+            "bisection_bw_GBps": 384.0,
+            "avg_hops": 4.26666666666667
+        },
+        "c_model": {
+            "latency": 15.0254,
+            "throughput_packets_per_cycle": 0.216912,
+            "bw_GBps": 20.823552,
+            "deadlock": false
+        },
+        "booksim": {
+            "latency": Infinity,
+            "throughput_flits_per_cycle": 0.0,
+            "bw_GBps": 0.0,
+            "deadlock": true
+        }
+    },
+    {
+        "topology": "mesh",
+        "frequency_GHz": 1.5,
+        "python": {
+            "bisection_bw_GBps": 768.0,
+            "avg_hops": 2.6666666666666665
+        },
+        "c_model": {
+            "latency": 318.637,
+            "throughput_packets_per_cycle": 8.92857,
+            "bw_GBps": 857.14272,
+            "deadlock": false
+        },
+        "booksim": {
+            "latency": 502.85,
+            "throughput_flits_per_cycle": 4.128576,
+            "bw_GBps": 396.343296,
+            "deadlock": false
+        }
+    },
+    {
+        "topology": "torus",
+        "frequency_GHz": 1.5,
+        "python": {
+            "bisection_bw_GBps": 1536.0,
+            "avg_hops": 2.13333333333333
+        },
+        "c_model": {
+            "latency": 297.459,
+            "throughput_packets_per_cycle": 9.49555,
+            "bw_GBps": 911.5727999999999,
+            "deadlock": false
+        },
+        "booksim": {
+            "latency": Infinity,
+            "throughput_flits_per_cycle": 0.0,
+            "bw_GBps": 0.0,
+            "deadlock": true
+        }
+    }
+]
