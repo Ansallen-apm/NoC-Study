@@ -60,6 +60,7 @@
     *   [x] 在 Python 理論模型中實作非均勻流量 (如 Transpose, Bit-complement, Tornado) 的熱點與負載期望值計算 (`dse_tools/core/metrics.py`)。
     *   [x] 使用 BookSim 針對多種標準流量模式進行自動化參數掃描模擬 (`verify_traffic_patterns.py`)，確認理論瓶頸與實際飽和點一致。
     *   [ ] 支援匯入真實應用 Trace，進行理論模型與模擬器的端到端比對。
+    *   [ ] **支援客製化流量矩陣 (Custom Traffic Matrix)**：(TDD) 開發與驗證跨引擎 (C Model 與 BookSim 近似) 之 Master/Slave 不均勻機率矩陣，確保節點至節點流量分佈的統計一致性。
 *   [ ] **非確定性路由 (Adaptive Routing) 的驗證**：
     *   [ ] 在 Python 核心中建立自適應路由 (Adaptive Routing) 的理論分析模型，推算多路徑負載平衡對最大通道負載的影響。
     *   [ ] 於 BookSim 啟用自適應路由 (如 Minimal Adaptive)，並將其飽和點與延遲結果與 Python 預測進行交叉比對。

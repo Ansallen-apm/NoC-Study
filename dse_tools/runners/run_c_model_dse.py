@@ -9,13 +9,13 @@ import random
 import tempfile
 from noc_python_model.metrics import get_traffic_destinations
 
-def generate_trace(num_nodes, injection_rate, sim_cycles, trace_file, pattern, width, height):
+def generate_trace(num_nodes, injection_rate, sim_cycles, trace_file, pattern, width, height, custom_matrix_file=None):
     with open(trace_file, 'w') as f:
         for cycle in range(sim_cycles):
             for src in range(num_nodes):
                 if random.random() < injection_rate:
                     # Get probability distribution for this source under the specified pattern
-                    dests = get_traffic_destinations(src, num_nodes, pattern, width, height)
+                    dests = get_traffic_destinations(src, num_nodes, pattern, width, height, custom_matrix_file=custom_matrix_file)
 
                     if not dests: continue
 

@@ -15,11 +15,54 @@ def calculate_channel_count(G):
     """
     return G.number_of_edges()
 
-def get_traffic_destinations(src, num_nodes, traffic_pattern='uniform', width=None, height=None):
+import csv
+
+def _load_custom_matrix(filepath, num_nodes):
+    matrix = []
+    try:
+        with open(filepath, 'r') as f:
+            reader = csv.reader(f)
+            # Skip header
+            next(reader)
+            for row in reader:
+                # Parse floats
+                matrix.append([float(x) for x in row])
+
+        # Verify dimensions
+        if len(matrix) != num_nodes or any(len(row) != num_nodes for row in matrix):
+            print(f"Warning: Custom matrix in {filepath} does not match {num_nodes}x{num_nodes}.")
+            # Return uniform matrix as fallback
+            return [[1.0 / (num_nodes - 1) if i != j else 0 for j in range(num_nodes)] for i in range(num_nodes)]
+        return matrix
+    except Exception as e:
+        print(f"Error reading custom matrix {filepath}: {e}")
+        return [[1.0 / (num_nodes - 1) if i != j else 0 for j in range(num_nodes)] for i in range(num_nodes)]
+
+def get_traffic_destinations(src, num_nodes, traffic_pattern='uniform', width=None, height=None, custom_matrix_file=None):
     """
     根據流量模式取得目的節點列表與機率分佈。
     回傳格式: [(dest_node, probability), ...]
     """
+    if traffic_pattern == 'custom_matrix':
+        if custom_matrix_file:
+            matrix = _load_custom_matrix(custom_matrix_file, num_nodes)
+            # Find non-zero probabilities for the source
+            row = matrix[src]
+            dests = []
+            for dst, prob in enumerate(row):
+                if prob > 0 and dst != src:
+                    dests.append((dst, prob))
+
+            # Normalize probabilities if they don't sum to 1.0 (excluding self)
+            total_prob = sum(p for _, p in dests)
+            if total_prob > 0:
+                return [(dst, prob / total_prob) for dst, prob in dests]
+            else:
+                return []
+        else:
+            print("Warning: custom_matrix_file not provided for custom_matrix pattern. Falling back to uniform.")
+            traffic_pattern = 'uniform'
+
     if traffic_pattern == 'uniform':
         # 均勻發送給所有其他節點
         prob = 1.0 / (num_nodes - 1) if num_nodes > 1 else 0
