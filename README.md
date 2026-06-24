@@ -30,7 +30,6 @@ To ensure our theoretical models and eventual hardware implementations are accur
 
 *   **BookSim 2.0**: The classic, cycle-accurate simulator. It serves as our "Golden Model" for verifying topologies, routing latency, and saturation points.
 *   **Noxim**: A SystemC-based simulator, particularly renowned for its "Power/Energy" evaluation capabilities, and support for 3D NoC and WiNoC architectures.
-*   **ProNoC**: Features a graphical user interface (GUI) and focuses on generating synthesizable RTL (Verilog/VHDL) code directly, making it ideal for FPGA/ASIC implementations.
 *   **Constellation**: A Chisel-based NoC generator that is highly parameterized and widely adopted within the RISC-V ecosystem (e.g., Rocket Chip, Chipyard).
 
 ## Documentation
@@ -43,7 +42,7 @@ To ensure our theoretical models and eventual hardware implementations are accur
 *   `noc_c_model/`: Refactored C++ functional model with dynamic yaml loading and double-buffering.
 *   `noc_tlm_model/`: SystemC Transaction Level Modeling (Phase 4).
 *   `noc_rtl/`: Verilog implementation (Phase 4).
-*   `third_party/`: Integrated open-source standalone simulators (`booksim`, `noxim`, `pronoc`, `constellation`, `ratatoskr`).
+*   `third_party/`: Integrated open-source standalone simulators (`booksim`, `noxim`, `constellation`, `ratatoskr`).
 *   `dse_tools/`: Core Python orchestration toolkit for simulation execution, trace generation, and HTML/Markdown report aggregation.
 *   `reports/`: Centralized directory for all generated JSON results, Markdown summaries, and the Unified HTML Dashboard.
 
@@ -77,7 +76,6 @@ To ensure our theoretical models and eventual hardware implementations are accur
 
 *   **BookSim 2.0**: 最經典的週期精確 (Cycle-accurate) 模擬器。它是我們驗證拓撲與路由延遲的「黃金基準 (Golden Model)」。
 *   **Noxim**: 基於 SystemC 開發，特別擅長於「功耗/能量評估 (Power/Energy)」，並且支援 3D NoC 與無線 NoC (WiNoC) 架構。
-*   **ProNoC**: 提供圖形介面 (GUI)，主打能夠直接產生可合成的 RTL 程式碼 (Verilog/VHDL)，非常適合 FPGA/ASIC 的快速實作。
 *   **Constellation**: 基於 Chisel 語言的 NoC 產生器，具備高度參數化的特性，在 RISC-V 生態系 (如 Rocket Chip, Chipyard) 中被廣泛使用。
 
 ## 相關文件
@@ -90,6 +88,6 @@ To ensure our theoretical models and eventual hardware implementations are accur
 *   `noc_c_model/`: 重構後的 C++ 功能性模型（支援動態 yaml 讀取與雙重緩衝機制）。
 *   `noc_tlm_model/`: SystemC 交易層級建模 (Phase 4)。
 *   `noc_rtl/`: Verilog 實作 (Phase 4)。
-*   `third_party/`: 包含用於交叉驗證的獨立開源模擬器 (`booksim`, `noxim`, `pronoc`, `constellation`, `ratatoskr`)。
+*   `third_party/`: 包含用於交叉驗證的獨立開源模擬器 (`booksim`, `noxim`, `constellation`, `ratatoskr`)。
 *   `dse_tools/`: DSE 核心調度大腦，負責驅動各階層模型、跨引擎模擬器調度、以及互動式統一儀表板 (HTML/Markdown) 的自動生成。
 *   `reports/`: 集中存放所有產出的 JSON 數據結果、Markdown 比較表以及視覺化網頁報告。

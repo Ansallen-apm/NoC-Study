@@ -48,8 +48,8 @@ This document outlines the phased implementation strategy for building the compr
 (整合相對成熟的開源模擬器來驗證我們的模型並提供穩健的基準線。)
 
 *   **Item 3.1: Submodule Integration (Submodule 整合)** - **[COMPLETED (已完成)]**
-    *   *Plan (規劃)*: Add prominent standalone simulators (BookSim, Noxim, ProNoC, Constellation) as Git submodules in a `third_party/` directory.
-      (在 `third_party/` 目錄中，將著名的獨立模擬器（BookSim, Noxim, ProNoC, Constellation）新增為 Git submodules。)
+    *   *Plan (規劃)*: Add prominent standalone simulators (BookSim, Noxim, Constellation) as Git submodules in a `third_party/` directory.
+      (在 `third_party/` 目錄中，將著名的獨立模擬器（BookSim, Noxim, Constellation）新增為 Git submodules。)
 *   **Item 3.2: Universal Configuration & Format Adapter (通用配置與格式適配器)** - **[COMPLETED (已完成)]**
     *   *Plan (規劃)*: Design a unified `NoC_config.yaml` to serve as the master parameter input for all DSE processes. Create parsing scripts that read this YAML and automatically translate the parameters (e.g., topology, routing, packet size) and standard traffic trace files into the distinct, specific input formats required by the four integrated third-party simulators.
       (設計一個統一的 `NoC_config.yaml` 作為所有 DSE 流程的主參數輸入。建立解析腳本，讀取此 YAML 並自動將參數（如拓撲、路由、封包大小）與標準流量 trace 檔案，轉換為這四個整合的第三方模擬器所需的各別特定輸入格式。)
