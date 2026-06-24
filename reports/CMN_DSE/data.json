@@ -1,0 +1,254 @@
+[
+    {
+        "topology": "ring",
+        "frequency_GHz": 2.5,
+        "vcs": 1,
+        "python": {
+            "bisection_bw_GBps": 640.0,
+            "avg_hops": 4.26666666666667
+        },
+        "c_model": {
+            "latency": 8.27419,
+            "throughput_packets_per_cycle": 0.117424,
+            "bw_GBps_per_node": 1.17424,
+            "deadlock": false
+        },
+        "booksim": {
+            "latency": Infinity,
+            "throughput_flits_per_cycle_per_node": 0.0,
+            "bw_GBps_per_node": 0.0,
+            "deadlock": true
+        }
+    },
+    {
+        "topology": "mesh",
+        "frequency_GHz": 2.5,
+        "vcs": 1,
+        "python": {
+            "bisection_bw_GBps": 1280.0,
+            "avg_hops": 2.6666666666666665
+        },
+        "c_model": {
+            "latency": 296.921,
+            "throughput_packets_per_cycle": 9.4173,
+            "bw_GBps_per_node": 94.17299999999999,
+            "deadlock": false
+        },
+        "booksim": {
+            "latency": 502.85,
+            "throughput_flits_per_cycle_per_node": 0.258036,
+            "bw_GBps_per_node": 41.285759999999996,
+            "deadlock": false
+        }
+    },
+    {
+        "topology": "torus",
+        "frequency_GHz": 2.5,
+        "vcs": 1,
+        "python": {
+            "bisection_bw_GBps": 2560.0,
+            "avg_hops": 2.13333333333333
+        },
+        "c_model": {
+            "latency": 312.765,
+            "throughput_packets_per_cycle": 9.11162,
+            "bw_GBps_per_node": 91.1162,
+            "deadlock": false
+        },
+        "booksim": {
+            "latency": Infinity,
+            "throughput_flits_per_cycle_per_node": 0.0,
+            "bw_GBps_per_node": 0.0,
+            "deadlock": true
+        }
+    },
+    {
+        "topology": "ring",
+        "frequency_GHz": 1.5,
+        "vcs": 1,
+        "python": {
+            "bisection_bw_GBps": 384.0,
+            "avg_hops": 4.26666666666667
+        },
+        "c_model": {
+            "latency": 9.2973,
+            "throughput_packets_per_cycle": 0.139623,
+            "bw_GBps_per_node": 0.837738,
+            "deadlock": false
+        },
+        "booksim": {
+            "latency": Infinity,
+            "throughput_flits_per_cycle_per_node": 0.0,
+            "bw_GBps_per_node": 0.0,
+            "deadlock": true
+        }
+    },
+    {
+        "topology": "mesh",
+        "frequency_GHz": 1.5,
+        "vcs": 1,
+        "python": {
+            "bisection_bw_GBps": 768.0,
+            "avg_hops": 2.6666666666666665
+        },
+        "c_model": {
+            "latency": 299.059,
+            "throughput_packets_per_cycle": 9.29692,
+            "bw_GBps_per_node": 55.78152,
+            "deadlock": false
+        },
+        "booksim": {
+            "latency": 502.85,
+            "throughput_flits_per_cycle_per_node": 0.258036,
+            "bw_GBps_per_node": 24.771456,
+            "deadlock": false
+        }
+    },
+    {
+        "topology": "torus",
+        "frequency_GHz": 1.5,
+        "vcs": 1,
+        "python": {
+            "bisection_bw_GBps": 1536.0,
+            "avg_hops": 2.13333333333333
+        },
+        "c_model": {
+            "latency": 299.924,
+            "throughput_packets_per_cycle": 9.3622,
+            "bw_GBps_per_node": 56.173199999999994,
+            "deadlock": false
+        },
+        "booksim": {
+            "latency": Infinity,
+            "throughput_flits_per_cycle_per_node": 0.0,
+            "bw_GBps_per_node": 0.0,
+            "deadlock": true
+        }
+    },
+    {
+        "topology": "ring",
+        "frequency_GHz": 2.5,
+        "vcs": 2,
+        "python": {
+            "bisection_bw_GBps": 640.0,
+            "avg_hops": 4.26666666666667
+        },
+        "c_model": {
+            "latency": 12.3923,
+            "throughput_packets_per_cycle": 0.327899,
+            "bw_GBps_per_node": 3.27899,
+            "deadlock": false
+        },
+        "booksim": {
+            "latency": 446.63,
+            "throughput_flits_per_cycle_per_node": 0.0640625,
+            "bw_GBps_per_node": 10.25,
+            "deadlock": false
+        }
+    },
+    {
+        "topology": "mesh",
+        "frequency_GHz": 2.5,
+        "vcs": 2,
+        "python": {
+            "bisection_bw_GBps": 1280.0,
+            "avg_hops": 2.6666666666666665
+        },
+        "c_model": {
+            "latency": 133.772,
+            "throughput_packets_per_cycle": 11.8343,
+            "bw_GBps_per_node": 118.343,
+            "deadlock": false
+        },
+        "booksim": {
+            "latency": 313.274,
+            "throughput_flits_per_cycle_per_node": 0.532054,
+            "bw_GBps_per_node": 85.12864,
+            "deadlock": false
+        }
+    },
+    {
+        "topology": "torus",
+        "frequency_GHz": 2.5,
+        "vcs": 2,
+        "python": {
+            "bisection_bw_GBps": 2560.0,
+            "avg_hops": 2.13333333333333
+        },
+        "c_model": {
+            "latency": 135.745,
+            "throughput_packets_per_cycle": 11.8168,
+            "bw_GBps_per_node": 118.168,
+            "deadlock": false
+        },
+        "booksim": {
+            "latency": 368.222,
+            "throughput_flits_per_cycle_per_node": 0.449375,
+            "bw_GBps_per_node": 71.9,
+            "deadlock": false
+        }
+    },
+    {
+        "topology": "ring",
+        "frequency_GHz": 1.5,
+        "vcs": 2,
+        "python": {
+            "bisection_bw_GBps": 384.0,
+            "avg_hops": 4.26666666666667
+        },
+        "c_model": {
+            "latency": 20.1792,
+            "throughput_packets_per_cycle": 0.426288,
+            "bw_GBps_per_node": 2.557728,
+            "deadlock": false
+        },
+        "booksim": {
+            "latency": 446.63,
+            "throughput_flits_per_cycle_per_node": 0.0640625,
+            "bw_GBps_per_node": 6.1499999999999995,
+            "deadlock": false
+        }
+    },
+    {
+        "topology": "mesh",
+        "frequency_GHz": 1.5,
+        "vcs": 2,
+        "python": {
+            "bisection_bw_GBps": 768.0,
+            "avg_hops": 2.6666666666666665
+        },
+        "c_model": {
+            "latency": 136.816,
+            "throughput_packets_per_cycle": 11.9225,
+            "bw_GBps_per_node": 71.535,
+            "deadlock": false
+        },
+        "booksim": {
+            "latency": 313.274,
+            "throughput_flits_per_cycle_per_node": 0.532054,
+            "bw_GBps_per_node": 51.077184,
+            "deadlock": false
+        }
+    },
+    {
+        "topology": "torus",
+        "frequency_GHz": 1.5,
+        "vcs": 2,
+        "python": {
+            "bisection_bw_GBps": 1536.0,
+            "avg_hops": 2.13333333333333
+        },
+        "c_model": {
+            "latency": 145.068,
+            "throughput_packets_per_cycle": 11.2915,
+            "bw_GBps_per_node": 67.749,
+            "deadlock": false
+        },
+        "booksim": {
+            "latency": 368.222,
+            "throughput_flits_per_cycle_per_node": 0.449375,
+            "bw_GBps_per_node": 43.14,
+            "deadlock": false
+        }
+    }
+]
