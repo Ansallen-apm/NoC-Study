@@ -20,32 +20,6 @@ void MeshTopology::build_network(std::vector<Router*>& routers) {
     }
 }
 
-// Torus Mapping: 1=NORTH, 2=EAST, 3=SOUTH, 4=WEST
-void TorusTopology::build_network(std::vector<Router*>& routers) {
-    for (int y = 0; y < height; ++y) {
-        for (int x = 0; x < width; ++x) {
-            int id = y * width + x;
-            Router* r = routers[id];
-
-            // North
-            int n_y = (y - 1 + height) % height;
-            r->connect(1, routers[n_y * width + x], 3);
-
-            // South
-            int s_y = (y + 1) % height;
-            r->connect(3, routers[s_y * width + x], 1);
-
-            // West
-            int w_x = (x - 1 + width) % width;
-            r->connect(4, routers[y * width + w_x], 2);
-
-            // East
-            int e_x = (x + 1) % width;
-            r->connect(2, routers[y * width + e_x], 4);
-        }
-    }
-}
-
 // Ring Mapping: 1=EAST(Right), 2=WEST(Left)
 void RingTopology::build_network(std::vector<Router*>& routers) {
     for (int i = 0; i < num_nodes; ++i) {
