@@ -36,12 +36,11 @@
 
 ## 階段 3：交叉驗證整合 (Cross-Verification Integration)
 
-*   [x] **整合開源模擬器**：引入成熟的開源 NoC 模型 (BookSim, Noxim, ProNoC, Constellation) 作為 Git submodules，以作為驗證基準。
+*   [x] **整合開源模擬器**：引入成熟的開源 NoC 模型 (BookSim, Noxim, Constellation) 作為 Git submodules，以作為驗證基準。
 *   [x] **設計統一設定檔 `NoC_config.yaml`**：定義單一 YAML 檔作為所有 DSE 參數（拓撲、路由、緩衝區、流量）的主輸入。
-*   [x] **開發轉接腳本 (Adapter Scripts)**：撰寫轉換腳本以解析 YAML，並為 BookSim 產生專屬設定檔 (Noxim, ProNoC, Constellation 骨架已建立)。
+*   [x] **開發轉接腳本 (Adapter Scripts)**：撰寫轉換腳本以解析 YAML，並為 BookSim 產生專屬設定檔 (Noxim, Constellation 骨架已建立)。
 *   [ ] **實作剩餘的模擬器轉接器 (Converters)**：
     *   [ ] 實作 `NoximConverter` (`dse_tools/converters/other_converters.py`)。
-    *   [ ] 實作 `PronocConverter` (`dse_tools/converters/other_converters.py`)。
     *   [ ] 實作 `ConstellationConverter` (`dse_tools/converters/other_converters.py`)。
 *   [x] **整合 Ratatoskr 模擬器 (3D/PPA)**：
     *   [x] **(1) Submodule 初始化**：將 `jmjos/ratatoskr` 新增至 `third_party/ratatoskr`。
