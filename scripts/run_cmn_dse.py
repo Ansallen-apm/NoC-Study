@@ -6,7 +6,6 @@ import subprocess
 import copy
 import re
 
-# Set up paths
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT_DIR)
 
@@ -22,19 +21,18 @@ REPORTS_DIR = os.path.join(ROOT_DIR, 'reports', 'CMN_DSE')
 
 os.makedirs(REPORTS_DIR, exist_ok=True)
 
-# Configurations to sweep
 topologies = [
     {'name': 'ring', 'width': 16, 'height': 1},
     {'name': 'mesh', 'width': 4, 'height': 4},
     {'name': 'torus', 'width': 4, 'height': 4}
 ]
-frequencies = [2.5, 1.5] # GHz
-flit_size = 1 # packet size
+frequencies = [2.5, 1.5]
+vcs_list = [1, 2]
+flit_size = 1
 buffer_size = 4
-num_vcs = 1
 data_width_bytes = 64
 sim_cycles = 1000
-injection_rate = 1.0 # full load
+injection_rate = 1.0
 
 def run_python_model(topo, freq_ghz):
     name = topo['name']
@@ -47,13 +45,7 @@ def run_python_model(topo, freq_ghz):
         graph = generate_torus_topology(w, h)
 
     bisection_bw_bits = calculate_bisection_bandwidth(graph, channel_bandwidth_bits=data_width_bytes * 8)
-
-    # Python metric only provides BW in bits/cycle. We convert to GB/s.
-    # GB/s = Bisection_BW_bits * freq_GHz / 8 / 1024 / 1024 ... wait,
-    # 1 GB = 10**9 Bytes or 2**30 Bytes? Usually GB/s is 10**9 for network, or 1024**3.
-    # Let's use 1 GB = 10**9 Bytes
     bisection_bw_GBps = (bisection_bw_bits * freq_ghz * 1e9) / (8 * 1e9)
-
     avg_hops = calculate_average_hop_count(graph)
 
     return {
@@ -61,14 +53,13 @@ def run_python_model(topo, freq_ghz):
         'avg_hops': avg_hops
     }
 
-def run_c_model(topo, freq_ghz):
-    # 1. Create YAML
+def run_c_model(topo, freq_ghz, num_vcs):
     config = {
         'architecture': {
             'topology': topo['name'],
             'width': topo['width'],
             'height': topo['height'],
-            'routing': 'xy' if topo['name'] == 'mesh' else 'dim_order', # C model routing
+            'routing': 'xy' if topo['name'] == 'mesh' else 'dim_order',
             'packet_size': flit_size,
             'buffer_size': buffer_size,
             'num_vcs': num_vcs,
@@ -97,7 +88,6 @@ def run_c_model(topo, freq_ghz):
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
         output = result.stdout
 
-        # Parse output
         latency = float('inf')
         throughput = 0.0
         deadlock = False
@@ -113,26 +103,22 @@ def run_c_model(topo, freq_ghz):
                 match = re.search(r'Total Throughput:\s*([\d\.]+)', line)
                 if match: throughput = float(match.group(1))
 
-        # Calculate BW GB/s
-        # Throughput = flits/cycle/node ? Wait, noc_c_model output:
-        # Total Throughput: 0.123 packets/cycle
-        # We need GB/s = Total Throughput * packet_size_flits * data_width_bytes * freq_GHz
-        bw_GBps = throughput * flit_size * data_width_bytes * freq_ghz
+        # Total Throughput * data_width_bytes * freq_GHz / num_nodes
+        bw_GBps_per_node = (throughput * flit_size * data_width_bytes * freq_ghz) / num_nodes
 
-        # Cleanup
         os.remove(yaml_path)
         os.remove(trace_path)
 
         return {
             'latency': latency,
             'throughput_packets_per_cycle': throughput,
-            'bw_GBps': bw_GBps,
+            'bw_GBps_per_node': bw_GBps_per_node,
             'deadlock': deadlock
         }
     except Exception as e:
         return {'error': str(e), 'deadlock': True}
 
-def run_booksim(topo, freq_ghz):
+def run_booksim(topo, freq_ghz, num_vcs):
     config = {
         'architecture': {
             'topology': topo['name'],
@@ -163,7 +149,7 @@ def run_booksim(topo, freq_ghz):
         deadlock = "deadlock" in output.lower() or "aborted" in output.lower() or result.returncode != 0
 
         latency = float('inf')
-        throughput = 0.0
+        throughput_flits_per_node = 0.0
 
         for line in output.split('\n'):
             match_lat = re.search(r'Packet latency average = ([\d\.]+)', line)
@@ -171,15 +157,15 @@ def run_booksim(topo, freq_ghz):
 
             # accepted flits/cycle/node
             match_tpt = re.search(r'Accepted flit rate.*?= ([\d\.]+)', line)
-            if match_tpt: throughput = float(match_tpt.group(1)) * topo['width'] * topo['height']
+            if match_tpt: throughput_flits_per_node = float(match_tpt.group(1))
 
-        bw_GBps = throughput * data_width_bytes * freq_ghz
+        bw_GBps_per_node = throughput_flits_per_node * data_width_bytes * freq_ghz
 
         os.remove(cfg_path)
         return {
             'latency': latency,
-            'throughput_flits_per_cycle': throughput,
-            'bw_GBps': bw_GBps,
+            'throughput_flits_per_cycle_per_node': throughput_flits_per_node,
+            'bw_GBps_per_node': bw_GBps_per_node,
             'deadlock': deadlock
         }
     except Exception as e:
@@ -187,21 +173,23 @@ def run_booksim(topo, freq_ghz):
 
 results = []
 
-for freq in frequencies:
-    for topo in topologies:
-        print(f"Running DSE for {topo['name']} at {freq} GHz...")
-        py_res = run_python_model(topo, freq)
-        c_res = run_c_model(topo, freq)
-        bs_res = run_booksim(topo, freq)
+for vcs in vcs_list:
+    for freq in frequencies:
+        for topo in topologies:
+            print(f"Running DSE for {topo['name']} at {freq} GHz with VC={vcs}...")
+            py_res = run_python_model(topo, freq)
+            c_res = run_c_model(topo, freq, vcs)
+            bs_res = run_booksim(topo, freq, vcs)
 
-        res = {
-            'topology': topo['name'],
-            'frequency_GHz': freq,
-            'python': py_res,
-            'c_model': c_res,
-            'booksim': bs_res
-        }
-        results.append(res)
+            res = {
+                'topology': topo['name'],
+                'frequency_GHz': freq,
+                'vcs': vcs,
+                'python': py_res,
+                'c_model': c_res,
+                'booksim': bs_res
+            }
+            results.append(res)
 
 with open(os.path.join(REPORTS_DIR, 'data.json'), 'w') as f:
     json.dump(results, f, indent=4)
