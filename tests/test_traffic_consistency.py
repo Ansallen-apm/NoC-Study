@@ -183,18 +183,17 @@ class TestTrafficConsistency(unittest.TestCase):
         with open(self.booksim_config_file, 'r') as f:
             content = f.read()
 
-        # It should have set traffic to hotspot
-        self.assertIn("traffic = hotspot;", content, "BookSim config did not set traffic to hotspot")
+        # It should have set traffic to hotspot(...)
+        self.assertIn("traffic = hotspot({", content, "BookSim config did not set traffic to hotspot string")
 
         # It should have identified Node 15 as the main hotspot, and maybe 5 and 11
-        # The exact format might be hotspot = {15}; or something similar depending on implementation
-        # But we expect 15 to be in the hotspot list.
-        hotspot_match = re.search(r'hotspots\s*=\s*\{([^}]+)\}', content)
+        # The new format is traffic = hotspot({nodes},{rates})
+        hotspot_match = re.search(r'hotspot\(\s*\{([^}]+)\}', content)
         if hotspot_match:
             hotspots = [int(x.strip()) for x in hotspot_match.group(1).split(',')]
             self.assertIn(15, hotspots, "Node 15 was not identified as a hotspot")
         else:
-            self.fail("Could not find 'hotspots = {...}' array in BookSim config")
+            self.fail("Could not find 'hotspot({nodes}' string in BookSim config")
 
 if __name__ == '__main__':
     unittest.main()

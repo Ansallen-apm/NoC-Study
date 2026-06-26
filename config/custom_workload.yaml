@@ -1,0 +1,22 @@
+architecture:
+  topology: mesh  # Will be dynamically overwritten by runner
+  width: 4
+  height: 4
+  buffer_size: 16
+  num_vcs: 2
+  packet_size: 1
+  frequency_mhz: 1500
+  flit_width_bits: 512
+
+simulation:
+  sim_cycles: 10000
+  traffic_pattern: custom_matrix
+  custom_matrix_file: "config/custom_workload.csv"
+  # User specified injection rates: 1 = 100% BW (96 GB/sec)
+  injection_rate: [1.0, 0.2, 0.1, 1.0, 1.0, 0.2, 0.2, 1.0, 1.0, 0.2, 0.2, 1.0, 1.0, 0.1, 0.1, 1.0]
+
+simulators:
+  booksim:
+    sim_type: latency
+    warmup_periods: 3
+    max_samples: 10
