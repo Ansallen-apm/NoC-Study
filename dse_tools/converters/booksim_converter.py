@@ -55,6 +55,18 @@ class BookSimConverter(ConfigConverterBase):
         raw_injection_rate = sim.get('injection_rate', 0.1)
         if isinstance(raw_injection_rate, list):
             bs_config["injection_rate"] = "{" + ",".join(map(str, raw_injection_rate)) + "}"
+
+            # For BookSim to apply an array of injection rates properly, we must assign them to classes.
+            # And we need to tell BookSim to generate traffic where node N belongs to class N.
+            num_classes = len(raw_injection_rate)
+            bs_config["classes"] = num_classes
+
+            # Provide an array of traffic types for each class so BookSim knows how to handle them.
+            # We default to the main traffic pattern for all classes.
+            bs_config["traffic"] = "{" + ",".join([traffic_pattern] * num_classes) + "}"
+
+            # Since BookSim's class mapping can be tricky, we define injection_process if needed,
+            # but setting classes should distribute the injection array across the defined classes.
         else:
             bs_config["injection_rate"] = raw_injection_rate
 
@@ -90,12 +102,20 @@ class BookSimConverter(ConfigConverterBase):
                             rates.append(int(weight * 100)) # Convert to integer rates
 
                     if hotspots:
-                        bs_config['traffic'] = 'hotspot'
-                        # BookSim syntax for array is {1, 2, 3}
-                        bs_config['hotspots'] = "{" + ",".join(map(str, hotspots)) + "}"
-                        bs_config['hotspot_rates'] = "{" + ",".join(map(str, rates)) + "}"
+                        # BookSim traffic arguments are passed as hotspot(nodes,rates)
+                        nodes_str = "{" + ",".join(map(str, hotspots)) + "}"
+                        rates_str = "{" + ",".join(map(str, rates)) + "}"
+                        hotspot_pattern = f"hotspot({nodes_str},{rates_str})"
+
+                        if "classes" in bs_config:
+                            bs_config['traffic'] = "{" + ",".join([hotspot_pattern] * bs_config["classes"]) + "}"
+                        else:
+                            bs_config['traffic'] = hotspot_pattern
                     else:
-                        bs_config['traffic'] = 'uniform'
+                        if "classes" in bs_config:
+                            bs_config['traffic'] = "{" + ",".join(['uniform'] * bs_config["classes"]) + "}"
+                        else:
+                            bs_config['traffic'] = 'uniform'
                 except Exception as e:
                     print(f"Warning: Failed to parse custom matrix for BookSim conversion: {e}. Falling back to uniform.")
                     bs_config['traffic'] = 'uniform'
