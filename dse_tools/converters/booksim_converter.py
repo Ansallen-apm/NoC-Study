@@ -40,7 +40,6 @@ class BookSimConverter(ConfigConverterBase):
 
             # Traffic
             "traffic": traffic_pattern,
-            "injection_rate": sim.get('injection_rate', 0.1),
             "packet_size": arch.get('packet_size', 1),
 
             # Simulation
@@ -52,6 +51,12 @@ class BookSimConverter(ConfigConverterBase):
             # Overrides
             **booksim_overrides
         }
+
+        raw_injection_rate = sim.get('injection_rate', 0.1)
+        if isinstance(raw_injection_rate, list):
+            bs_config["injection_rate"] = "{" + ",".join(map(str, raw_injection_rate)) + "}"
+        else:
+            bs_config["injection_rate"] = raw_injection_rate
 
         # Handle custom traffic matrix by approximating it as a hotspot pattern in BookSim
         if traffic_pattern == 'custom_matrix':
