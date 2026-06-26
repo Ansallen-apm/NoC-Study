@@ -13,7 +13,10 @@ def generate_trace(num_nodes, injection_rate, sim_cycles, trace_file, pattern, w
     with open(trace_file, 'w') as f:
         for cycle in range(sim_cycles):
             for src in range(num_nodes):
-                if random.random() < injection_rate:
+                # Handle both scalar and per-node array injection rates
+                current_rate = injection_rate[src] if isinstance(injection_rate, list) else injection_rate
+
+                if random.random() < current_rate:
                     # Get probability distribution for this source under the specified pattern
                     dests = get_traffic_destinations(src, num_nodes, pattern, width, height, custom_matrix_file=custom_matrix_file)
 

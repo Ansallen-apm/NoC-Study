@@ -53,6 +53,66 @@ class TestTrafficConsistency(unittest.TestCase):
     def tearDown(self):
         self.test_dir.cleanup()
 
+    def test_c_model_per_node_injection_rate(self):
+        """
+        Verify that passing a list of injection rates generates correctly proportioned traces.
+        """
+        injection_rates = [0.1] * self.num_nodes
+        # Make Node 0 very active (80%) and Node 1 very quiet (0%)
+        injection_rates[0] = 0.8
+        injection_rates[1] = 0.0
+
+        sim_cycles = 10000
+        width = 4
+        height = 4
+
+        trace_file_rates = os.path.join(self.test_dir.name, "rates.trace")
+
+        try:
+            generate_trace(self.num_nodes, injection_rates, sim_cycles, trace_file_rates, 'uniform', width, height)
+        except Exception as e:
+            self.fail(f"generate_trace failed with list injection_rate: {e}")
+
+        total_src_counts = defaultdict(int)
+        with open(trace_file_rates, 'r') as f:
+            for line in f:
+                if line.strip() and not line.startswith('#'):
+                    parts = line.split()
+                    src = int(parts[0])
+                    total_src_counts[src] += 1
+
+        # Node 0 should have around 8000 packets (0.8 * 10000)
+        self.assertGreater(total_src_counts[0], 7000)
+        self.assertLess(total_src_counts[0], 9000)
+
+        # Node 1 should have 0 packets
+        self.assertEqual(total_src_counts[1], 0)
+
+        # Node 2 should have around 1000 packets (0.1 * 10000)
+        self.assertGreater(total_src_counts[2], 800)
+        self.assertLess(total_src_counts[2], 1200)
+
+    def test_booksim_converter_array_injection(self):
+        """
+        Verify that BookSimConverter translates an array of injection rates properly.
+        BookSim natively supports array notation like injection_rate = {0.1, 0.2};
+        """
+        config = {
+            'architecture': {'width': 4, 'height': 4},
+            'simulation': {
+                'traffic_pattern': 'uniform',
+                'injection_rate': [0.5, 0.2, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
+            }
+        }
+
+        converter = BookSimConverter(config)
+        converter.convert(self.booksim_config_file)
+
+        with open(self.booksim_config_file, 'r') as f:
+            content = f.read()
+
+        self.assertIn("injection_rate={0.5,0.2,0.1,0.1", content.replace(" ", ""), "Array injection rate not formatted correctly for BookSim")
+
     def test_c_model_trace_probabilities(self):
         """
         Verify that the generated trace file for C Model respects the probabilities
