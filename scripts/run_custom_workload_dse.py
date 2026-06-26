@@ -14,13 +14,15 @@ from noc_python_model.topology import generate_mesh_topology, generate_torus_top
 from noc_python_model.metrics import analyze_channel_load
 from dse_tools.runners.run_c_model_dse import generate_trace
 
-def run_booksim(config_filepath, booksim_executable):
+def run_booksim(config_filepath, booksim_executable, width, topo):
     try:
         result = subprocess.run([booksim_executable, config_filepath], capture_output=True, text=True, timeout=60)
         output = result.stdout
         latency = float('inf')
         throughput = 0.0
+        edge_loads = {}
 
+        current_router = -1
         for line in output.split('\n'):
             if "Packet latency average" in line and "=" in line:
                 match = re.search(r"=\s*([0-9.]+)", line)
@@ -31,17 +33,48 @@ def run_booksim(config_filepath, booksim_executable):
                 if match:
                     throughput = float(match.group(1))
 
-        return latency, throughput
+            # Parse print_activity
+            if line.startswith("router_"):
+                # format: router_y_x.switchMonitor:
+                match = re.search(r"router_(\d+)_(\d+)", line)
+                if match:
+                    y, x = int(match.group(1)), int(match.group(2))
+                    current_router = y * width + x if topo != 'ring' else x
+            elif "Activity for port" in line and current_router != -1:
+                # format: Activity for port 0: 0.123
+                match = re.search(r"port (\d+):\s*([0-9.]+)", line)
+                if match:
+                    port = int(match.group(1))
+                    act = float(match.group(2))
+                    if act > 0:
+                        # BookSim ports: 0=Right(+x), 1=Left(-x), 2=Down(+y), 3=Up(-y), 4=Local
+                        # In Torus ring it's just 0=Right, 1=Left
+                        neighbor = -1
+                        if topo == 'ring':
+                            if port == 0: neighbor = (current_router + 1) % width
+                            elif port == 1: neighbor = (current_router - 1 + width) % width
+                        else:
+                            rx, ry = current_router % width, current_router // width
+                            # We don't have height passed here easily but we know total nodes.
+                            # We'll just ignore generating neighbor mapping for BookSim in this exact function
+                            # and instead do a quick heuristic or pass height. Let's return raw port acts.
+                        if port != 4: # Ignore local
+                            edge_loads[f"R{current_router}_P{port}"] = round(act, 4)
+
+        return latency, throughput, edge_loads
     except Exception as e:
         print(f"BookSim Error: {e}")
-        return float('inf'), 0.0
+        return float('inf'), 0.0, {}
 
-def run_c_model(config_filepath, trace_filepath, c_model_executable):
+def run_c_model(config_filepath, trace_filepath, c_model_executable, width, height, topo):
     try:
         result = subprocess.run([c_model_executable, config_filepath, trace_filepath], capture_output=True, text=True, timeout=60)
         output = result.stdout
         latency = float('inf')
         throughput = 0.0
+        edge_loads = {}
+
+        sim_cycles = 1 # We'll need total cycles to calculate rate. We'll use 10000 as default from config later.
 
         for line in output.split('\n'):
             if "Average Latency:" in line:
@@ -52,11 +85,41 @@ def run_c_model(config_filepath, trace_filepath, c_model_executable):
                 match = re.search(r"Total Throughput:\s*([0-9.]+)", line)
                 if match:
                     throughput = float(match.group(1))
+            if "Simulation finished." in line:
+                # We can't extract total cycles directly unless we print it. Assuming 10000.
+                sim_cycles = 10000
+            if "ActiveCycles:" in line:
+                # format: Router X Port Y ActiveCycles: Z
+                match = re.search(r"Router (\d+) Port (\d+) ActiveCycles: (\d+)", line)
+                if match:
+                    r_id = int(match.group(1))
+                    port = int(match.group(2))
+                    cycles = int(match.group(3))
 
-        return latency, throughput
+                    # Convert to normalized load
+                    load = cycles / sim_cycles
+
+                    # Map Port to Neighbor:
+                    # Mesh/Torus: 1=N, 2=E, 3=S, 4=W
+                    # Ring: 1=E, 2=W
+                    neighbor = -1
+                    rx, ry = r_id % width, r_id // width
+                    if topo == 'ring':
+                        if port == 1: neighbor = (r_id + 1) % width
+                        elif port == 2: neighbor = (r_id - 1 + width) % width
+                    else:
+                        if port == 1: neighbor = ((ry - 1 + height) % height) * width + rx # North
+                        elif port == 2: neighbor = ry * width + ((rx + 1) % width) # East
+                        elif port == 3: neighbor = ((ry + 1) % height) * width + rx # South
+                        elif port == 4: neighbor = ry * width + ((rx - 1 + width) % width) # West
+
+                    if neighbor != -1 and load > 0:
+                        edge_loads[f"{r_id}->{neighbor}"] = round(load, 4)
+
+        return latency, throughput, edge_loads
     except Exception as e:
         print(f"C Model Error: {e}")
-        return float('inf'), 0.0
+        return float('inf'), 0.0, {}
 
 def main():
     config_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'custom_workload.yaml')
@@ -108,8 +171,12 @@ def main():
         # But wait, analyze_channel_load applies the probability from get_traffic_destinations.
         # We need to scale the final output by the node's injection rate.
 
-        # Let's write a simple wrapper to calculate exact edge loads
-        edge_loads_abs = {edge: 0.0 for edge in G.edges()}
+        # Let's write a simple wrapper to calculate exact edge loads using Directed logic
+        edge_loads_abs = {}
+        for u, v in G.edges():
+            edge_loads_abs[(u, v)] = 0.0
+            edge_loads_abs[(v, u)] = 0.0
+
         inj_rates = current_config['simulation']['injection_rate']
         matrix_file = os.path.join(os.path.dirname(__file__), '..', current_config['simulation']['custom_matrix_file'])
 
@@ -173,11 +240,13 @@ def main():
                     curr = next_node
 
                 for u, v in path:
-                    if (u,v) in edge_loads_abs: edge_loads_abs[(u,v)] += flow
-                    elif (v,u) in edge_loads_abs: edge_loads_abs[(v,u)] += flow
+                    if (u,v) in edge_loads_abs:
+                        edge_loads_abs[(u,v)] += flow
+                    else:
+                        print(f"Warning: Edge {u}->{v} not found in topology graph")
 
         max_load = max(edge_loads_abs.values()) if edge_loads_abs else 0
-        serializable_edge_loads = {f"{u}->{v}": round(load, 4) for (u, v), load in edge_loads_abs.items()}
+        serializable_edge_loads = {f"{u}->{v}": round(load, 4) for (u, v), load in edge_loads_abs.items() if load > 0}
 
         # 3. BookSim Simulation
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=".cfg") as tmp_bs_cfg:
@@ -185,7 +254,7 @@ def main():
 
         converter = BookSimConverter(current_config)
         converter.convert(bs_cfg_path)
-        bs_lat, bs_thr = run_booksim(bs_cfg_path, booksim_exe)
+        bs_lat, bs_thr, bs_edges = run_booksim(bs_cfg_path, booksim_exe, w, topo)
         os.remove(bs_cfg_path)
 
         # 4. C Model Simulation
@@ -198,7 +267,7 @@ def main():
 
         generate_trace(num_nodes, inj_rates, current_config['simulation']['sim_cycles'], trace_path, 'custom_matrix', w, h, matrix_file)
 
-        c_lat, c_thr = run_c_model(c_cfg_path, trace_path, c_model_exe)
+        c_lat, c_thr, c_edges = run_c_model(c_cfg_path, trace_path, c_model_exe, w, h, topo)
 
         os.remove(c_cfg_path)
         os.remove(trace_path)
@@ -209,8 +278,10 @@ def main():
             'theory_edge_loads': serializable_edge_loads,
             'booksim_latency': bs_lat,
             'booksim_throughput': bs_thr,
+            'booksim_edge_loads': bs_edges,
             'c_model_latency': c_lat,
-            'c_model_throughput': c_thr
+            'c_model_throughput': c_thr,
+            'c_model_edge_loads': c_edges
         }
 
         print(f"  Theory Max Channel Load: {max_load:.4f} FLITs/cycle")

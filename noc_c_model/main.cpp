@@ -236,6 +236,13 @@ int main(int argc, char* argv[]) {
         if (r->received_flits > 0) {
             std::cout << "Router " << r->id << " received " << r->received_flits << " flits." << std::endl;
         }
+
+        // Print edge activity (Port 1=N, 2=E, 3=S, 4=W)
+        for (int p = 1; p < topology->get_max_ports(); ++p) {
+            if (r->port_active_cycles[p] > 0) {
+                std::cout << "Router " << r->id << " Port " << p << " ActiveCycles: " << r->port_active_cycles[p] << std::endl;
+            }
+        }
     }
 
     return 0;

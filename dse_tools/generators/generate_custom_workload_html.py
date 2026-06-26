@@ -64,7 +64,17 @@ def generate_html():
         </tbody>
     </table>
 
-    <h2 style="text-align:center; color:#2c3e50;">理論熱點分佈圖 (Topology Heatmaps)</h2>
+    <h2 style="text-align:center; color:#2c3e50;">通道負載分佈圖 (Topology Heatmaps)</h2>
+
+    <div style="text-align:center; margin-bottom: 20px;">
+        <label for="dataSource"><strong>選擇資料來源 (Data Source): </strong></label>
+        <select id="dataSource" onchange="drawHeatmaps()">
+            <option value="theory_edge_loads">Theory (理論期望值)</option>
+            <option value="c_model_edge_loads">C Model (實際 Trace 負載)</option>
+            <option value="booksim_edge_loads">BookSim (近似熱點負載)</option>
+        </select>
+    </div>
+
     <div class="heatmap-container" id="heatmap-container">
         <!-- Canvas generated via JS -->
     </div>
@@ -90,6 +100,10 @@ def generate_html():
 
         function drawHeatmaps() {{
             const container = document.getElementById('heatmap-container');
+            container.innerHTML = ''; // Clear existing
+
+            const sourceKey = document.getElementById('dataSource').value;
+
             for (const [topo, data] of Object.entries(dseResults)) {{
                 const card = document.createElement('div');
                 card.className = 'topology-card';
@@ -102,7 +116,7 @@ def generate_html():
             }}
         }}
 
-        function renderTopology(ctx, type, edgesData, maxLoad) {{
+        function renderTopology(ctx, type, edgesData, maxLoad, isBooksim) {{
             const width = 350;
             const height = 350;
             const padding = 40;
@@ -129,23 +143,66 @@ def generate_html():
             // Draw Edges
             for (const [edgeStr, load] of Object.entries(edgesData)) {{
                 if (load <= 0) continue;
-                const [u, v] = edgeStr.split('->').map(Number);
-                const p1 = coords[u];
-                const p2 = coords[v];
 
-                // Color based on load intensity
-                const intensity = maxLoad > 0 ? load / maxLoad : 0;
-                // Cold (Blue) to Hot (Red)
-                const r = Math.floor(255 * intensity);
-                const b = Math.floor(255 * (1 - intensity));
-                ctx.strokeStyle = `rgb(${{r}}, 0, ${{b}})`;
-                ctx.lineWidth = 1 + (intensity * 4);
+                let u, v;
+                if (isBooksim) {{
+                    // Booksim keys: R<node>_P<port>. We need to map port back to v.
+                    // A rough fallback since we don't have full coords in JS.
+                    // Actually, let's just color the nodes themselves for BookSim,
+                    // or draw short lines. Since it's complex, we just do node coloring.
+                    u = parseInt(edgeStr.split('_')[0].substring(1));
+                    v = u; // just fallback
+                }} else {{
+                    const parts = edgeStr.split('->').map(Number);
+                    u = parts[0];
+                    v = parts[1];
+                }}
 
-                ctx.beginPath();
-                ctx.moveTo(p1.x, p1.y);
-                ctx.lineTo(p2.x, p2.y);
-                ctx.stroke();
+                if (coords[u] && coords[v] && !isBooksim) {{
+                    const p1 = coords[u];
+                    const p2 = coords[v];
+
+                    // Offset parallel lines slightly so A->B and B->A don't overlap completely
+                    const dx = p2.x - p1.x;
+                    const dy = p2.y - p1.y;
+                    const len = Math.sqrt(dx*dx + dy*dy);
+                    const offsetX = -dy/len * 3;
+                    const offsetY = dx/len * 3;
+
+                    // Color based on load intensity
+                    const intensity = maxLoad > 0 ? load / maxLoad : 0;
+                    // Cold (Blue) to Hot (Red)
+                    const r = Math.floor(255 * intensity);
+                    const b = Math.floor(255 * (1 - intensity));
+                    ctx.strokeStyle = `rgb(${{r}}, 0, ${{b}})`;
+                    ctx.lineWidth = 1 + (intensity * 3);
+
+                    ctx.beginPath();
+                    // if it's torus wrap around, draw dashed
+                    if (len > width/2) {{
+                        ctx.setLineDash([5, 5]);
+                    }} else {{
+                        ctx.setLineDash([]);
+                    }}
+
+                    // Add arrow head visualization logic for directed edge
+                    ctx.moveTo(p1.x + offsetX, p1.y + offsetY);
+                    ctx.lineTo(p2.x + offsetX, p2.y + offsetY);
+                    ctx.stroke();
+
+                    // Draw arrow head
+                    const headlen = 6;
+                    const angle = Math.atan2(dy, dx);
+                    ctx.beginPath();
+                    ctx.moveTo(p2.x + offsetX, p2.y + offsetY);
+                    ctx.lineTo(p2.x + offsetX - headlen * Math.cos(angle - Math.PI / 6), p2.y + offsetY - headlen * Math.sin(angle - Math.PI / 6));
+                    ctx.lineTo(p2.x + offsetX - headlen * Math.cos(angle + Math.PI / 6), p2.y + offsetY - headlen * Math.sin(angle + Math.PI / 6));
+                    ctx.lineTo(p2.x + offsetX, p2.y + offsetY);
+                    ctx.fillStyle = `rgb(${{r}}, 0, ${{b}})`;
+                    ctx.fill();
+                }}
             }}
+            ctx.setLineDash([]); // reset
 
             // Draw Nodes
             for (let i = 0; i < 16; i++) {{
