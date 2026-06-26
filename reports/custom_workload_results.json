@@ -29,8 +29,8 @@
         },
         "booksim_latency": Infinity,
         "booksim_throughput": 0.0,
-        "c_model_latency": 460.351,
-        "c_model_throughput": 8.2087
+        "c_model_latency": 457.285,
+        "c_model_throughput": 8.1899
     },
     "torus": {
         "theory_max_load": 1.4721540770784596,
@@ -70,8 +70,8 @@
         },
         "booksim_latency": Infinity,
         "booksim_throughput": 0.0,
-        "c_model_latency": 457.142,
-        "c_model_throughput": 8.2101
+        "c_model_latency": 473.656,
+        "c_model_throughput": 8.1947
     },
     "ring": {
         "theory_max_load": 3.946748556874705,
@@ -95,7 +95,7 @@
         },
         "booksim_latency": Infinity,
         "booksim_throughput": 0.0,
-        "c_model_latency": 95.1513,
-        "c_model_throughput": 2.02178
+        "c_model_latency": 91.1494,
+        "c_model_throughput": 1.89803
     }
 }
