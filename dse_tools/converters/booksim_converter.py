@@ -64,12 +64,10 @@ class BookSimConverter(ConfigConverterBase):
             num_classes = len(raw_injection_rate)
             bs_config["classes"] = num_classes
 
-            # Provide an array of traffic types for each class so BookSim knows how to handle them.
-            # We default to the main traffic pattern for all classes.
-            bs_config["traffic"] = "{" + ",".join([traffic_pattern] * num_classes) + "}"
-
-            # Since BookSim's class mapping can be tricky, we define injection_process if needed,
-            # but setting classes should distribute the injection array across the defined classes.
+            # If we pass a single string, BookSim applies it to all classes automatically.
+            # We must NOT pass an array like {hotspot,hotspot} if hotspot contains nested { }
+            # because BookSim's tokenizer will crash.
+            bs_config["traffic"] = traffic_pattern
         else:
             bs_config["injection_rate"] = raw_injection_rate
 
@@ -109,16 +107,9 @@ class BookSimConverter(ConfigConverterBase):
                         nodes_str = "{" + ",".join(map(str, hotspots)) + "}"
                         rates_str = "{" + ",".join(map(str, rates)) + "}"
                         hotspot_pattern = f"hotspot({nodes_str},{rates_str})"
-
-                        if "classes" in bs_config:
-                            bs_config['traffic'] = "{" + ",".join([hotspot_pattern] * bs_config["classes"]) + "}"
-                        else:
-                            bs_config['traffic'] = hotspot_pattern
+                        bs_config['traffic'] = hotspot_pattern
                     else:
-                        if "classes" in bs_config:
-                            bs_config['traffic'] = "{" + ",".join(['uniform'] * bs_config["classes"]) + "}"
-                        else:
-                            bs_config['traffic'] = 'uniform'
+                        bs_config['traffic'] = 'uniform'
                 except Exception as e:
                     print(f"Warning: Failed to parse custom matrix for BookSim conversion: {e}. Falling back to uniform.")
                     bs_config['traffic'] = 'uniform'

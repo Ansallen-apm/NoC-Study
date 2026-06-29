@@ -40,26 +40,40 @@ def run_booksim(config_filepath, booksim_executable, width, topo):
                 if match:
                     y, x = int(match.group(1)), int(match.group(2))
                     current_router = y * width + x if topo != 'ring' else x
-            elif "Activity for port" in line and current_router != -1:
-                # format: Activity for port 0: 0.123
-                match = re.search(r"port (\d+):\s*([0-9.]+)", line)
+            elif "->" in line and current_router != -1:
+                # format: [0 -> 1] 0:8  (input -> output) class:count
+                # We need to extract output port and the count, then accumulate it.
+                match = re.search(r"\[\d+\s*->\s*(\d+)\].*?:\s*(\d+)", line)
                 if match:
-                    port = int(match.group(1))
-                    act = float(match.group(2))
-                    if act > 0:
-                        # BookSim ports: 0=Right(+x), 1=Left(-x), 2=Down(+y), 3=Up(-y), 4=Local
-                        # In Torus ring it's just 0=Right, 1=Left
+                    out_port = int(match.group(1))
+                    count = int(match.group(2))
+
+                    if count > 0 and out_port != 4: # 4 is local ejection
+                        # We use a raw string key because mapping back to exact neighbor node ID
+                        # requires height which isn't passed here. The JS renderer will handle
+                        # the translation or we map it simply. Let's map it exactly like C Model if we can.
+                        # Booksim Ports: 0:Right(+x), 1:Left(-x), 2:Down(+y), 3:Up(-y)
+                        rx, ry = current_router % width, current_router // width
+                        height = 4 # Hardcoded fallback, user specifies 4x4
                         neighbor = -1
+
                         if topo == 'ring':
-                            if port == 0: neighbor = (current_router + 1) % width
-                            elif port == 1: neighbor = (current_router - 1 + width) % width
+                            if out_port == 0: neighbor = (current_router + 1) % width
+                            elif out_port == 1: neighbor = (current_router - 1 + width) % width
                         else:
-                            rx, ry = current_router % width, current_router // width
-                            # We don't have height passed here easily but we know total nodes.
-                            # We'll just ignore generating neighbor mapping for BookSim in this exact function
-                            # and instead do a quick heuristic or pass height. Let's return raw port acts.
-                        if port != 4: # Ignore local
-                            edge_loads[f"R{current_router}_P{port}"] = round(act, 4)
+                            if out_port == 0: neighbor = ry * width + ((rx + 1) % width) # Right
+                            elif out_port == 1: neighbor = ry * width + ((rx - 1 + width) % width) # Left
+                            elif out_port == 2: neighbor = ((ry + 1) % height) * width + rx # Down
+                            elif out_port == 3: neighbor = ((ry - 1 + height) % height) * width + rx # Up
+
+                        if neighbor != -1:
+                            key = f"{current_router}->{neighbor}"
+                            edge_loads[key] = edge_loads.get(key, 0) + count
+
+        # Convert total counts to rate (flits/cycle) - assuming sample period 500 or similar
+        # Since booksim aborts early or runs to max_samples, we normalize based on relative throughput for visualization
+        max_edge = max(edge_loads.values()) if edge_loads else 1
+        edge_loads = {k: round(v / max_edge, 4) for k, v in edge_loads.items()}
 
         return latency, throughput, edge_loads
     except Exception as e:

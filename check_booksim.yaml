@@ -1,0 +1,12 @@
+architecture:
+  topology: torus
+  width: 4
+  height: 4
+  buffer_size: 16
+  num_vcs: 2
+  packet_size: 1
+simulation:
+  sim_cycles: 1000
+  traffic_pattern: custom_matrix
+  custom_matrix_file: "config/custom_workload.csv"
+  injection_rate: [1.0, 0.2, 0.1, 1.0, 1.0, 0.2, 0.2, 1.0, 1.0, 0.2, 0.2, 1.0, 1.0, 0.1, 0.1, 1.0]
