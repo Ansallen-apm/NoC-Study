@@ -1,3 +1,4 @@
+from dse_tools.html_gen.lib import load_json
 import sys
 import os
 import json
@@ -127,21 +128,21 @@ def main():
     print("產生 HTML 報告...")
 
     try:
-        with open(os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports", "report_theory_ring.json"), 'r', encoding='utf-8') as f:
+        with open(os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports", "uniform_dse", "data", "report_theory_ring.json"), 'r', encoding='utf-8') as f:
             theory_data = json.load(f)
     except Exception as e:
         print(f"錯誤：讀取 report_theory_ring.json 失敗 ({e})。")
         theory_data = {}
 
     try:
-        with open(os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports", "report_full_booksim_ring.json"), 'r', encoding='utf-8') as f:
+        with open(os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports", "uniform_dse", "data", "report_full_booksim_ring.json"), 'r', encoding='utf-8') as f:
             booksim_data = json.load(f)
     except Exception as e:
         print(f"錯誤：讀取 report_full_booksim_ring.json 失敗 ({e})。")
         booksim_data = {}
 
-    generate_html(theory_data, booksim_data, os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports", "full_ring_dse_comparison.html"))
-    print("報告產生完畢：reports/full_ring_dse_comparison.html")
+    generate_html(theory_data, booksim_data, os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports", "uniform_dse", "html", "full_ring_dse_comparison.html"))
+    print("報告產生完畢：reports/uniform_dse/html/full_ring_dse_comparison.html")
 
 if __name__ == "__main__":
     main()

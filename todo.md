@@ -111,3 +111,10 @@
     *   **Throughput vs. Injection Rate 曲線圖**：對比不同模型在飽和點後的吞吐量衰減或穩定情況。
 *   [x] **誤差分析表格 (Error Analysis Table)**：針對選定配置，顯示各個模型在零負載延遲 (Zero-load Latency) 與極限吞吐量 (Saturation Rate) 相對於黃金模型 (BookSim) 的誤差百分比 (%)。
 *   [x] **產生器開發**：撰寫 `dse_tools/generators/generate_multi_model_cmp.py`，自動從 `reports/` 抓取資料並生成 `reports/multi_model_cmp.html` 網頁。
+
+## 階段 7：Report 管線模組化與重構 (Phase 7: Reporting Pipeline Refactoring)
+*(目的：將分散的 HTML 產生腳本重構至獨立模組，並建立結構化的專案輸出目錄)*
+*   [x] **報告目錄結構重構**：將 `reports/` 與 `report/` 合併，並依照專案 (如 `uniform_dse/`, `custom_workload/`, `CMN/` 等) 建立子目錄。每個專案下劃分 `data/` (放 JSON), `html/` (放圖表與子網頁), `docs/` (放 Markdown)，並在專案根目錄放置 `index.html`。
+*   [x] **建立 HTML Generator 模組**：建立 `dse_tools/html_gen/` 目錄，將散落的 generators 腳本移入。
+*   [x] **封裝共用 API**：建立 `dse_tools/html_gen/lib/`，將重複的邏輯（如讀取 JSON、HTML Template 組合、Chart.js 圖表生成、資料處理）提取為固定的共用 API 供各產生器呼叫。
+*   [x] **更新全域路徑參照**：修改所有 Runner 與 Generator 腳本，使其適應新的目錄結構，確保輸出與讀取路徑皆指向正確的專案資料夾。

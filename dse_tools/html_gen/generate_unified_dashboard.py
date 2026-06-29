@@ -9,23 +9,16 @@ def queue_delay_func(rate, base, max_rate, scaling):
     y[valid] = base + scaling * (rate[valid] / (max_rate - rate[valid]))
     return y
 
-def load_json(filepath, default_val=None):
-    if default_val is None:
-        default_val = []
-    try:
-        with open(filepath, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except Exception as e:
-        print(f"Warning: Could not load {filepath}: {e}")
-        return default_val
+from dse_tools.html_gen.lib import load_json
+
 
 def generate_dashboard():
     # --- 1. Load Data ---
     print("Loading data...")
-    v_results = load_json(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "..", "reports", "verification_results.json"), [])
-    r_results = load_json(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "..", "reports", "report_full_booksim_ring.json"), {})
-    micro_data = load_json(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "..", "reports", "micro_metrics_results.json"), [])
-    c_model_data = load_json(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "..", "reports", "c_model_sweep_results.json"), [])
+    v_results = load_json(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "..", "reports", "uniform_dse", "data", "verification_results.json"), [])
+    r_results = load_json(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "..", "reports", "uniform_dse", "data", "report_full_booksim_ring.json"), {})
+    micro_data = load_json(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "..", "reports", "uniform_dse", "data", "micro_metrics_results.json"), [])
+    c_model_data = load_json(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "..", "reports", "uniform_dse", "data", "c_model_sweep_results.json"), [])
 
     # --- 2. Process Macro DSE Data (Tab 1) ---
     unified_data = []
@@ -420,9 +413,9 @@ def generate_dashboard():
 """
 
     os.makedirs(os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports"), exist_ok=True)
-    with open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "..", "reports", "Unified_NoC_Dashboard.html"), 'w', encoding='utf-8') as f:
+    with open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "..", "reports", "unified", "index.html"), 'w', encoding='utf-8') as f:
         f.write(html)
-    print("Unified Dashboard successfully generated at reports/Unified_NoC_Dashboard.html")
+    print("Unified Dashboard successfully generated at reports/unified/index.html")
 
 if __name__ == "__main__":
     generate_dashboard()

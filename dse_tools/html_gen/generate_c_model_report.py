@@ -1,30 +1,32 @@
+from dse_tools.html_gen.lib import load_json
 import sys
 import os
 import json
 import yaml
 
 def generate_report():
-    c_model_results_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports", "c_model_sweep_results.json")
-    booksim_results_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports", "verification_results.json")
+    c_model_results_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports", "uniform_dse", "data", "c_model_sweep_results.json")
+    booksim_results_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports", "uniform_dse", "data", "verification_results.json")
     config_path = "config/NoC_config.yaml"
-    output_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports", "c_model_report.md")
+    output_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports", "uniform_dse", "docs", "c_model_report.md")
 
     # Load configuration
     try:
-        with open(config_path, 'r', encoding='utf-8') as f:
+        with open(config_path, 'r') as f:
             config = yaml.safe_load(f)
-        topo = config.get('architecture', {}).get('topology', 'mesh')
-        width = config.get('architecture', {}).get('width', 4)
-        height = config.get('architecture', {}).get('height', 4)
-        nodes = width * height
-        buf_size = config.get('architecture', {}).get('buffer_size', 8)
-    except:
-        return "Error loading config"
-
-    # Load C++ Model results
-    try:
-        with open(c_model_results_path, 'r', encoding='utf-8') as f:
-            c_model_data = json.load(f)
+            topo = config['topology']['name']
+            width = config['topology']['width']
+            height = config['topology']['height']
+            nodes = width * height if topo in ['mesh', 'torus'] else config['topology']['nodes']
+            buf_size = config['router']['buffer_size']
+        c_model_data = load_json(c_model_results_path, [])
+        with open(config_path, 'r') as f:
+            config = yaml.safe_load(f)
+            topo = config['topology']['name']
+            width = config['topology']['width']
+            height = config['topology']['height']
+            nodes = width * height if topo in ['mesh', 'torus'] else config['topology']['nodes']
+            buf_size = config['router']['buffer_size']
     except FileNotFoundError as e:
         return f"錯誤：找不到報告檔案 {e.filename}，請先執行對應的模擬腳本。"
     except json.JSONDecodeError as e:
@@ -33,13 +35,12 @@ def generate_report():
     # Load BookSim & Theory results
     bs_data = None
     try:
-        with open(booksim_results_path, 'r', encoding='utf-8') as f:
-            all_bs_data = json.load(f)
-            # Find matching configuration
-            for entry in all_bs_data:
-                if entry['topology'] == topo and entry['nodes'] == nodes:
-                    bs_data = entry
-                    break
+        all_bs_data = load_json(booksim_results_path, [])
+        # Find matching configuration
+        for entry in all_bs_data:
+            if entry['topology'] == topo and entry['nodes'] == nodes:
+                bs_data = entry
+                break
     except Exception as e:
         print(f"警告：讀取 {booksim_results_path} 失敗 ({e})。忽略 BookSim 資料。")
 
@@ -64,7 +65,7 @@ def generate_report():
             for bs_entry in bs_data['latency_curve']:
                 if abs(bs_entry['rate'] - rate) < 0.001:
                     bs_lat = f"{bs_entry['latency']:.4f}"
-                    break
+                break
 
         c_lat_str = f"{c_lat:.4f}" if c_lat != float('inf') else "Saturation"
 

@@ -193,8 +193,8 @@ def main():
             print(f"進度: {i+1}/{len(tasks)} 完成.")
 
     # 儲存 JSON
-    os.makedirs(os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports"), exist_ok=True)
-    with open(os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports", "verification_results.json"), 'w') as f:
+    os.makedirs(os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports", "uniform_dse", "data"), exist_ok=True)
+    with open(os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports", "uniform_dse", "data", "verification_results.json"), 'w') as f:
         json.dump(results, f, indent=4)
 
     # 數據分析與畫圖 (Correlation)

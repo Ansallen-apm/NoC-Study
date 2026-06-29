@@ -1,0 +1,206 @@
+[
+    {
+        "topology": "ring",
+        "frequency_GHz": 2.5,
+        "vcs": 1,
+        "python": {
+            "bisection_bw_GBps": 640.0,
+            "avg_hops": 4.26666666666667
+        },
+        "c_model": {
+            "error": "[Errno 2] No such file or directory: '/app/noc_c_model/noc_sim'",
+            "deadlock": true
+        },
+        "booksim": {
+            "error": "[Errno 2] No such file or directory: '/app/third_party/booksim/src/booksim'",
+            "deadlock": true
+        }
+    },
+    {
+        "topology": "mesh",
+        "frequency_GHz": 2.5,
+        "vcs": 1,
+        "python": {
+            "bisection_bw_GBps": 1280.0,
+            "avg_hops": 2.6666666666666665
+        },
+        "c_model": {
+            "error": "[Errno 2] No such file or directory: '/app/noc_c_model/noc_sim'",
+            "deadlock": true
+        },
+        "booksim": {
+            "error": "[Errno 2] No such file or directory: '/app/third_party/booksim/src/booksim'",
+            "deadlock": true
+        }
+    },
+    {
+        "topology": "torus",
+        "frequency_GHz": 2.5,
+        "vcs": 1,
+        "python": {
+            "bisection_bw_GBps": 2560.0,
+            "avg_hops": 2.13333333333333
+        },
+        "c_model": {
+            "error": "[Errno 2] No such file or directory: '/app/noc_c_model/noc_sim'",
+            "deadlock": true
+        },
+        "booksim": {
+            "error": "[Errno 2] No such file or directory: '/app/third_party/booksim/src/booksim'",
+            "deadlock": true
+        }
+    },
+    {
+        "topology": "ring",
+        "frequency_GHz": 1.5,
+        "vcs": 1,
+        "python": {
+            "bisection_bw_GBps": 384.0,
+            "avg_hops": 4.26666666666667
+        },
+        "c_model": {
+            "error": "[Errno 2] No such file or directory: '/app/noc_c_model/noc_sim'",
+            "deadlock": true
+        },
+        "booksim": {
+            "error": "[Errno 2] No such file or directory: '/app/third_party/booksim/src/booksim'",
+            "deadlock": true
+        }
+    },
+    {
+        "topology": "mesh",
+        "frequency_GHz": 1.5,
+        "vcs": 1,
+        "python": {
+            "bisection_bw_GBps": 768.0,
+            "avg_hops": 2.6666666666666665
+        },
+        "c_model": {
+            "error": "[Errno 2] No such file or directory: '/app/noc_c_model/noc_sim'",
+            "deadlock": true
+        },
+        "booksim": {
+            "error": "[Errno 2] No such file or directory: '/app/third_party/booksim/src/booksim'",
+            "deadlock": true
+        }
+    },
+    {
+        "topology": "torus",
+        "frequency_GHz": 1.5,
+        "vcs": 1,
+        "python": {
+            "bisection_bw_GBps": 1536.0,
+            "avg_hops": 2.13333333333333
+        },
+        "c_model": {
+            "error": "[Errno 2] No such file or directory: '/app/noc_c_model/noc_sim'",
+            "deadlock": true
+        },
+        "booksim": {
+            "error": "[Errno 2] No such file or directory: '/app/third_party/booksim/src/booksim'",
+            "deadlock": true
+        }
+    },
+    {
+        "topology": "ring",
+        "frequency_GHz": 2.5,
+        "vcs": 2,
+        "python": {
+            "bisection_bw_GBps": 640.0,
+            "avg_hops": 4.26666666666667
+        },
+        "c_model": {
+            "error": "[Errno 2] No such file or directory: '/app/noc_c_model/noc_sim'",
+            "deadlock": true
+        },
+        "booksim": {
+            "error": "[Errno 2] No such file or directory: '/app/third_party/booksim/src/booksim'",
+            "deadlock": true
+        }
+    },
+    {
+        "topology": "mesh",
+        "frequency_GHz": 2.5,
+        "vcs": 2,
+        "python": {
+            "bisection_bw_GBps": 1280.0,
+            "avg_hops": 2.6666666666666665
+        },
+        "c_model": {
+            "error": "[Errno 2] No such file or directory: '/app/noc_c_model/noc_sim'",
+            "deadlock": true
+        },
+        "booksim": {
+            "error": "[Errno 2] No such file or directory: '/app/third_party/booksim/src/booksim'",
+            "deadlock": true
+        }
+    },
+    {
+        "topology": "torus",
+        "frequency_GHz": 2.5,
+        "vcs": 2,
+        "python": {
+            "bisection_bw_GBps": 2560.0,
+            "avg_hops": 2.13333333333333
+        },
+        "c_model": {
+            "error": "[Errno 2] No such file or directory: '/app/noc_c_model/noc_sim'",
+            "deadlock": true
+        },
+        "booksim": {
+            "error": "[Errno 2] No such file or directory: '/app/third_party/booksim/src/booksim'",
+            "deadlock": true
+        }
+    },
+    {
+        "topology": "ring",
+        "frequency_GHz": 1.5,
+        "vcs": 2,
+        "python": {
+            "bisection_bw_GBps": 384.0,
+            "avg_hops": 4.26666666666667
+        },
+        "c_model": {
+            "error": "[Errno 2] No such file or directory: '/app/noc_c_model/noc_sim'",
+            "deadlock": true
+        },
+        "booksim": {
+            "error": "[Errno 2] No such file or directory: '/app/third_party/booksim/src/booksim'",
+            "deadlock": true
+        }
+    },
+    {
+        "topology": "mesh",
+        "frequency_GHz": 1.5,
+        "vcs": 2,
+        "python": {
+            "bisection_bw_GBps": 768.0,
+            "avg_hops": 2.6666666666666665
+        },
+        "c_model": {
+            "error": "[Errno 2] No such file or directory: '/app/noc_c_model/noc_sim'",
+            "deadlock": true
+        },
+        "booksim": {
+            "error": "[Errno 2] No such file or directory: '/app/third_party/booksim/src/booksim'",
+            "deadlock": true
+        }
+    },
+    {
+        "topology": "torus",
+        "frequency_GHz": 1.5,
+        "vcs": 2,
+        "python": {
+            "bisection_bw_GBps": 1536.0,
+            "avg_hops": 2.13333333333333
+        },
+        "c_model": {
+            "error": "[Errno 2] No such file or directory: '/app/noc_c_model/noc_sim'",
+            "deadlock": true
+        },
+        "booksim": {
+            "error": "[Errno 2] No such file or directory: '/app/third_party/booksim/src/booksim'",
+            "deadlock": true
+        }
+    }
+]

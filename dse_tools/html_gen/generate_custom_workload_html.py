@@ -1,14 +1,14 @@
+from dse_tools.html_gen.lib import load_json
 import os
 import json
 
 def generate_html():
-    results_file = os.path.join(os.path.dirname(__file__), '..', '..', 'reports', 'custom_workload_results.json')
+    results_file = os.path.join(os.path.dirname(__file__), '..', '..', 'reports', 'custom_workload', 'data', 'custom_workload_results.json')
     if not os.path.exists(results_file):
         print(f"Error: {results_file} not found.")
         return
 
-    with open(results_file, 'r') as f:
-        results = json.load(f)
+    results = load_json(results_file, [])
 
     # Convert results into JS-friendly variables
     js_data = "const dseResults = " + json.dumps(results) + ";"
@@ -232,7 +232,7 @@ def generate_html():
 </html>
 """
 
-    html_path = os.path.join(os.path.dirname(__file__), '..', '..', 'reports', 'custom_workload_report.html')
+    html_path = os.path.join(os.path.dirname(__file__), '..', '..', 'reports', 'custom_workload', 'index.html')
     with open(html_path, 'w', encoding='utf-8') as f:
         f.write(html_content)
     print(f"HTML Report generated at {html_path}")

@@ -1,3 +1,4 @@
+from dse_tools.html_gen.lib import load_json
 import sys
 import os
 import json
@@ -21,7 +22,7 @@ def main():
 
     # Load BookSim Micro Metrics Results
     try:
-        with open(os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports", "micro_metrics_results.json"), 'r') as f:
+        with open(os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports", "uniform_dse", "data", "micro_metrics_results.json"), 'r') as f:
             micro_data = json.load(f)
     except FileNotFoundError:
         print("Error: micro_metrics_results.json not found.")
@@ -161,7 +162,7 @@ def main():
 </html>
 """
 
-    out_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports", "advanced_micro_metrics_report.html")
+    out_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports", "uniform_dse", "html", "advanced_micro_metrics_report.html")
     with open(out_path, "w") as f:
         f.write(html)
 

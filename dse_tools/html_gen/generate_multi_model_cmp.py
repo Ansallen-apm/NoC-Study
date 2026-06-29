@@ -2,15 +2,8 @@ import os
 import json
 import numpy as np
 
-def load_json(filepath, default_val=None):
-    if default_val is None:
-        default_val = []
-    try:
-        with open(filepath, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except Exception as e:
-        print(f"Warning: Could not load {filepath}: {e}")
-        return default_val
+from dse_tools.html_gen.lib import load_json
+
 
 def get_base_metrics_path():
     return os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "..", "reports")
@@ -19,9 +12,9 @@ def generate_cmp_dashboard():
     reports_dir = get_base_metrics_path()
 
     # 1. Load Data
-    v_results = load_json(os.path.join(reports_dir, 'verification_results.json'), [])
-    c_model_data = load_json(os.path.join(reports_dir, 'c_model_sweep_results.json'), [])
-    micro_data = load_json(os.path.join(reports_dir, 'micro_metrics_results.json'), [])
+    v_results = load_json(os.path.join(reports_dir, 'uniform_dse/data/verification_results.json'), [])
+    c_model_data = load_json(os.path.join(reports_dir, 'uniform_dse/data/c_model_sweep_results.json'), [])
+    micro_data = load_json(os.path.join(reports_dir, 'uniform_dse/data/micro_metrics_results.json'), [])
 
     # 2. Aggregation Dictionary
     # Key: (topology, dim, traffic, routing, vcs)
@@ -334,7 +327,7 @@ def generate_html(js_data):
 
 if __name__ == "__main__":
     js_data = generate_cmp_dashboard()
-    out_path = os.path.join(get_base_metrics_path(), "multi_model_cmp.html")
+    out_path = os.path.join(get_base_metrics_path(), "unified", "html", "multi_model_cmp.html")
     with open(out_path, "w", encoding='utf-8') as f:
         f.write(generate_html(js_data))
     print(f"Multi-Model Comparison Dashboard saved to {out_path}")
