@@ -48,6 +48,9 @@ class BookSimConverter(ConfigConverterBase):
             "max_samples": 10,
             "sample_period": int(sim.get('sim_cycles', 5000) / 10),
 
+            # Tracking
+            "print_activity": 1,
+
             # Overrides
             **booksim_overrides
         }

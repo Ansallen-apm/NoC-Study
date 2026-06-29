@@ -49,7 +49,17 @@
         </tbody>
     </table>
 
-    <h2 style="text-align:center; color:#2c3e50;">理論熱點分佈圖 (Topology Heatmaps)</h2>
+    <h2 style="text-align:center; color:#2c3e50;">通道負載分佈圖 (Topology Heatmaps)</h2>
+
+    <div style="text-align:center; margin-bottom: 20px;">
+        <label for="dataSource"><strong>選擇資料來源 (Data Source): </strong></label>
+        <select id="dataSource" onchange="drawHeatmaps()">
+            <option value="theory_edge_loads">Theory (理論期望值)</option>
+            <option value="c_model_edge_loads">C Model (實際 Trace 負載)</option>
+            <option value="booksim_edge_loads">BookSim (近似熱點負載)</option>
+        </select>
+    </div>
+
     <div class="heatmap-container" id="heatmap-container">
         <!-- Canvas generated via JS -->
     </div>
@@ -57,7 +67,7 @@
     <div id="tooltip" class="tooltip"></div>
 
     <script>
-        const dseResults = {"mesh": {"theory_max_load": 1.7081633865340244, "theory_edge_loads": {"0->1": 0.3177, "0->4": 1.7082, "4->5": 1.046, "4->8": 1.1251, "8->9": 1.046, "8->12": 1.112, "12->13": 0.556, "1->2": 0.3412, "1->5": 0.1831, "5->6": 0.63, "5->9": 0.7089, "9->10": 0.42, "9->13": 0.0427, "13->14": 0.56, "2->3": 0.3177, "2->6": 0.1351, "6->7": 1.046, "6->10": 0.4749, "10->11": 1.046, "10->14": 0.0427, "14->15": 0.556, "3->7": 1.7082, "7->11": 1.6551, "11->15": 1.112}, "booksim_latency": Infinity, "booksim_throughput": 0.0, "c_model_latency": 457.285, "c_model_throughput": 8.1899}, "torus": {"theory_max_load": 1.4721540770784596, "theory_edge_loads": {"0->1": 0.1577, "0->4": 1.4722, "0->3": 0.16, "0->12": 0.236, "4->5": 0.966, "4->8": 0.8891, "4->7": 0.08, "8->9": 0.966, "8->12": 0.876, "8->11": 0.08, "12->13": 0.136, "12->15": 0.42, "1->2": 0.1812, "1->5": 0.1404, "1->13": 0.0427, "5->6": 0.55, "5->9": 0.6662, "9->10": 0.34, "9->13": 0.0, "13->14": 0.14, "2->3": 0.1577, "2->6": 0.0924, "2->14": 0.0427, "6->7": 0.966, "6->10": 0.4322, "10->11": 0.966, "10->14": 0.0, "14->15": 0.136, "3->7": 1.4722, "3->15": 0.236, "7->11": 1.4191, "11->15": 0.876}, "booksim_latency": Infinity, "booksim_throughput": 0.0, "c_model_latency": 473.656, "c_model_throughput": 8.1947}, "ring": {"theory_max_load": 3.946748556874705, "theory_edge_loads": {"0->1": 1.8258, "0->15": 0.8523, "1->2": 1.9344, "2->3": 1.9478, "3->4": 3.0582, "4->5": 3.0851, "5->6": 3.1949, "6->7": 3.9467, "7->8": 3.1117, "8->9": 3.4246, "9->10": 2.6244, "10->11": 2.8978, "11->12": 1.8709, "12->13": 1.2069, "13->14": 1.3016, "14->15": 1.3963}, "booksim_latency": Infinity, "booksim_throughput": 0.0, "c_model_latency": 91.1494, "c_model_throughput": 1.89803}};
+        const dseResults = {"mesh": {"theory_max_load": 1.0841633865340243, "theory_edge_loads": {"0->1": 0.11, "1->0": 0.2077, "0->4": 1.0842, "4->0": 0.624, "4->5": 0.85, "5->4": 0.196, "4->8": 0.3451, "8->4": 0.78, "8->9": 0.85, "9->8": 0.196, "8->12": 0.056, "12->8": 1.056, "12->13": 0.25, "13->12": 0.306, "1->2": 0.195, "2->1": 0.1462, "1->5": 0.0311, "5->1": 0.152, "5->6": 0.204, "6->5": 0.426, "5->9": 0.3229, "9->5": 0.386, "9->10": 0.204, "10->9": 0.216, "9->13": 0.0187, "13->9": 0.024, "13->14": 0.28, "14->13": 0.28, "2->3": 0.2077, "3->2": 0.11, "2->6": 0.0311, "6->2": 0.104, "6->7": 0.196, "7->6": 0.85, "6->10": 0.1129, "10->6": 0.362, "10->11": 0.196, "11->10": 0.85, "10->14": 0.0187, "14->10": 0.024, "14->15": 0.306, "15->14": 0.25, "3->7": 1.0842, "7->3": 0.624, "7->11": 0.8751, "11->7": 0.78, "11->15": 0.056, "15->11": 1.056}, "booksim_latency": Infinity, "booksim_throughput": 0.0, "booksim_edge_loads": {}, "c_model_latency": 464.848, "c_model_throughput": 8.171, "c_model_edge_loads": {"0->1": 0.0745, "0->4": 0.7771, "1->2": 0.1665, "1->5": 0.0288, "1->0": 0.1709, "2->3": 0.1863, "2->6": 0.0266, "2->1": 0.1043, "3->7": 0.6932, "3->2": 0.0602, "4->0": 0.5785, "4->5": 0.7776, "4->8": 0.2578, "5->1": 0.1499, "5->6": 0.19, "5->9": 0.2939, "5->4": 0.1927, "6->2": 0.0995, "6->7": 0.1892, "6->10": 0.1026, "6->5": 0.4289, "7->3": 0.6066, "7->11": 0.5474, "7->6": 0.8463, "8->4": 0.7282, "8->9": 0.8564, "8->12": 0.0418, "9->5": 0.3894, "9->10": 0.1973, "9->13": 0.0161, "9->8": 0.1971, "10->6": 0.357, "10->11": 0.1919, "10->14": 0.015, "10->9": 0.2104, "11->7": 0.7034, "11->15": 0.0414, "11->10": 0.8449, "12->8": 0.9823, "12->13": 0.2507, "13->9": 0.0219, "13->14": 0.2781, "13->12": 0.2365, "14->10": 0.0225, "14->15": 0.303, "14->13": 0.2039, "15->11": 0.8574, "15->14": 0.1713}}, "torus": {"theory_max_load": 1.0281540770784596, "theory_edge_loads": {"0->1": 0.03, "1->0": 0.1277, "0->4": 1.0282, "4->0": 0.444, "0->3": 0.08, "3->0": 0.08, "0->12": 0.056, "12->0": 0.18, "4->5": 0.81, "5->4": 0.156, "4->8": 0.2891, "8->4": 0.6, "4->7": 0.04, "7->4": 0.04, "8->9": 0.81, "9->8": 0.156, "12->8": 0.876, "8->11": 0.04, "11->8": 0.04, "12->13": 0.04, "13->12": 0.096, "12->15": 0.21, "15->12": 0.21, "1->2": 0.115, "2->1": 0.0662, "1->5": 0.0124, "5->1": 0.128, "1->13": 0.0187, "13->1": 0.024, "5->6": 0.164, "6->5": 0.386, "5->9": 0.3042, "9->5": 0.362, "9->10": 0.164, "10->9": 0.176, "13->14": 0.07, "14->13": 0.07, "2->3": 0.1277, "3->2": 0.03, "2->6": 0.0124, "6->2": 0.08, "2->14": 0.0187, "14->2": 0.024, "6->7": 0.156, "7->6": 0.81, "6->10": 0.0942, "10->6": 0.338, "10->11": 0.156, "11->10": 0.81, "14->15": 0.096, "15->14": 0.04, "3->7": 1.0282, "7->3": 0.444, "3->15": 0.056, "15->3": 0.18, "7->11": 0.8191, "11->7": 0.6, "15->11": 0.876}, "booksim_latency": Infinity, "booksim_throughput": 0.0, "booksim_edge_loads": {}, "c_model_latency": 479.114, "c_model_throughput": 8.1993, "c_model_edge_loads": {"0->1": 0.0798, "0->4": 0.7853, "1->2": 0.17, "1->5": 0.0303, "1->0": 0.175, "2->3": 0.1832, "2->6": 0.0304, "2->1": 0.1087, "3->7": 0.6817, "3->2": 0.0629, "4->0": 0.6057, "4->5": 0.7974, "4->8": 0.2646, "5->1": 0.1435, "5->6": 0.2069, "5->9": 0.3024, "5->4": 0.193, "6->2": 0.0984, "6->7": 0.1928, "6->10": 0.111, "6->5": 0.4272, "7->3": 0.6075, "7->11": 0.551, "7->6": 0.8518, "8->4": 0.7467, "8->9": 0.8429, "8->12": 0.041, "9->5": 0.3755, "9->10": 0.204, "9->13": 0.0162, "9->8": 0.1906, "10->6": 0.3519, "10->11": 0.1963, "10->14": 0.0175, "10->9": 0.2177, "11->7": 0.7005, "11->15": 0.0441, "11->10": 0.8485, "12->8": 0.9832, "12->13": 0.2535, "13->9": 0.0201, "13->14": 0.2863, "13->12": 0.2538, "14->10": 0.0191, "14->15": 0.3177, "14->13": 0.218, "15->11": 0.8526, "15->14": 0.1797}}, "ring": {"theory_max_load": 2.25, "theory_edge_loads": {"0->1": 1.288, "1->0": 0.5378, "0->15": 0.2323, "15->0": 0.62, "1->2": 1.3551, "2->1": 0.5793, "2->3": 1.3498, "3->2": 0.598, "3->4": 2.0862, "4->3": 0.972, "4->5": 1.9791, "5->4": 1.106, "5->6": 1.6249, "6->5": 1.57, "6->7": 1.6967, "7->6": 2.25, "7->8": 1.4237, "8->7": 1.688, "8->9": 1.6246, "9->8": 1.8, "9->10": 0.9204, "10->9": 1.704, "10->11": 0.858, "11->10": 2.0398, "11->12": 0.124, "12->11": 1.7469, "12->13": 0.264, "13->12": 0.9429, "13->14": 0.342, "14->13": 0.9596, "14->15": 0.42, "15->14": 0.9763}, "booksim_latency": Infinity, "booksim_throughput": 0.0, "booksim_edge_loads": {}, "c_model_latency": 93.9544, "c_model_throughput": 1.84107, "c_model_edge_loads": {"0->1": 0.0272, "0->15": 0.0074, "1->2": 0.029, "1->0": 0.0151, "2->3": 0.0283, "2->1": 0.0151, "3->4": 0.0446, "3->2": 0.0153, "4->5": 0.0565, "4->3": 0.0234, "5->6": 0.0424, "5->4": 0.0176, "6->7": 0.043, "6->5": 0.0316, "7->8": 0.0308, "7->6": 0.0535, "8->9": 0.0446, "8->7": 0.0289, "9->10": 0.0215, "9->8": 0.0313, "10->11": 0.0193, "10->9": 0.0267, "11->12": 0.0113, "11->10": 0.0329, "12->13": 0.0168, "12->11": 0.0296, "13->14": 0.0156, "13->12": 0.0158, "14->15": 0.0144, "14->13": 0.0159, "15->0": 0.0202, "15->14": 0.017}}};
 
         function populateTable() {
             const tbody = document.getElementById('table-body');
@@ -75,6 +85,10 @@
 
         function drawHeatmaps() {
             const container = document.getElementById('heatmap-container');
+            container.innerHTML = ''; // Clear existing
+
+            const sourceKey = document.getElementById('dataSource').value;
+
             for (const [topo, data] of Object.entries(dseResults)) {
                 const card = document.createElement('div');
                 card.className = 'topology-card';
@@ -87,7 +101,7 @@
             }
         }
 
-        function renderTopology(ctx, type, edgesData, maxLoad) {
+        function renderTopology(ctx, type, edgesData, maxLoad, isBooksim) {
             const width = 350;
             const height = 350;
             const padding = 40;
@@ -114,23 +128,66 @@
             // Draw Edges
             for (const [edgeStr, load] of Object.entries(edgesData)) {
                 if (load <= 0) continue;
-                const [u, v] = edgeStr.split('->').map(Number);
-                const p1 = coords[u];
-                const p2 = coords[v];
 
-                // Color based on load intensity
-                const intensity = maxLoad > 0 ? load / maxLoad : 0;
-                // Cold (Blue) to Hot (Red)
-                const r = Math.floor(255 * intensity);
-                const b = Math.floor(255 * (1 - intensity));
-                ctx.strokeStyle = `rgb(${r}, 0, ${b})`;
-                ctx.lineWidth = 1 + (intensity * 4);
+                let u, v;
+                if (isBooksim) {
+                    // Booksim keys: R<node>_P<port>. We need to map port back to v.
+                    // A rough fallback since we don't have full coords in JS.
+                    // Actually, let's just color the nodes themselves for BookSim,
+                    // or draw short lines. Since it's complex, we just do node coloring.
+                    u = parseInt(edgeStr.split('_')[0].substring(1));
+                    v = u; // just fallback
+                } else {
+                    const parts = edgeStr.split('->').map(Number);
+                    u = parts[0];
+                    v = parts[1];
+                }
 
-                ctx.beginPath();
-                ctx.moveTo(p1.x, p1.y);
-                ctx.lineTo(p2.x, p2.y);
-                ctx.stroke();
+                if (coords[u] && coords[v] && !isBooksim) {
+                    const p1 = coords[u];
+                    const p2 = coords[v];
+
+                    // Offset parallel lines slightly so A->B and B->A don't overlap completely
+                    const dx = p2.x - p1.x;
+                    const dy = p2.y - p1.y;
+                    const len = Math.sqrt(dx*dx + dy*dy);
+                    const offsetX = -dy/len * 3;
+                    const offsetY = dx/len * 3;
+
+                    // Color based on load intensity
+                    const intensity = maxLoad > 0 ? load / maxLoad : 0;
+                    // Cold (Blue) to Hot (Red)
+                    const r = Math.floor(255 * intensity);
+                    const b = Math.floor(255 * (1 - intensity));
+                    ctx.strokeStyle = `rgb(${r}, 0, ${b})`;
+                    ctx.lineWidth = 1 + (intensity * 3);
+
+                    ctx.beginPath();
+                    // if it's torus wrap around, draw dashed
+                    if (len > width/2) {
+                        ctx.setLineDash([5, 5]);
+                    } else {
+                        ctx.setLineDash([]);
+                    }
+
+                    // Add arrow head visualization logic for directed edge
+                    ctx.moveTo(p1.x + offsetX, p1.y + offsetY);
+                    ctx.lineTo(p2.x + offsetX, p2.y + offsetY);
+                    ctx.stroke();
+
+                    // Draw arrow head
+                    const headlen = 6;
+                    const angle = Math.atan2(dy, dx);
+                    ctx.beginPath();
+                    ctx.moveTo(p2.x + offsetX, p2.y + offsetY);
+                    ctx.lineTo(p2.x + offsetX - headlen * Math.cos(angle - Math.PI / 6), p2.y + offsetY - headlen * Math.sin(angle - Math.PI / 6));
+                    ctx.lineTo(p2.x + offsetX - headlen * Math.cos(angle + Math.PI / 6), p2.y + offsetY - headlen * Math.sin(angle + Math.PI / 6));
+                    ctx.lineTo(p2.x + offsetX, p2.y + offsetY);
+                    ctx.fillStyle = `rgb(${r}, 0, ${b})`;
+                    ctx.fill();
+                }
             }
+            ctx.setLineDash([]); // reset
 
             // Draw Nodes
             for (let i = 0; i < 16; i++) {
