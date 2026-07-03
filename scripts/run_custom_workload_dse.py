@@ -302,7 +302,8 @@ def main():
         print(f"  BookSim -> Latency: {bs_lat:.2f}, Throughput: {bs_thr:.4f}")
         print(f"  C Model -> Latency: {c_lat:.2f}, Throughput: {c_thr:.4f}")
 
-    output_file = os.path.join(os.path.dirname(__file__), '..', 'reports', 'custom_workload_results.json')
+    output_file = os.path.join(os.path.dirname(__file__), '..', 'reports', 'custom_workload', 'data', 'custom_workload_results.json')
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
     with open(output_file, 'w') as f:
         json.dump(results, f, indent=4)
     print(f"\nResults saved to {output_file}")

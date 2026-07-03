@@ -125,8 +125,8 @@ def main():
             print(f"  Rate: {rate:.3f} -> 網路飽和/不穩定")
 
     import json
-    os.makedirs(os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports"), exist_ok=True)
-    report_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports", "c_model_sweep_results.json")
+    report_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports", "c_model_eval", "data", "c_model_sweep_results.json")
+    os.makedirs(os.path.dirname(report_file), exist_ok=True)
     with open(report_file, 'w') as f:
         json.dump(results, f, indent=4)
 

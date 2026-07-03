@@ -17,7 +17,7 @@ from noc_python_model.metrics import calculate_bisection_bandwidth, calculate_av
 
 C_MODEL_EXEC = os.path.join(ROOT_DIR, 'noc_c_model', 'noc_sim')
 BOOKSIM_EXEC = os.path.join(ROOT_DIR, 'third_party', 'booksim', 'src', 'booksim')
-REPORTS_DIR = os.path.join(ROOT_DIR, 'reports', 'CMN_DSE')
+REPORTS_DIR = os.path.join(ROOT_DIR, 'reports', 'cmn_dse')
 
 os.makedirs(REPORTS_DIR, exist_ok=True)
 
@@ -191,7 +191,8 @@ for vcs in vcs_list:
             }
             results.append(res)
 
-with open(os.path.join(REPORTS_DIR, 'data.json'), 'w') as f:
+os.makedirs(os.path.join(REPORTS_DIR, 'data'), exist_ok=True)
+with open(os.path.join(REPORTS_DIR, 'data', 'data.json'), 'w') as f:
     json.dump(results, f, indent=4)
 
-print("DSE run complete. Data saved to reports/CMN_DSE/data.json.")
+print("DSE run complete. Data saved to reports/cmn_dse/data/data.json.")

@@ -89,13 +89,13 @@
 ## 基礎建設與端到端驗證 (Infrastructure)
 
 *   [x] **專案目錄結構大掃除 (Directory Housekeeping)**：將 `dse_tools/` 內的龐雜腳本分類至 `core/`, `runners/`, `generators/`, `converters/`, `config/` 與 `examples/`，並更新所有相對路徑與 README 文件。
-*   [ ] **統整 Report 報告模組與路徑重構 (Report System Refactoring)**：
-    *   [ ] **報告產生模組化**：將 `dse_tools/generators/` 下零散的 HTML 與圖表 (Chart.js) 產生邏輯，抽離成固定的 function/library，並放置於 `scripts/html_gen/` (或命名為 `scripts/report_lib/`) 以供各腳本重複呼叫。
-    *   [ ] **收斂 Report 目錄與階層標準化**：
+*   [x] **統整 Report 報告模組與路徑重構 (Report System Refactoring)**：
+    *   [x] **報告產生模組化**：將 `dse_tools/generators/` 下零散的 HTML 與圖表 (Chart.js) 產生邏輯，抽離成固定的 function/library，並放置於 `scripts/html_gen/` (或命名為 `scripts/report_lib/`) 以供各腳本重複呼叫。
+    *   [x] **收斂 Report 目錄與階層標準化**：
         *   將根目錄舊的 `report/` 與 `reports/` 合併，統一保留唯一的 `reports/` 作為根目錄。
         *   實作專案制子資料夾結構：`reports/<專案項目名稱>/`，並在每個專案下標準化切分 `data/` (放 json), `docs/` (放 md), `html/` (放 html)，以及該專案層級的 `index.html`。
         *   預計分類之專案資料夾範例：`reports/cmn_dse/`, `reports/custom_workload/`, `reports/unified_dashboard/`, `reports/cross_verification/` 等。
-    *   [ ] **腳本路徑更新**：配合上述結構變更，需同步修改以下腳本中寫死的輸出入路徑與 import 來源：
+    *   [x] **腳本路徑更新**：配合上述結構變更，需同步修改以下腳本中寫死的輸出入路徑與 import 來源：
         *   Generator 腳本 (需更新檔案輸出至 `reports/<專案>/...`)：`dse_tools/generators/generate_c_model_report.py`, `generate_custom_workload_html.py`, `generate_html_report.py`, `generate_multi_model_cmp.py`, `generate_unified_dashboard.py`, `generate_verify_table.py` 等。
         *   Runner 腳本 (需更新 json 輸出位置)：`dse_tools/runners/run_c_model_dse.py`, `run_booksim_dse.py`, `verify_cross_correlation.py` 以及 `scripts/` 下的 runner 等。
 *   [ ] **統一設定檔解析**：確保 C++, TLM, RTL 各階層模型與 Testbench 皆能動態讀取 `NoC_config.yaml` 進行初始化。
