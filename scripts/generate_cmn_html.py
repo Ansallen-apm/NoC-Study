@@ -3,9 +3,9 @@ import os
 import datetime
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-REPORTS_DIR = os.path.join(ROOT_DIR, 'reports', 'CMN_DSE')
-DATA_FILE = os.path.join(REPORTS_DIR, 'data.json')
-HTML_FILE = os.path.join(REPORTS_DIR, 'basic_CMN.html')
+REPORTS_DIR = os.path.join(ROOT_DIR, 'reports', 'cmn_dse')
+DATA_FILE = os.path.join(REPORTS_DIR, 'data', 'data.json')
+HTML_FILE = os.path.join(REPORTS_DIR, 'html', 'basic_CMN.html')
 
 with open(DATA_FILE, 'r') as f:
     data = json.load(f)

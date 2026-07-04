@@ -136,8 +136,9 @@ def main():
         })
         print(f"Rate: {r:.2f} | Lat: {lat:.2f} | Var: {var:.2f} | Max Lat: {max_lat} | Avg Buf: {avg_buf:.2f}")
 
-    os.makedirs(os.path.join(os.path.dirname(__file__), '..', '..', 'reports'), exist_ok=True)
-    with open(os.path.join(os.path.dirname(__file__), '..', '..', 'reports', 'micro_metrics_results.json'), 'w') as f:
+    out_file = os.path.join(os.path.dirname(__file__), '..', '..', 'reports', 'uniform_dse', 'data', 'micro_metrics_results.json')
+    os.makedirs(os.path.dirname(out_file), exist_ok=True)
+    with open(out_file, 'w') as f:
         json.dump(results, f, indent=4)
 
 if __name__ == "__main__":

@@ -157,9 +157,8 @@ def main():
         print(f"[{topo} {width}x{height}] Pattern: {pattern:10} | Theory Sat: {theory_sat:.4f} | BookSim Sat: {actual_sat:.4f}")
 
     # 輸出成 JSON 檔案
-    out_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports")
-    os.makedirs(out_dir, exist_ok=True)
-    out_file = os.path.join(out_dir, "traffic_verification_results.json")
+    out_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports", "cross_verification", "data", "traffic_verification_results.json")
+    os.makedirs(os.path.dirname(out_file), exist_ok=True)
     with open(out_file, 'w') as f:
         json.dump(final_report, f, indent=4)
 

@@ -4,10 +4,10 @@ import json
 import yaml
 
 def generate_report():
-    c_model_results_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports", "c_model_sweep_results.json")
-    booksim_results_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports", "verification_results.json")
+    c_model_results_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports", "c_model_eval", "data", "c_model_sweep_results.json")
+    booksim_results_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports", "cross_verification", "data", "verification_results.json")
     config_path = "config/NoC_config.yaml"
-    output_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports", "c_model_report.md")
+    output_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports", "c_model_eval", "docs", "c_model_report.md")
 
     # Load configuration
     try:
