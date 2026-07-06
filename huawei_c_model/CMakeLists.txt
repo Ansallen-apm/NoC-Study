@@ -50,6 +50,8 @@ add_executable(run_tests
     tests/test_simulator.cpp
     tests/test_single_ring.cpp
     tests/test_full_ring.cpp
+    tests/test_i_tag.cpp
+    tests/test_e_tag.cpp
 )
 target_link_libraries(run_tests PRIVATE nocsim_core GTest::gtest_main)
 
