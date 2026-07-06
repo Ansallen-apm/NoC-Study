@@ -37,9 +37,9 @@ struct MultiRingConfig {
 };
 
 struct RBRGL1Config {
-    bool at_each_intersection;
-    int queue_depth;
-    int latency_cycles;
+    bool at_each_intersection = false;
+    int queue_depth = 4;
+    int latency_cycles = 2;
 };
 
 struct RoutingConfig {

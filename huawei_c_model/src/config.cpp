@@ -73,6 +73,9 @@ bool Config::parse(const std::string& filepath) {
             if (config["rbrg_l1"]["queue_depth"]) r1c.queue_depth = config["rbrg_l1"]["queue_depth"].as<int>();
             if (config["rbrg_l1"]["latency_cycles"]) r1c.latency_cycles = config["rbrg_l1"]["latency_cycles"].as<int>();
             rbrg_l1 = r1c;
+        } else {
+            // Provide default if not in config but requested by architecture
+            rbrg_l1 = RBRGL1Config();
         }
 
         if (config["nodes"] && config["nodes"].IsMap()) {
