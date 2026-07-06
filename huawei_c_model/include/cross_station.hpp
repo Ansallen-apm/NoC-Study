@@ -3,6 +3,8 @@
 
 #include "component.hpp"
 #include "node_interface.hpp"
+#include "swap_sink.hpp"
+#include "config.hpp"
 #include "ring.hpp"
 #include <vector>
 
@@ -13,7 +15,14 @@ public:
 
     // Two local devices (e.g. NodeInterface[0] and [1])
     std::vector<NodeInterface> node_if;
-    int rr_ptr = 0; // Round-robin pointer for injection arbitration
+    int rr_ptr = 0;
+    SwapSink* swap_sink = nullptr;
+    int deadlock_threshold_cycles = 64;
+    int consecutive_inject_fail_cycles = 0;
+    bool drm_active = false;
+
+    void set_swap_sink(SwapSink* sink) { swap_sink = sink; }
+    void set_deadlock_threshold(int t) { deadlock_threshold_cycles = t; } // Round-robin pointer for injection arbitration
 
     CrossStation(int id, Ring* r);
 
@@ -25,7 +34,7 @@ public:
     int choose_inject_port(Direction dir);
 
 private:
-    void process_direction(const std::vector<RingSlot>& curr_slots, std::vector<RingSlot>& station_outputs, Direction dir);
+    void process_direction(const std::vector<RingSlot>& curr_slots, std::vector<RingSlot>& station_outputs, Direction dir, bool wanted_to_inject, bool& injection_failed);
 
     // Internal state to hold the decisions made during tick
     std::vector<RingSlot> next_cw_out;

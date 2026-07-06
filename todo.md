@@ -59,9 +59,9 @@
 *   [x] **Phase 5 — RBRG-L2 與 Die-to-Die Link**
     *   [x] 實作 RBRG-L2 queueing, backpressure 與 credit control。
     *   [x] 實作 D2D link latency 與 chiplet-to-chiplet 跨越。
-*   [ ] **Phase 6 — SWAP 死結恢復 (Deadlock Recovery)**
-    *   [ ] 實作 Deadlock detector 與 DRM state machine。
-    *   [ ] 實作 Reserved TX buffer 與 same-cycle eject/inject SWAP 行為。
+*   [x] **Phase 6 — SWAP 死結恢復 (Deadlock Recovery)**
+    *   [x] 實作 Deadlock detector 與 DRM state machine。
+    *   [x] 實作 Reserved TX buffer 與 same-cycle eject/inject SWAP 行為。
 *   [ ] **Phase 7 — Server-CPU 實驗與拓撲**
     *   [ ] 定義 Server topology config (CPU clusters, L3, DDRC)。
     *   [ ] 執行 empty network latency 與 DDR latency sweep 測試。

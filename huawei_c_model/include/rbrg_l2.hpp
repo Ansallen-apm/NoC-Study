@@ -5,6 +5,7 @@
 #include "ring.hpp"
 #include "config.hpp"
 #include "router.hpp"
+#include "swap_sink.hpp"
 #include <memory>
 #include <deque>
 #include <vector>
@@ -15,7 +16,7 @@ struct D2DPipelineStage {
     Flit flit;
 };
 
-class RBRG_L2 : public Component {
+class RBRG_L2 : public Component, public SwapSink {
 public:
     int local_ring_id;
     int local_station_id;
@@ -32,6 +33,15 @@ public:
     std::shared_ptr<Router> router;
 
     // Queues on Local Die (Die 0)
+    std::deque<Flit> reserved_tx_buffer;
+
+    bool can_accept_swap() const override {
+        return reserved_tx_buffer.size() < static_cast<size_t>(queue_depth);
+    }
+
+    void accept_swap(const Flit& f) override {
+        reserved_tx_buffer.push_back(f);
+    }
     std::deque<Flit> local_rx_queue; // From local ring
 
     // Queues on Remote Die (Die 1)

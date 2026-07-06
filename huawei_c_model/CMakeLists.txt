@@ -58,6 +58,7 @@ add_executable(run_tests
     tests/test_rbrg_l1_backpressure.cpp
     tests/test_rbrg_l2.cpp
     tests/test_rbrg_l2_credit.cpp
+    tests/test_swap_deadlock.cpp
 )
 target_link_libraries(run_tests PRIVATE nocsim_core GTest::gtest_main)
 

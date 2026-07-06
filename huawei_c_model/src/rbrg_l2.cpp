@@ -69,11 +69,18 @@ void RBRG_L2::tick() {
         current_credits++;
     }
 
-    if (!d2d_pipeline_next[0].valid && !local_rx_queue.empty() && current_credits > 0) {
-        d2d_pipeline_next[0].valid = true;
-        d2d_pipeline_next[0].flit = local_rx_queue.front();
-        local_rx_queue.pop_front();
-        current_credits--;
+    if (!d2d_pipeline_next[0].valid && current_credits > 0) {
+        if (!reserved_tx_buffer.empty()) {
+            d2d_pipeline_next[0].valid = true;
+            d2d_pipeline_next[0].flit = reserved_tx_buffer.front();
+            reserved_tx_buffer.pop_front();
+            current_credits--;
+        } else if (!local_rx_queue.empty()) {
+            d2d_pipeline_next[0].valid = true;
+            d2d_pipeline_next[0].flit = local_rx_queue.front();
+            local_rx_queue.pop_front();
+            current_credits--;
+        }
     }
 
     // Eject from Local Ring to local_rx_queue
