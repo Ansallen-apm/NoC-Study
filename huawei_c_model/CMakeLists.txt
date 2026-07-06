@@ -22,6 +22,8 @@ add_library(nocsim_core
     src/stats.cpp
     src/trace.cpp
     src/simulator.cpp
+    src/ring.cpp
+    src/cross_station.cpp
 )
 target_include_directories(nocsim_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(nocsim_core PUBLIC yaml-cpp)
@@ -46,6 +48,8 @@ FetchContent_MakeAvailable(googletest)
 add_executable(run_tests
     tests/test_config.cpp
     tests/test_simulator.cpp
+    tests/test_single_ring.cpp
+    tests/test_full_ring.cpp
 )
 target_link_libraries(run_tests PRIVATE nocsim_core GTest::gtest_main)
 
