@@ -33,20 +33,28 @@ void CrossStation::process_direction(const std::vector<RingSlot>& curr_slots, st
     const RingSlot& incoming_slot = curr_slots[station_id];
     RingSlot& outgoing_slot = station_outputs[station_id];
 
+    // Transfer E-tag unconditionally initially, might be overridden or cleared
+    outgoing_slot.e_tag = incoming_slot.e_tag;
+    outgoing_slot.e_tag_owner_station = incoming_slot.e_tag_owner_station;
+    outgoing_slot.e_tag_flit_id = incoming_slot.e_tag_flit_id;
+
     // Priority Rule implementation:
     // 1. On-the-fly flit gets highest priority
     if (incoming_slot.occupied) {
         Flit f = incoming_slot.flit; // Copy to manipulate
         if (f.dst_node == station_id || f.dst_node == -1) { // Assuming dst_node corresponds to station_id for simple test
-            // 2. Incoming reaches dest, EjectQueue has space
+            // 2. Incoming reaches dest, EjectQueue has space (or we have a reservation!)
             bool ejected = false;
             for (int k = 0; k < 2; ++k) {
-                if (node_if[k].eject_q.has_space()) {
+                if (node_if[k].eject_q.is_reserved_for(f.id) || node_if[k].eject_q.has_space()) {
                     f.eject_cycle = f.hop_count; // Simplified timing for now
-                    // Just pushing to queue immediately in tick for simple skeleton behavior,
-                    // a deeper implementation would defer to tock.
+                    // Push handles clearing reservation internally
                     node_if[k].eject_q.push(f);
                     ejected = true;
+                    // We ejected, so we should clear the e_tag on the moving slot if it matched us
+                    if (incoming_slot.e_tag && incoming_slot.e_tag_flit_id == f.id) {
+                        outgoing_slot.e_tag = false;
+                    }
                     break;
                 }
             }
@@ -55,8 +63,22 @@ void CrossStation::process_direction(const std::vector<RingSlot>& curr_slots, st
                 // Slot becomes empty
                 outgoing_slot.occupied = false;
             } else {
-                // 3. Dest reached but EjectQueue full -> deflect (pass-through)
+                // 3. Dest reached but EjectQueue full (no normal space and no reservation yet) -> deflect (pass-through)
                 f.deflect_count++;
+
+                // Attempt to establish an E-tag reservation if the slot doesn't already have one
+                if (!incoming_slot.e_tag) {
+                    for (int k = 0; k < 2; ++k) {
+                        if (node_if[k].eject_q.can_reserve()) {
+                            node_if[k].eject_q.reserve(f.id);
+                            outgoing_slot.e_tag = true;
+                            outgoing_slot.e_tag_owner_station = station_id; // the station the flit is trying to reach
+                            outgoing_slot.e_tag_flit_id = f.id;
+                            break;
+                        }
+                    }
+                }
+
                 outgoing_slot.occupied = true;
                 outgoing_slot.flit = f;
             }
@@ -70,14 +92,61 @@ void CrossStation::process_direction(const std::vector<RingSlot>& curr_slots, st
         outgoing_slot.occupied = false;
     }
 
-    // 5. Output slot is empty, round-robin injection
+    // Transfer I-tag unconditionally initially
+    outgoing_slot.i_tag = incoming_slot.i_tag;
+    outgoing_slot.i_tag_owner_station = incoming_slot.i_tag_owner_station;
+    outgoing_slot.i_tag_flit_id = incoming_slot.i_tag_flit_id;
+
+    // 4. Output slot is empty, process I-tag rules and round-robin injection
     if (!outgoing_slot.occupied) {
+        if (!incoming_slot.i_tag) {
+            // Free slot, normal round-robin injection
+            int port = choose_inject_port(dir);
+            if (port != -1) {
+                Flit injecting = node_if[port].inject_q.front();
+                outgoing_slot.occupied = true;
+                outgoing_slot.flit = injecting;
+                node_if[port].inject_q.pop();
+            }
+        } else if (incoming_slot.i_tag_owner_station == station_id) {
+            // It is an I-tag reserved for US.
+            // WE MUST ONLY inject the flit that owns the tag.
+            int owner_port = -1;
+            // Find which queue has the owner flit at the front
+            for (int k = 0; k < 2; ++k) {
+                if (node_if[k].inject_q.can_pop() && node_if[k].inject_q.front().id == incoming_slot.i_tag_flit_id) {
+                    owner_port = k;
+                    break;
+                }
+            }
+
+            if (owner_port != -1) {
+                // We found the owner! Inject it and consume the tag.
+                Flit injecting = node_if[owner_port].inject_q.front();
+                outgoing_slot.occupied = true;
+                outgoing_slot.flit = injecting;
+                outgoing_slot.i_tag = false;
+                node_if[owner_port].inject_q.pop();
+            } else {
+                // The owner flit is not at the front of either queue (maybe dropped?)
+                // Clear the tag to prevent it from permanently occupying the ring
+                outgoing_slot.i_tag = false;
+            }
+        }
+        // else: I-tag belongs to someone else, do nothing and let it propagate (already transferred above)
+    } else {
+        // Output slot is occupied by on-the-fly flit.
+        // If we wanted to inject but couldn't, we establish an I-tag on this moving slot.
+        // We only do this if it doesn't already have an I-tag, to prevent overriding someone else's reservation.
+        // NOTE: we need to check if there is an injecting flit WITHOUT consuming the rr_ptr if we just want to look.
+        // But for cycle accuracy, actually choosing is fine because it fails.
+        // Wait, choose_inject_port increments rr_ptr. That's fine.
         int port = choose_inject_port(dir);
-        if (port != -1) {
+        if (port != -1 && !outgoing_slot.i_tag) {
             Flit injecting = node_if[port].inject_q.front();
-            outgoing_slot.occupied = true;
-            outgoing_slot.flit = injecting;
-            node_if[port].inject_q.pop();
+            outgoing_slot.i_tag = true;
+            outgoing_slot.i_tag_owner_station = station_id;
+            outgoing_slot.i_tag_flit_id = injecting.id;
         }
     }
 }
