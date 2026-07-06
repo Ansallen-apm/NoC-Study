@@ -1,0 +1,32 @@
+topology: ai_processor
+flit_bytes: 64
+
+vertical_rings:
+  count: 8
+  type: half
+  stations_per_ring: 32
+
+horizontal_rings:
+  count: 8
+  type: half
+  stations_per_ring: 32
+
+rbrg_l1:
+  at_each_intersection: true
+  queue_depth: 4
+  latency_cycles: 2
+
+nodes:
+  vertical:
+    - type: AICORE
+      count_per_ring: 8
+  horizontal:
+    - type: L2
+      count_per_ring: 4
+    - type: LLC
+      count_per_ring: 2
+    - type: HBMC
+      count_per_ring: 1
+
+routing:
+  mode: XY

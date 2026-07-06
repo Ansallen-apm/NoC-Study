@@ -1,0 +1,46 @@
+topology: server_cpu
+flit_bytes: 64
+
+rings:
+  - id: 0
+    die: CCD0
+    type: full
+    stations: 32
+  - id: 10
+    die: IOD0
+    type: half
+    stations: 16
+
+nodes:
+  - id: 0
+    type: CPU_CLUSTER
+    ring: 0
+    station: 0
+  - id: 1
+    type: L3_TAG
+    ring: 0
+    station: 4
+  - id: 2
+    type: L3_DATA
+    ring: 0
+    station: 8
+  - id: 3
+    type: DDRC
+    ring: 0
+    station: 12
+  - id: 100
+    type: PCIE
+    ring: 10
+    station: 2
+  - id: 101
+    type: ETHERNET
+    ring: 10
+    station: 6
+
+bridges:
+  - type: RBRG_L2
+    local_ring: 0
+    remote_ring: 10
+    local_station: 16
+    remote_station: 8
+    d2d_latency_cycles: 4
