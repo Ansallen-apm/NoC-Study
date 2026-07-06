@@ -34,6 +34,58 @@
     *   [x] 開發 `run_c_model_dse.py` 執行與 BookSim 相同的注入率參數掃描。
     *   [x] 開發 `generate_c_model_report.py` 產生 C++ 理論與 BookSim 的交叉比較分析報告 (`c_model_report.md`)。
 
+
+## 階段 2.5：Huawei Cycle-Accurate C++ 模型實作 (Phase 2.5)
+*(請務必參考 `Huawei_CA_model_plan.md` 進行實作與架構設計，目標為建立 bufferless multi-ring NoC 模擬器)*
+
+### 開發里程碑 (Implementation Phases)
+*   [x] **Phase 0 — 模擬器骨架 (Simulator Skeleton)**
+    *   [x] 實作 Component base class 與 `tick()` / `tock()` 雙階段週期迴圈。
+    *   [x] 實作 YAML 設定檔解析 (`Config`) 與基礎統計元件 (`StatCollector`)。
+    *   [x] 建立基礎單元測試框架 (GoogleTest 整合)。
+*   [x] **Phase 1 — 單向半環 (Single Half-Ring)**
+    *   [x] 實作 Ring slot movement。
+    *   [x] 實作 Cross station pass-through。
+    *   [x] 實作基礎的 InjectQueue / EjectQueue 與 Latency 量測。
+*   [x] **Phase 2 — 雙向全環 (Full-Ring)**
+    *   [x] 實作 CW / CCW movement 與 shortest-path 方向選擇。
+    *   [x] 實作 per-direction injection arbitration。
+*   [x] **Phase 3 — I-Tag / E-Tag 機制**
+    *   [x] 實作 I-tag slot injection reservation，避免 starvation。
+    *   [x] 實作 E-tag ejection reservation，避免 endless deflection (livelock)。
+*   [ ] **Phase 4 — RBRG-L1 Multi-Ring**
+    *   [ ] 實作 Vertical / horizontal ring topology 建立。
+    *   [ ] 實作 RBRG-L1 佇列與 cross-ring routing (XY / YX routing)。
+*   [ ] **Phase 5 — RBRG-L2 與 Die-to-Die Link**
+    *   [ ] 實作 RBRG-L2 queueing, backpressure 與 credit control。
+    *   [ ] 實作 D2D link latency 與 chiplet-to-chiplet 跨越。
+*   [ ] **Phase 6 — SWAP 死結恢復 (Deadlock Recovery)**
+    *   [ ] 實作 Deadlock detector 與 DRM state machine。
+    *   [ ] 實作 Reserved TX buffer 與 same-cycle eject/inject SWAP 行為。
+*   [ ] **Phase 7 — Server-CPU 實驗與拓撲**
+    *   [ ] 定義 Server topology config (CPU clusters, L3, DDRC)。
+    *   [ ] 執行 empty network latency 與 DDR latency sweep 測試。
+*   [ ] **Phase 8 — AI-Processor 實驗與拓撲**
+    *   [ ] 定義 AI vertical/horizontal multi-ring topology。
+    *   [ ] 執行 Read/write ratio sweep 與 bandwidth probes 測試。
+
+### 階段 2.6：模型驗證與交叉比對 (Validation & Verification)
+*(包含 Phase 9 / 10 的功能驗收與效能確認)*
+*   [ ] **功能驗證 (Functional Validation)**
+    *   [ ] Round-robin arbitration 沒有餓死 local port。
+    *   [ ] RBRG-L1 能正確完成 intra-die ring change。
+    *   [ ] RBRG-L2 能正確完成 inter-die transfer。
+    *   [ ] 在 Synthetic two-ring deadlock 場景下，SWAP 機制能成功打破死結。
+    *   [ ] 確認沒有封包重複 (flit duplicated) 且無封包遺失 (flit lost)。
+*   [ ] **週期精確度驗證 (Cycle-Accuracy Validation)**
+    *   [ ] 空載延遲 (Empty-network latency) 符合預期 Ring distance。
+    *   [ ] Bridge 與 D2D 延遲符合設定的 pipeline 週期。
+    *   [ ] 確保每個 Slot 每週期最多只有一個 Flit，且 SWAP 發生時具備 Atomic update。
+*   [ ] **效能與極限驗證 (Performance Validation)**
+    *   [ ] 負載接近飽和 (Saturation) 時，Latency 呈現急遽上升趨勢。
+    *   [ ] Saturation 下，Ring 利用率 (Utilization) 接近預期上限。
+    *   [ ] AI bandwidth probes 在各節點顯示分佈均衡。
+
 ## 階段 3：交叉驗證整合 (Cross-Verification Integration)
 
 *   [x] **整合開源模擬器**：引入成熟的開源 NoC 模型 (BookSim, Noxim, Constellation) 作為 Git submodules，以作為驗證基準。
