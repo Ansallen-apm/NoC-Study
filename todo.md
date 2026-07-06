@@ -56,9 +56,9 @@
 *   [x] **Phase 4 — RBRG-L1 Multi-Ring**
     *   [x] 實作 Vertical / horizontal ring topology 建立。
     *   [x] 實作 RBRG-L1 佇列與 cross-ring routing (XY / YX routing)。
-*   [ ] **Phase 5 — RBRG-L2 與 Die-to-Die Link**
-    *   [ ] 實作 RBRG-L2 queueing, backpressure 與 credit control。
-    *   [ ] 實作 D2D link latency 與 chiplet-to-chiplet 跨越。
+*   [x] **Phase 5 — RBRG-L2 與 Die-to-Die Link**
+    *   [x] 實作 RBRG-L2 queueing, backpressure 與 credit control。
+    *   [x] 實作 D2D link latency 與 chiplet-to-chiplet 跨越。
 *   [ ] **Phase 6 — SWAP 死結恢復 (Deadlock Recovery)**
     *   [ ] 實作 Deadlock detector 與 DRM state machine。
     *   [ ] 實作 Reserved TX buffer 與 same-cycle eject/inject SWAP 行為。
