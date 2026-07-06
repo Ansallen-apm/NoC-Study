@@ -53,9 +53,9 @@
 *   [x] **Phase 3 — I-Tag / E-Tag 機制**
     *   [x] 實作 I-tag slot injection reservation，避免 starvation。
     *   [x] 實作 E-tag ejection reservation，避免 endless deflection (livelock)。
-*   [ ] **Phase 4 — RBRG-L1 Multi-Ring**
-    *   [ ] 實作 Vertical / horizontal ring topology 建立。
-    *   [ ] 實作 RBRG-L1 佇列與 cross-ring routing (XY / YX routing)。
+*   [x] **Phase 4 — RBRG-L1 Multi-Ring**
+    *   [x] 實作 Vertical / horizontal ring topology 建立。
+    *   [x] 實作 RBRG-L1 佇列與 cross-ring routing (XY / YX routing)。
 *   [ ] **Phase 5 — RBRG-L2 與 Die-to-Die Link**
     *   [ ] 實作 RBRG-L2 queueing, backpressure 與 credit control。
     *   [ ] 實作 D2D link latency 與 chiplet-to-chiplet 跨越。

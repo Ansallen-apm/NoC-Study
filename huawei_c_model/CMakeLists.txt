@@ -11,7 +11,7 @@ if(NOT yaml-cpp_FOUND)
     FetchContent_Declare(
         yaml-cpp
         GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
-        GIT_TAG yaml-cpp-0.8.0
+        GIT_TAG 0.8.0
     )
     FetchContent_MakeAvailable(yaml-cpp)
 endif()
@@ -24,6 +24,7 @@ add_library(nocsim_core
     src/simulator.cpp
     src/ring.cpp
     src/cross_station.cpp
+    src/rbrg_l1.cpp
 )
 target_include_directories(nocsim_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(nocsim_core PUBLIC yaml-cpp)
@@ -52,6 +53,8 @@ add_executable(run_tests
     tests/test_full_ring.cpp
     tests/test_i_tag.cpp
     tests/test_e_tag.cpp
+    tests/test_rbrg_l1.cpp
+    tests/test_rbrg_l1_backpressure.cpp
 )
 target_link_libraries(run_tests PRIVATE nocsim_core GTest::gtest_main)
 
