@@ -62,12 +62,12 @@
 *   [x] **Phase 6 — SWAP 死結恢復 (Deadlock Recovery)**
     *   [x] 實作 Deadlock detector 與 DRM state machine。
     *   [x] 實作 Reserved TX buffer 與 same-cycle eject/inject SWAP 行為。
-*   [ ] **Phase 7 — Server-CPU 實驗與拓撲**
-    *   [ ] 定義 Server topology config (CPU clusters, L3, DDRC)。
-    *   [ ] 執行 empty network latency 與 DDR latency sweep 測試。
-*   [ ] **Phase 8 — AI-Processor 實驗與拓撲**
-    *   [ ] 定義 AI vertical/horizontal multi-ring topology。
-    *   [ ] 執行 Read/write ratio sweep 與 bandwidth probes 測試。
+*   [x] **Phase 7 — Server-CPU 實驗與拓撲**
+    *   [x] 定義 Server topology config (CPU clusters, L3, DDRC)。
+    *   [x] 執行 empty network latency 與 DDR latency sweep 測試。
+*   [x] **Phase 8 — AI-Processor 實驗與拓撲**
+    *   [x] 定義 AI vertical/horizontal multi-ring topology。
+    *   [x] 執行 Read/write ratio sweep 與 bandwidth probes 測試。
 
 ### 階段 2.6：模型驗證與交叉比對 (Validation & Verification)
 *(包含 Phase 9 / 10 的功能驗收與效能確認)*
