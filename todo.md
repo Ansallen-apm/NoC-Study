@@ -86,6 +86,13 @@
     *   [x] Saturation 下，Ring 利用率 (Utilization) 接近預期上限。
     *   [x] AI bandwidth probes 在各節點顯示分佈均衡。
 
+### 階段 2.7：週期精確度視覺化審查 (Cycle-Accurate Visualizer)
+*(目的：提供人工 Review 專用的動態週期播放器，以視覺化驗證跨環與死結情境)*
+*   [x] **定義通用 Trace JSON 格式**：設計支援 Topology 與每週期 Link/Buffer 狀態的通用 Trace 架構，供所有模型未來共用。
+*   [x] **實作 C++ TraceDumper**：將 `huawei_c_model` 的內部狀態（Slot 佔用、佇列深度）精確輸出為上述 JSON。
+*   [x] **設計 3x3 交會擁塞測試情境**：建立 `ca_verify_3x3.yaml`，並在 C++ 刻意製造 RBRG-L1 交會點的排隊擁塞。
+*   [x] **開發 HTML 動態播放器 (`generate_ca_visualizer.py`)**：讀取 JSON，利用純 JS/Canvas 開發具備 Play/Pause/Step 功能的視覺化網頁。
+
 ## 階段 3：交叉驗證整合 (Cross-Verification Integration)
 
 *   [x] **整合開源模擬器**：引入成熟的開源 NoC 模型 (BookSim, Noxim, Constellation) 作為 Git submodules，以作為驗證基準。

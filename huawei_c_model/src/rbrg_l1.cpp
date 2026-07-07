@@ -61,11 +61,11 @@ void RBRG_L1::tick() {
     // Stage Final: Inject from egress queue to remote ring
     // We should choose CW or CCW. For simplicity, if bidir, choose shortest path (left as future optimization, just inject CW for now or whichever is empty)
     if (!egress_queue.empty()) {
-        if (!remote_ring->curr_cw_slots[remote_station_id].occupied) {
+        if (!remote_ring->next_cw_slots[remote_station_id].occupied) {
             remote_ring->next_cw_slots[remote_station_id].occupied = true;
             remote_ring->next_cw_slots[remote_station_id].flit = egress_queue.front();
             egress_queue.pop_front();
-        } else if (remote_ring->bidirectional && !remote_ring->curr_ccw_slots[remote_station_id].occupied) {
+        } else if (remote_ring->bidirectional && !remote_ring->next_ccw_slots[remote_station_id].occupied) {
             remote_ring->next_ccw_slots[remote_station_id].occupied = true;
             remote_ring->next_ccw_slots[remote_station_id].flit = egress_queue.front();
             egress_queue.pop_front();

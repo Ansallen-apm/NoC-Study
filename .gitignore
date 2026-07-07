@@ -19,3 +19,6 @@ dse_tools/*.html
 !dse_tools/report/*.json
 !dse_tools/report/*.html
 !dse_tools/report/*.png
+reports/huawei_c_model/*.json
+reports/huawei_c_model/*.html
+reports/huawei_c_model/*.csv
