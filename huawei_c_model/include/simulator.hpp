@@ -5,6 +5,10 @@
 #include "stats.hpp"
 #include "trace.hpp"
 #include "component.hpp"
+#include "traffic_generator.hpp"
+#include "rbrg_l1.hpp"
+#include "rbrg_l2.hpp"
+#include "router.hpp"
 #include <vector>
 #include <memory>
 
@@ -18,10 +22,15 @@ public:
     TraceDumper trace;
 
     std::vector<std::unique_ptr<Component>> components;
-    std::vector<Ring*> rings; // Keep raw pointers for quick access, owned by components
+    std::vector<Ring*> rings;
     std::vector<CrossStation*> stations;
 
+    std::vector<std::unique_ptr<TrafficGenerator>> traffic_generators;
+    std::shared_ptr<NodeDirectory> node_dir;
+    std::shared_ptr<Router> global_router;
+
     bool init(const std::string& config_path);
+    void build_from_config();
     void run(uint64_t cycles);
 
     void add_component(std::unique_ptr<Component> comp);

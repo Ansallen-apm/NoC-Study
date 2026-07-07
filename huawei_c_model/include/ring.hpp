@@ -17,6 +17,9 @@ public:
     std::vector<RingSlot> curr_ccw_slots;
     std::vector<RingSlot> next_ccw_slots;
 
+    std::vector<uint64_t> active_cycles_cw;
+    std::vector<uint64_t> active_cycles_ccw;
+
     Ring(int id, int stations, bool bidir);
 
     void tick() override;
