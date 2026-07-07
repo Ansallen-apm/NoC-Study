@@ -1,30 +1,31 @@
 #include <gtest/gtest.h>
-#include "rbrg_l1.hpp"
+#include "rbrg_l2.hpp"
 #include "ring.hpp"
 #include "router.hpp"
 
-// Re-declare Phase4Test fixture here for this file
-class Phase4Test : public ::testing::Test {
+class Phase5Test : public ::testing::Test {
 protected:
     void SetUp() override {}
     void TearDown() override {}
 };
 
-TEST_F(Phase4Test, RBRGL1Backpressure) {
-    Ring ringA(0, 4, false);
-    Ring ringB(1, 4, false);
+TEST_F(Phase5Test, RBRGL2CreditControl) {
+    Ring ringA(0, 4, true);
+    Ring ringB(10, 4, true);
 
-    RBRGL1Config config;
-    config.latency_cycles = 2;
-    config.queue_depth = 1; // Small queue to force backpressure
+    BridgeConfig b_config;
+    b_config.d2d_latency_cycles = 2; // short D2D
+
+    // Very small queues to test credit backpressure
+    int queue_depth = 1;
+    int credit_depth = 1;
 
     std::shared_ptr<Router> router = std::make_shared<MultiRingRouter>();
-    RBRG_L1 bridge(0, 1, 1, 2, config, router);
-
+    RBRG_L2 bridge(0, 1, 10, 2, b_config, queue_depth, credit_depth, router);
     bridge.set_local_ring(&ringA);
     bridge.set_remote_ring(&ringB);
 
-    // Keep ringB occupied so bridge egress cannot inject
+    // Block ring B ejection
     Flit blocker;
     blocker.id = 99;
     blocker.valid = true;
@@ -33,15 +34,14 @@ TEST_F(Phase4Test, RBRGL1Backpressure) {
     ringB.next_cw_slots[2].flit = blocker;
     ringB.next_cw_slots[2].occupied = true;
 
-
-    // Inject multiple flits into Ring A
-    for (int cycle = 1; cycle <= 10; ++cycle) {
-        if (cycle <= 4) {
+    // Inject multiple flits
+    for (int cycle = 1; cycle <= 15; ++cycle) {
+        if (cycle <= 5) {
             Flit f;
             f.id = cycle;
             f.valid = true;
             f.src_ring = 0;
-            f.dst_ring = 1;
+            f.dst_ring = 10;
 
             ringA.curr_cw_slots[1].flit = f;
             ringA.curr_cw_slots[1].occupied = true;
@@ -51,17 +51,13 @@ TEST_F(Phase4Test, RBRGL1Backpressure) {
 
         bridge.tick();
 
-        // Keep blocker in place
+        // Keep blocker
         ringB.next_cw_slots[2].flit = blocker;
         ringB.next_cw_slots[2].occupied = true;
 
         bridge.tock();
-
     }
 
-    // Check queues and pipelines
-    EXPECT_EQ(bridge.egress_queue.size(), 1);
-    EXPECT_TRUE(bridge.pipeline_regs_curr[0].valid);
-    EXPECT_TRUE(bridge.pipeline_regs_curr[1].valid);
-
+    EXPECT_LE(bridge.get_remote_rx_queue_size(), 1);
+    EXPECT_LE(bridge.get_local_rx_queue_size(), 1);
 }

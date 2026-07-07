@@ -46,6 +46,10 @@ struct RoutingConfig {
     std::string mode;
 };
 
+struct DeadlockConfig {
+    int threshold_cycles = 64;
+};
+
 class Config {
 public:
     std::string topology;
@@ -64,6 +68,7 @@ public:
     std::vector<NodeConfig> vertical_nodes;
     std::vector<NodeConfig> horizontal_nodes;
     std::optional<RoutingConfig> routing;
+    std::optional<DeadlockConfig> deadlock;
 
     bool parse(const std::string& filepath);
 };

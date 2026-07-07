@@ -103,6 +103,14 @@ bool Config::parse(const std::string& filepath) {
             routing = rc;
         }
 
+        if (config["deadlock"]) {
+            DeadlockConfig dc;
+            if (config["deadlock"]["threshold_cycles"]) dc.threshold_cycles = config["deadlock"]["threshold_cycles"].as<int>();
+            deadlock = dc;
+        } else {
+            deadlock = DeadlockConfig(); // Defaults
+        }
+
         return true;
     } catch (const YAML::Exception& e) {
         std::cerr << "YAML parsing error: " << e.what() << "\n";

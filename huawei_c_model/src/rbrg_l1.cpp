@@ -16,22 +16,23 @@ RBRG_L1::RBRG_L1(int l_ring, int l_station, int r_ring, int r_station, const RBR
 void RBRG_L1::tick() {
     assert(local_ring != nullptr && remote_ring != nullptr);
 
-    // Initialize next state with current state
     pipeline_regs_next = pipeline_regs_curr;
 
-    // Stage 0: Eject from local ring if router says so and queue has space
-    auto& local_slot = local_ring->curr_cw_slots[local_station_id];
-    if (local_slot.occupied) {
-        if (router->should_forward_to_ring(local_slot.flit, remote_ring_id)) {
+    // Eject from local ring (check CW then CCW)
+    auto check_and_eject = [&](auto& curr_slots, auto& next_slots) {
+        auto& slot = curr_slots[local_station_id];
+        if (slot.occupied && router->should_forward_to_ring(slot.flit, remote_ring_id)) {
             if (ingress_queue.size() < static_cast<size_t>(queue_depth)) {
-                // Eject
-                ingress_queue.push_back(local_slot.flit);
-                local_ring->next_cw_slots[local_station_id].occupied = false;
+                ingress_queue.push_back(slot.flit);
+                next_slots[local_station_id].occupied = false;
             }
         }
+    };
+    check_and_eject(local_ring->curr_cw_slots, local_ring->next_cw_slots);
+    if (local_ring->bidirectional) {
+        check_and_eject(local_ring->curr_ccw_slots, local_ring->next_ccw_slots);
     }
 
-    // Process pipeline back to front to handle stalls
     // Move from pipeline last stage to egress queue
     if (pipeline_regs_curr[latency_cycles - 1].valid) {
         if (egress_queue.size() < static_cast<size_t>(queue_depth)) {
@@ -42,11 +43,10 @@ void RBRG_L1::tick() {
 
     // Pipeline progression (Stage 1 to N-1) with stall logic
     for (int i = latency_cycles - 1; i > 0; --i) {
-        // If current stage is empty or moving out, we can pull from previous
         if (!pipeline_regs_next[i].valid) {
             if (pipeline_regs_curr[i - 1].valid) {
                 pipeline_regs_next[i] = pipeline_regs_curr[i - 1];
-                pipeline_regs_next[i - 1].valid = false; // Mark previous as moved
+                pipeline_regs_next[i - 1].valid = false;
             }
         }
     }
@@ -59,12 +59,17 @@ void RBRG_L1::tick() {
     }
 
     // Stage Final: Inject from egress queue to remote ring
-    auto& remote_slot = remote_ring->curr_cw_slots[remote_station_id];
-    if (!remote_slot.occupied && !egress_queue.empty()) {
-        // Slot is empty, inject!
-        remote_ring->next_cw_slots[remote_station_id].occupied = true;
-        remote_ring->next_cw_slots[remote_station_id].flit = egress_queue.front();
-        egress_queue.pop_front();
+    // We should choose CW or CCW. For simplicity, if bidir, choose shortest path (left as future optimization, just inject CW for now or whichever is empty)
+    if (!egress_queue.empty()) {
+        if (!remote_ring->curr_cw_slots[remote_station_id].occupied) {
+            remote_ring->next_cw_slots[remote_station_id].occupied = true;
+            remote_ring->next_cw_slots[remote_station_id].flit = egress_queue.front();
+            egress_queue.pop_front();
+        } else if (remote_ring->bidirectional && !remote_ring->curr_ccw_slots[remote_station_id].occupied) {
+            remote_ring->next_ccw_slots[remote_station_id].occupied = true;
+            remote_ring->next_ccw_slots[remote_station_id].flit = egress_queue.front();
+            egress_queue.pop_front();
+        }
     }
 }
 

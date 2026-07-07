@@ -10,6 +10,7 @@ public:
     size_t capacity = 16;
     std::deque<Flit> q;
 
+    size_t size() const { return q.size(); }
     bool can_push() const { return q.size() < capacity; }
     bool can_pop() const { return !q.empty(); }
     Flit& front() { return q.front(); }
@@ -38,6 +39,18 @@ public:
 
     // Checks if there is space for a NORMAL (unreserved) flit
     // Normal space is capacity minus current actual occupany AND outstanding reservations
+    size_t size() const { return q.size(); }
+    bool is_full() const {
+        return q.size() >= capacity;
+    }
+
+    Flit pop_oldest() {
+        if (q.empty()) return Flit();
+        Flit f = q.front();
+        q.pop_front();
+        return f;
+    }
+
     bool has_space() const {
         return (q.size() + reserved_flit_ids.size()) < capacity;
     }
