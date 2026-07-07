@@ -26,6 +26,7 @@ add_library(nocsim_core
     src/cross_station.cpp
     src/rbrg_l1.cpp
     src/rbrg_l2.cpp
+    src/traffic_generator.cpp
 )
 target_include_directories(nocsim_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(nocsim_core PUBLIC yaml-cpp)
@@ -59,6 +60,7 @@ add_executable(run_tests
     tests/test_rbrg_l2.cpp
     tests/test_rbrg_l2_credit.cpp
     tests/test_swap_deadlock.cpp
+    tests/test_validation.cpp
 )
 target_link_libraries(run_tests PRIVATE nocsim_core GTest::gtest_main)
 

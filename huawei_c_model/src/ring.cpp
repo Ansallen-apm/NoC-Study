@@ -8,7 +8,9 @@ Ring::Ring(int id, int stations, bool bidir)
     if (bidirectional) {
         curr_ccw_slots.resize(num_stations);
         next_ccw_slots.resize(num_stations);
+        active_cycles_ccw.resize(num_stations, 0);
     }
+    active_cycles_cw.resize(num_stations, 0);
 }
 
 void Ring::tick() {
@@ -25,6 +27,10 @@ void Ring::tock() {
     }
     curr_cw_slots = new_curr_cw;
 
+    for (int i = 0; i < num_stations; ++i) {
+        if (curr_cw_slots[i].occupied) active_cycles_cw[i]++;
+    }
+
     // CCW slot movement: slot i moves to (i - 1 + N) % N
     if (bidirectional) {
         std::vector<RingSlot> new_curr_ccw(num_stations);
@@ -33,5 +39,9 @@ void Ring::tock() {
             new_curr_ccw[next_idx] = next_ccw_slots[i];
         }
         curr_ccw_slots = new_curr_ccw;
+
+        for (int i = 0; i < num_stations; ++i) {
+            if (curr_ccw_slots[i].occupied) active_cycles_ccw[i]++;
+        }
     }
 }

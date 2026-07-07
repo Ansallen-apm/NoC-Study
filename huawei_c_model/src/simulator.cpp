@@ -4,13 +4,119 @@
 #include "ring.hpp"
 #include "cross_station.hpp"
 
+void Simulator::build_from_config() {
+    node_dir = std::make_shared<NodeDirectory>();
+    global_router = std::make_shared<MultiRingRouter>();
+
+    int deadlock_threshold = config.deadlock ? config.deadlock->threshold_cycles : 64;
+
+    if (config.topology == "server_cpu") {
+        std::map<int, Ring*> ring_map;
+
+        for (const auto& rcfg : config.rings) {
+            bool is_bidir = (rcfg.type == "full");
+            auto r = std::make_unique<Ring>(rcfg.id, rcfg.stations, is_bidir);
+            ring_map[rcfg.id] = r.get();
+            rings.push_back(r.get());
+
+            for (int s = 0; s < rcfg.stations; ++s) {
+                auto st = std::make_unique<CrossStation>(s, r.get());
+                st->set_deadlock_threshold(deadlock_threshold);
+                stations.push_back(st.get());
+                add_component(std::move(st));
+            }
+            add_component(std::move(r));
+        }
+
+        for (const auto& ncfg : config.nodes) {
+            node_dir->add_node(ncfg.ring, ncfg.station, ncfg.type);
+        }
+
+        for (const auto& bcfg : config.bridges) {
+            if (bcfg.type == "RBRG_L2") {
+                auto bridge = std::make_unique<RBRG_L2>(
+                    bcfg.local_ring, bcfg.local_station,
+                    bcfg.remote_ring, bcfg.remote_station,
+                    bcfg, 4, 16, global_router
+                );
+                bridge->set_local_ring(ring_map[bcfg.local_ring]);
+                bridge->set_remote_ring(ring_map[bcfg.remote_ring]);
+
+                for (auto* st : stations) {
+                    if (st->station_id == bcfg.local_station && st->ring->ring_id == bcfg.local_ring) {
+                        st->set_swap_sink(bridge.get());
+                        break;
+                    }
+                }
+                add_component(std::move(bridge));
+            }
+        }
+    } else if (config.topology == "ai_processor") {
+        std::map<int, Ring*> v_ring_map;
+        std::map<int, Ring*> h_ring_map;
+        int next_ring_id = 0;
+
+        auto build_multi_ring = [&](const MultiRingConfig& mrc, std::map<int, Ring*>& rmap, bool is_vertical, const std::vector<NodeConfig>& node_cfgs) {
+            bool is_bidir = (mrc.type == "full");
+            for (int i = 0; i < mrc.count; ++i) {
+                int r_id = next_ring_id++;
+                auto r = std::make_unique<Ring>(r_id, mrc.stations_per_ring, is_bidir);
+                rmap[i] = r.get();
+                rings.push_back(r.get());
+
+                for (int s = 0; s < mrc.stations_per_ring; ++s) {
+                    auto st = std::make_unique<CrossStation>(s, r.get());
+                    st->set_deadlock_threshold(deadlock_threshold);
+                    stations.push_back(st.get());
+                    add_component(std::move(st));
+                }
+
+                int current_station = 0;
+                for (const auto& nc : node_cfgs) {
+                    for (int c = 0; c < nc.count_per_ring; ++c) {
+                        node_dir->add_node(r_id, current_station, nc.type);
+                        current_station += 2;
+                    }
+                }
+
+                add_component(std::move(r));
+            }
+        };
+
+        if (config.vertical_rings) build_multi_ring(*config.vertical_rings, v_ring_map, true, config.vertical_nodes);
+        if (config.horizontal_rings) build_multi_ring(*config.horizontal_rings, h_ring_map, false, config.horizontal_nodes);
+
+        if (config.rbrg_l1 && config.rbrg_l1->at_each_intersection) {
+            int h_spacing = config.horizontal_rings->stations_per_ring / config.vertical_rings->count;
+            int v_spacing = config.vertical_rings->stations_per_ring / config.horizontal_rings->count;
+
+            for (int v = 0; v < config.vertical_rings->count; ++v) {
+                for (int h = 0; h < config.horizontal_rings->count; ++h) {
+                    int v_station = h * v_spacing;
+                    int h_station = v * h_spacing;
+
+                    auto bridge = std::make_unique<RBRG_L1>(
+                        v_ring_map[v]->ring_id, v_station,
+                        h_ring_map[h]->ring_id, h_station,
+                        *config.rbrg_l1, global_router
+                    );
+                    bridge->set_local_ring(v_ring_map[v]);
+                    bridge->set_remote_ring(h_ring_map[h]);
+                    add_component(std::move(bridge));
+                }
+            }
+        }
+    }
+}
+
+
 bool Simulator::init(const std::string& config_path) {
     if (!config.parse(config_path)) {
         std::cerr << "Failed to parse config: " << config_path << "\n";
         return false;
     }
 
-    init_topology();
+    build_from_config();
 
     return true;
 }

@@ -62,29 +62,29 @@
 *   [x] **Phase 6 — SWAP 死結恢復 (Deadlock Recovery)**
     *   [x] 實作 Deadlock detector 與 DRM state machine。
     *   [x] 實作 Reserved TX buffer 與 same-cycle eject/inject SWAP 行為。
-*   [ ] **Phase 7 — Server-CPU 實驗與拓撲**
-    *   [ ] 定義 Server topology config (CPU clusters, L3, DDRC)。
-    *   [ ] 執行 empty network latency 與 DDR latency sweep 測試。
-*   [ ] **Phase 8 — AI-Processor 實驗與拓撲**
-    *   [ ] 定義 AI vertical/horizontal multi-ring topology。
-    *   [ ] 執行 Read/write ratio sweep 與 bandwidth probes 測試。
+*   [x] **Phase 7 — Server-CPU 實驗與拓撲**
+    *   [x] 定義 Server topology config (CPU clusters, L3, DDRC)。
+    *   [x] 執行 empty network latency 與 DDR latency sweep 測試。
+*   [x] **Phase 8 — AI-Processor 實驗與拓撲**
+    *   [x] 定義 AI vertical/horizontal multi-ring topology。
+    *   [x] 執行 Read/write ratio sweep 與 bandwidth probes 測試。
 
 ### 階段 2.6：模型驗證與交叉比對 (Validation & Verification)
 *(包含 Phase 9 / 10 的功能驗收與效能確認)*
-*   [ ] **功能驗證 (Functional Validation)**
-    *   [ ] Round-robin arbitration 沒有餓死 local port。
-    *   [ ] RBRG-L1 能正確完成 intra-die ring change。
-    *   [ ] RBRG-L2 能正確完成 inter-die transfer。
-    *   [ ] 在 Synthetic two-ring deadlock 場景下，SWAP 機制能成功打破死結。
-    *   [ ] 確認沒有封包重複 (flit duplicated) 且無封包遺失 (flit lost)。
-*   [ ] **週期精確度驗證 (Cycle-Accuracy Validation)**
-    *   [ ] 空載延遲 (Empty-network latency) 符合預期 Ring distance。
-    *   [ ] Bridge 與 D2D 延遲符合設定的 pipeline 週期。
-    *   [ ] 確保每個 Slot 每週期最多只有一個 Flit，且 SWAP 發生時具備 Atomic update。
-*   [ ] **效能與極限驗證 (Performance Validation)**
-    *   [ ] 負載接近飽和 (Saturation) 時，Latency 呈現急遽上升趨勢。
-    *   [ ] Saturation 下，Ring 利用率 (Utilization) 接近預期上限。
-    *   [ ] AI bandwidth probes 在各節點顯示分佈均衡。
+*   [x] **功能驗證 (Functional Validation)**
+    *   [x] Round-robin arbitration 沒有餓死 local port。
+    *   [x] RBRG-L1 能正確完成 intra-die ring change。
+    *   [x] RBRG-L2 能正確完成 inter-die transfer。
+    *   [x] 在 Synthetic two-ring deadlock 場景下，SWAP 機制能成功打破死結。
+    *   [x] 確認沒有封包重複 (flit duplicated) 且無封包遺失 (flit lost)。
+*   [x] **週期精確度驗證 (Cycle-Accuracy Validation)**
+    *   [x] 空載延遲 (Empty-network latency) 符合預期 Ring distance。
+    *   [x] Bridge 與 D2D 延遲符合設定的 pipeline 週期。
+    *   [x] 確保每個 Slot 每週期最多只有一個 Flit，且 SWAP 發生時具備 Atomic update。
+*   [x] **效能與極限驗證 (Performance Validation)**
+    *   [x] 負載接近飽和 (Saturation) 時，Latency 呈現急遽上升趨勢。
+    *   [x] Saturation 下，Ring 利用率 (Utilization) 接近預期上限。
+    *   [x] AI bandwidth probes 在各節點顯示分佈均衡。
 
 ## 階段 3：交叉驗證整合 (Cross-Verification Integration)
 

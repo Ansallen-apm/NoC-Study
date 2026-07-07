@@ -37,8 +37,6 @@ private:
     void process_direction(const std::vector<RingSlot>& curr_slots, std::vector<RingSlot>& station_outputs, Direction dir, bool wanted_to_inject, bool& injection_failed);
 
     // Internal state to hold the decisions made during tick
-    std::vector<RingSlot> next_cw_out;
-    std::vector<RingSlot> next_ccw_out;
 };
 
 #endif // CROSS_STATION_HPP

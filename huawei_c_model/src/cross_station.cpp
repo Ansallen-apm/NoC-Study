@@ -3,9 +3,9 @@
 
 CrossStation::CrossStation(int id, Ring* r) : station_id(id), ring(r) {
     node_if.resize(2); // Two node interfaces per cross station
-    next_cw_out.resize(ring->num_stations);
+
     if (ring->bidirectional) {
-        next_ccw_out.resize(ring->num_stations);
+
     }
 }
 
@@ -188,10 +188,10 @@ void CrossStation::tick() {
         }
     }
 
-    process_direction(ring->curr_cw_slots, next_cw_out, Direction::CW, wanted_to_inject, injection_failed_this_cycle);
+    process_direction(ring->curr_cw_slots, ring->next_cw_slots, Direction::CW, wanted_to_inject, injection_failed_this_cycle);
 
     if (ring->bidirectional) {
-        process_direction(ring->curr_ccw_slots, next_ccw_out, Direction::CCW, wanted_to_inject, injection_failed_this_cycle);
+        process_direction(ring->curr_ccw_slots, ring->next_ccw_slots, Direction::CCW, wanted_to_inject, injection_failed_this_cycle);
     }
 
     // Deadlock detection and SWAP
@@ -214,11 +214,4 @@ void CrossStation::tick() {
     }
 }
 
-void CrossStation::tock() {
-    // Publish station output decisions to the ring's next state
-    ring->next_cw_slots[station_id] = next_cw_out[station_id];
-
-    if (ring->bidirectional) {
-        ring->next_ccw_slots[station_id] = next_ccw_out[station_id];
-    }
-}
+void CrossStation::tock() {}
