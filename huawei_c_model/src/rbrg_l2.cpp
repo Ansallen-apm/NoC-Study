@@ -30,12 +30,12 @@ void RBRG_L2::tick() {
     // --- REMOTE DIE (Die 1) LOGIC ---
     // Inject from remote_rx_queue into Remote Ring
     if (!remote_rx_queue.empty()) {
-        if (!remote_ring->curr_cw_slots[remote_station_id].occupied) {
+        if (!remote_ring->next_cw_slots[remote_station_id].occupied) {
             remote_ring->next_cw_slots[remote_station_id].occupied = true;
             remote_ring->next_cw_slots[remote_station_id].flit = remote_rx_queue.front();
             remote_rx_queue.pop_front();
             credit_returned_this_cycle = true;
-        } else if (remote_ring->bidirectional && !remote_ring->curr_ccw_slots[remote_station_id].occupied) {
+        } else if (remote_ring->bidirectional && !remote_ring->next_ccw_slots[remote_station_id].occupied) {
             remote_ring->next_ccw_slots[remote_station_id].occupied = true;
             remote_ring->next_ccw_slots[remote_station_id].flit = remote_rx_queue.front();
             remote_rx_queue.pop_front();

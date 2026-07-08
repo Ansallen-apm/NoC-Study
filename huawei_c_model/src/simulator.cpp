@@ -207,7 +207,6 @@ void Simulator::run(uint64_t cycles) {
         }
 
         stats.tick();
-        trace.tick();
 
         // 2. tock() commits the state for all components (writes next state to current)
         for (auto& comp : components) {
@@ -215,7 +214,6 @@ void Simulator::run(uint64_t cycles) {
         }
 
         stats.tock();
-        trace.tock();
     }
 }
 

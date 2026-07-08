@@ -1,7 +1,6 @@
 #include "simulator.hpp"
 #include <iostream>
 #include <fstream>
-#include <cassert>
 
 void run_server_experiment(const std::string& config_file) {
     std::cout << "Running Server-CPU Experiment..." << std::endl;
@@ -66,7 +65,6 @@ void run_server_experiment(const std::string& config_file) {
             }
         }
         double avg_util = total_slots > 0 ? (double)total_active / total_slots : 0;
-
         double avg_lat = total_received > 0 ? (double)total_latency / total_received : 0;
         std::cout << "Rate: " << rate << " | Avg Latency: " << avg_lat << " | Util: " << avg_util << std::endl;
         out_file << rate << "," << avg_lat << "," << total_received << "," << avg_util << "\n";
@@ -136,7 +134,6 @@ void run_ai_experiment(const std::string& config_file) {
             }
         }
         double avg_util = total_slots > 0 ? (double)total_active / total_slots : 0;
-
         double bw = (double)total_received / sim_cycles;
         std::cout << "Ratio: " << ratio << " | BW: " << bw << " | Util: " << avg_util << std::endl;
         out_file << ratio << "," << bw << "," << avg_util << "\n";
@@ -144,15 +141,56 @@ void run_ai_experiment(const std::string& config_file) {
     out_file.close();
 }
 
-int main(int argc, char** argv) {
-    if (argc < 5) {
-        std::cerr << "Usage: " << argv[0] << " --experiment <server|ai> --config <path.yaml>\n";
-        return 1;
+void run_ca_verify(const std::string& config_file) {
+    std::cout << "Running CA Verify Experiment..." << std::endl;
+    Simulator sim;
+    if (!sim.init(config_file)) return;
+
+    sim.trace.init("../../reports/huawei_c_model/ca_trace.json");
+    sim.trace.dump_topology(&sim);
+
+    auto* src_station = sim.stations[8];
+    for (int i=1; i<=5; ++i) {
+        Flit f;
+        f.id = 100 + i;
+        f.valid = true;
+        f.src_ring = 0;
+        f.src_node = 8;
+        f.dst_ring = 3;
+        f.dst_node = 4;
+        src_station->node_if[0].inject_q.push(f);
     }
 
+    auto* blocker_station = sim.stations[12 * 3 + 10];
+    for (int i=1; i<=10; ++i) {
+        Flit f;
+        f.id = 200 + i;
+        f.valid = true;
+        f.src_ring = 3;
+        f.src_node = 10;
+        f.dst_ring = 3;
+        f.dst_node = 8;
+        blocker_station->node_if[0].inject_q.push(f);
+    }
+
+    int sim_cycles = 50;
+    for (int i = 0; i < sim_cycles; ++i) {
+        for (auto& comp : sim.components) comp->tick();
+        for (auto& comp : sim.components) comp->tock();
+        sim.trace.capture_cycle(&sim, i);
+    }
+
+    sim.trace.write_json();
+    std::cout << "CA Verify trace generated." << std::endl;
+}
+
+int main(int argc, char** argv) {
+    if (argc < 5) {
+        std::cerr << "Usage: " << argv[0] << " --experiment <server|ai|ca_verify> --config <path.yaml>\n";
+        return 1;
+    }
     std::string experiment = "";
     std::string config_file = "";
-
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
         if (arg == "--experiment" && i + 1 < argc) {
@@ -161,11 +199,12 @@ int main(int argc, char** argv) {
             config_file = argv[++i];
         }
     }
-
     if (experiment == "server") {
         run_server_experiment(config_file);
     } else if (experiment == "ai") {
         run_ai_experiment(config_file);
+    } else if (experiment == "ca_verify") {
+        run_ca_verify(config_file);
     } else {
         std::cerr << "Unknown experiment\n";
         return 1;
