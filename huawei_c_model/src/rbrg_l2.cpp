@@ -85,11 +85,11 @@ void RBRG_L2::tick() {
 
     // Eject from Local Ring to local_rx_queue
     auto check_and_eject = [&](auto& curr_slots, auto& next_slots) {
-        auto& slot = curr_slots[local_station_id];
+        auto& slot = next_slots[local_station_id];
         if (slot.occupied && router->should_forward_to_ring(slot.flit, remote_ring_id)) {
             if (local_rx_queue.size() < static_cast<size_t>(queue_depth)) {
                 local_rx_queue.push_back(slot.flit);
-                next_slots[local_station_id].occupied = false;
+                slot.occupied = false;
             }
         }
     };
