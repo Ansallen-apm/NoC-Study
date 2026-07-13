@@ -20,11 +20,11 @@ void RBRG_L1::tick() {
 
     // Eject from local ring (check CW then CCW)
     auto check_and_eject = [&](auto& curr_slots, auto& next_slots) {
-        auto& slot = next_slots[local_station_id];
+        auto& slot = curr_slots[local_station_id];
         if (slot.occupied && router->should_forward_to_ring(slot.flit, remote_ring_id)) {
             if (ingress_queue.size() < static_cast<size_t>(queue_depth)) {
                 ingress_queue.push_back(slot.flit);
-                slot.occupied = false;
+                next_slots[local_station_id].occupied = false;
             }
         }
     };
