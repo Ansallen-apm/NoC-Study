@@ -95,9 +95,9 @@
 
 ### 階段 2.8：極限混沌壓力測試 (Chaos Stress Test)
 *(目的：透過高強度隨機流量與長時間模擬，激發所有極端複合狀態，以驗證行為覆蓋率與週期精確度穩健性)*
-*   [x] **建立高壓混沌拓撲與流量**：建構多環交會網路，並注入極高頻率的 Uniform Random 流量，搭配極小 Buffer 強迫觸發壅塞。
-*   [x] **實作動態不變性斷言 (Runtime Invariants)**：在模擬過程中即時驗證「Flit 守恆定理」與「Slot 互斥佔用」。
-*   [x] **實作死結解除與活躍度檢查 (Liveness Check)**：監控網路中是否存在永久卡死的封包，證明 SWAP 與 Deflection 機制在極端複合狀態下依然有效。
+*   [ ] **建立高壓混沌拓撲與流量**：建構多環交會網路，並注入極高頻率的 Uniform Random 流量，搭配極小 Buffer 強迫觸發壅塞。
+*   [ ] **實作動態不變性斷言 (Runtime Invariants)**：在模擬過程中即時驗證「Flit 守恆定理」與「Slot 互斥佔用」。
+*   [ ] **實作死結解除與活躍度檢查 (Liveness Check)**：監控網路中是否存在永久卡死的封包，證明 SWAP 與 Deflection 機制在極端複合狀態下依然有效。
 *   [ ] **量化邊界案例覆蓋率**：統計並印出 Deflection、E-tag、I-tag 與 SWAP 在測試中的觸發總數，證明行為覆蓋充分。
 
 ## 階段 3：交叉驗證整合 (Cross-Verification Integration)
