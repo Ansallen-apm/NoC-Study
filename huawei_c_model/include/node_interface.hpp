@@ -52,15 +52,16 @@ public:
     }
 
     bool has_space() const {
-        return (q.size() + reserved_flit_ids.size()) < capacity;
+        // Normal injection requires actual space (not exceeding capacity with reserves)
+        return q.size() < capacity && (q.size() + reserved_flit_ids.size()) < capacity;
     }
 
     // Checks if the EjectQueue has capacity to grant a NEW reservation
     // A reservation can be granted as long as the total number of reservations
-    // doesn't exceed the queue's MAX capacity. We can reserve even if the queue
-    // is currently full of actual flits!
+    // doesn't exceed the queue's MAX capacity. We also need to check current size
+    // to avoid exceeding capacity in tiny buffer scenarios.
     bool can_reserve() const {
-        return reserved_flit_ids.size() < capacity;
+        return (q.size() + reserved_flit_ids.size()) < capacity;
     }
 
     void reserve(uint64_t flit_id) {

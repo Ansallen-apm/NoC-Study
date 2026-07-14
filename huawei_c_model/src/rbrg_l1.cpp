@@ -19,18 +19,18 @@ void RBRG_L1::tick() {
     pipeline_regs_next = pipeline_regs_curr;
 
     // Eject from local ring (check CW then CCW)
-    auto check_and_eject = [&](auto& curr_slots, auto& next_slots) {
-        auto& slot = curr_slots[local_station_id];
+    auto check_and_eject = [&](auto& next_slots) {
+        auto& slot = next_slots[local_station_id];
         if (slot.occupied && router->should_forward_to_ring(slot.flit, remote_ring_id)) {
             if (ingress_queue.size() < static_cast<size_t>(queue_depth)) {
                 ingress_queue.push_back(slot.flit);
-                next_slots[local_station_id].occupied = false;
+                slot.occupied = false;
             }
         }
     };
-    check_and_eject(local_ring->curr_cw_slots, local_ring->next_cw_slots);
+    check_and_eject(local_ring->next_cw_slots);
     if (local_ring->bidirectional) {
-        check_and_eject(local_ring->curr_ccw_slots, local_ring->next_ccw_slots);
+        check_and_eject(local_ring->next_ccw_slots);
     }
 
     // Move from pipeline last stage to egress queue

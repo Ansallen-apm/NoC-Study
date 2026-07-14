@@ -1,6 +1,7 @@
 #include "config.hpp"
 #include <yaml-cpp/yaml.h>
 #include <iostream>
+#include <stdexcept>
 
 bool Config::parse(const std::string& filepath) {
     try {
@@ -8,6 +9,8 @@ bool Config::parse(const std::string& filepath) {
 
         if (config["topology"]) {
             topology = config["topology"].as<std::string>();
+        } else {
+            throw std::runtime_error("Config missing required 'topology' field");
         }
         if (config["flit_bytes"]) {
             flit_bytes = config["flit_bytes"].as<int>();
@@ -17,10 +20,15 @@ bool Config::parse(const std::string& filepath) {
         if (config["rings"]) {
             for (const auto& r : config["rings"]) {
                 RingConfig rc;
-                if (r["id"]) rc.id = r["id"].as<int>();
+                if (!r["id"]) throw std::runtime_error("Ring config missing 'id'");
+                rc.id = r["id"].as<int>();
+                if (!r["type"]) throw std::runtime_error("Ring config missing 'type'");
+                rc.type = r["type"].as<std::string>();
+                if (!r["stations"]) throw std::runtime_error("Ring config missing 'stations'");
+                rc.stations = r["stations"].as<int>();
+                if (rc.stations <= 0) throw std::runtime_error("Ring 'stations' must be > 0");
                 if (r["die"]) rc.die = r["die"].as<std::string>();
-                if (r["type"]) rc.type = r["type"].as<std::string>();
-                if (r["stations"]) rc.stations = r["stations"].as<int>();
+                else rc.die = "cpu";
                 rings.push_back(rc);
             }
         }
@@ -29,10 +37,13 @@ bool Config::parse(const std::string& filepath) {
             for (const auto& n : config["nodes"]) {
                 NodeConfig nc;
                 nc.count_per_ring = 0; // default
-                if (n["id"]) nc.id = n["id"].as<int>();
-                if (n["type"]) nc.type = n["type"].as<std::string>();
-                if (n["ring"]) nc.ring = n["ring"].as<int>();
-                if (n["station"]) nc.station = n["station"].as<int>();
+                if (!n["id"] || !n["type"] || !n["ring"] || !n["station"]) {
+                    throw std::runtime_error("Node config missing id, type, ring or station");
+                }
+                nc.id = n["id"].as<int>();
+                nc.type = n["type"].as<std::string>();
+                nc.ring = n["ring"].as<int>();
+                nc.station = n["station"].as<int>();
                 nodes.push_back(nc);
             }
         }
@@ -40,12 +51,16 @@ bool Config::parse(const std::string& filepath) {
         if (config["bridges"]) {
             for (const auto& b : config["bridges"]) {
                 BridgeConfig bc;
-                if (b["type"]) bc.type = b["type"].as<std::string>();
-                if (b["local_ring"]) bc.local_ring = b["local_ring"].as<int>();
-                if (b["remote_ring"]) bc.remote_ring = b["remote_ring"].as<int>();
-                if (b["local_station"]) bc.local_station = b["local_station"].as<int>();
-                if (b["remote_station"]) bc.remote_station = b["remote_station"].as<int>();
+                if (!b["type"] || !b["local_ring"] || !b["remote_ring"] || !b["local_station"] || !b["remote_station"]) {
+                    throw std::runtime_error("Bridge config missing required fields");
+                }
+                bc.type = b["type"].as<std::string>();
+                bc.local_ring = b["local_ring"].as<int>();
+                bc.remote_ring = b["remote_ring"].as<int>();
+                bc.local_station = b["local_station"].as<int>();
+                bc.remote_station = b["remote_station"].as<int>();
                 if (b["d2d_latency_cycles"]) bc.d2d_latency_cycles = b["d2d_latency_cycles"].as<int>();
+                else bc.d2d_latency_cycles = 1;
                 bridges.push_back(bc);
             }
         }
@@ -53,17 +68,25 @@ bool Config::parse(const std::string& filepath) {
         // Parse AI-Processor specifics
         if (config["vertical_rings"]) {
             MultiRingConfig mrc;
-            if (config["vertical_rings"]["count"]) mrc.count = config["vertical_rings"]["count"].as<int>();
-            if (config["vertical_rings"]["type"]) mrc.type = config["vertical_rings"]["type"].as<std::string>();
-            if (config["vertical_rings"]["stations_per_ring"]) mrc.stations_per_ring = config["vertical_rings"]["stations_per_ring"].as<int>();
+            if (!config["vertical_rings"]["count"] || !config["vertical_rings"]["type"] || !config["vertical_rings"]["stations_per_ring"]) {
+                 throw std::runtime_error("vertical_rings missing required fields");
+            }
+            mrc.count = config["vertical_rings"]["count"].as<int>();
+            mrc.type = config["vertical_rings"]["type"].as<std::string>();
+            mrc.stations_per_ring = config["vertical_rings"]["stations_per_ring"].as<int>();
+            if (mrc.stations_per_ring <= 0 || mrc.count <= 0) throw std::runtime_error("vertical_rings count/stations must be > 0");
             vertical_rings = mrc;
         }
 
         if (config["horizontal_rings"]) {
             MultiRingConfig mrc;
-            if (config["horizontal_rings"]["count"]) mrc.count = config["horizontal_rings"]["count"].as<int>();
-            if (config["horizontal_rings"]["type"]) mrc.type = config["horizontal_rings"]["type"].as<std::string>();
-            if (config["horizontal_rings"]["stations_per_ring"]) mrc.stations_per_ring = config["horizontal_rings"]["stations_per_ring"].as<int>();
+            if (!config["horizontal_rings"]["count"] || !config["horizontal_rings"]["type"] || !config["horizontal_rings"]["stations_per_ring"]) {
+                 throw std::runtime_error("horizontal_rings missing required fields");
+            }
+            mrc.count = config["horizontal_rings"]["count"].as<int>();
+            mrc.type = config["horizontal_rings"]["type"].as<std::string>();
+            mrc.stations_per_ring = config["horizontal_rings"]["stations_per_ring"].as<int>();
+            if (mrc.stations_per_ring <= 0 || mrc.count <= 0) throw std::runtime_error("horizontal_rings count/stations must be > 0");
             horizontal_rings = mrc;
         }
 
@@ -114,6 +137,9 @@ bool Config::parse(const std::string& filepath) {
         return true;
     } catch (const YAML::Exception& e) {
         std::cerr << "YAML parsing error: " << e.what() << "\n";
+        return false;
+    } catch (const std::runtime_error& e) {
+        std::cerr << "Config validation error: " << e.what() << "\n";
         return false;
     }
 }
