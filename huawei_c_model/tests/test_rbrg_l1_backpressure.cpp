@@ -43,10 +43,10 @@ TEST_F(Phase4Test, RBRGL1Backpressure) {
             f.src_ring = 0;
             f.dst_ring = 1;
 
-            ringA.curr_cw_slots[1].flit = f;
-            ringA.curr_cw_slots[1].occupied = true;
+            ringA.next_cw_slots[1].flit = f;
+            ringA.next_cw_slots[1].occupied = true;
         } else {
-            ringA.curr_cw_slots[1].occupied = false;
+            ringA.next_cw_slots[1].occupied = false;
         }
 
         bridge.tick();
