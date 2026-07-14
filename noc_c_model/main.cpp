@@ -22,7 +22,7 @@ int main(int argc, char* argv[]) {
     // 0. 讀取 YAML 配置 (Load YAML Config)
     Config global_config;
     std::string topo_type = "mesh";
-    std::string routing_type = "xy";
+    std::string routing_type = "";
     constexpr int DEFAULT_MAX_CYCLES = 10000;
     int max_cycles = DEFAULT_MAX_CYCLES;
 
@@ -56,21 +56,46 @@ int main(int argc, char* argv[]) {
     std::unique_ptr<Topology> topology;
     std::unique_ptr<RoutingAlgorithm> routing;
 
+    // Convert routing_type to lowercase
+    for (char &c : routing_type) {
+        c = std::tolower(c);
+    }
+
     if (topo_type == "mesh") {
+        if (routing_type != "" && routing_type != "xy") {
+            std::cerr << "Error: Routing '" << routing_type << "' is not supported for topology 'mesh'." << std::endl;
+            return 1;
+        }
+        routing_type = "xy"; // default for mesh
         topology.reset(new MeshTopology(global_config.mesh_width, global_config.mesh_height));
+        routing.reset(new XYRouting(global_config.mesh_width, global_config.mesh_height));
     } else if (topo_type == "torus") {
+        if (global_config.num_vcs < 2) {
+            std::cerr << "Error: Torus topology requires at least 2 VCs for deadlock safety." << std::endl;
+            return 1;
+        }
+        if (routing_type != "" && routing_type != "xy" && routing_type != "dim_order") {
+            std::cerr << "Error: Routing '" << routing_type << "' is not supported for topology 'torus'." << std::endl;
+            return 1;
+        }
+        routing_type = "dim_order"; // effective routing for torus
         topology.reset(new TorusTopology(global_config.mesh_width, global_config.mesh_height));
+        routing.reset(new TorusRouting(global_config.mesh_width, global_config.mesh_height));
     } else if (topo_type == "ring") {
+        if (global_config.num_vcs < 2) {
+            std::cerr << "Error: Ring topology requires at least 2 VCs for deadlock safety." << std::endl;
+            return 1;
+        }
+        if (routing_type != "" && routing_type != "shortest_path") {
+            std::cerr << "Error: Routing '" << routing_type << "' is not supported for topology 'ring'." << std::endl;
+            return 1;
+        }
+        routing_type = "shortest_path"; // default for ring
         topology.reset(new RingTopology(global_config.get_num_nodes()));
+        routing.reset(new RingRouting(global_config.get_num_nodes()));
     } else {
         std::cerr << "Unsupported topology: " << topo_type << std::endl;
         return 1;
-    }
-
-    if (topo_type == "ring") {
-        routing.reset(new RingRouting(global_config.get_num_nodes()));
-    } else {
-        routing.reset(new XYRouting(global_config.mesh_width, global_config.mesh_height)); // Default to XY for mesh
     }
 
     // 2. Setup Routers & Network (建立路由器與網路)
@@ -184,7 +209,7 @@ int main(int argc, char* argv[]) {
             }
 
             if ((sim_time - last_progress_cycle) > DEADLOCK_THRESHOLD && total_received < total_packets && packets_in_flight) {
-                std::cerr << "[DEADLOCK DETECTED] at cycle " << sim_time << "!" << std::endl;
+                std::cerr << "[ERROR] Deadlock detected at cycle " << sim_time << "!" << std::endl;
                 is_deadlocked = true;
                 break;
             }
@@ -207,6 +232,9 @@ int main(int argc, char* argv[]) {
 
     if (total_received != total_packets) {
         std::cout << "Pending Packets: " << pending_packets.size() << std::endl;
+        if (!is_deadlocked) {
+            std::cerr << "[ERROR] Simulation incomplete at max_cycles" << std::endl;
+        }
     }
 
     // Calculate latency and throughput (計算延遲與吞吐量)
@@ -243,6 +271,10 @@ int main(int argc, char* argv[]) {
                 std::cout << "Router " << r->id << " Port " << p << " ActiveCycles: " << r->port_active_cycles[p] << std::endl;
             }
         }
+    }
+
+    if (is_deadlocked || total_received != total_packets) {
+        return 2;
     }
 
     return 0;
