@@ -33,14 +33,15 @@ void Router::connect(int my_port, Router* neighbor, int neighbor_ingress_port) {
 }
 
 bool Router::inject_flit(Flit f) {
-    // 嘗試找到一個有空間的 VC 注入 (簡單的 VC Allocation: 第一個有空的)
-    // 實務上通常固定分配給 VC 0，或是 Round Robin。這裡先找第一個有空的。
-    for (int v = 0; v < num_vcs; ++v) {
-        if (input_buffers[0][v].size() < (size_t)buffer_size) {
-            f.vc_id = v;
-            input_buffers[0][v].push(f);
-            return true;
-        }
+    // 為了保證 Dateline 的死結避免機制，新注入的封包必須強制放入 VC 0。
+    // 如果 VC 0 滿了，我們必須等待，不能將其注入 VC 1 (或更高的 VC)，
+    // 否則會破壞資源依賴的無環保證（cyclic dependency invariants）。
+    int target_vc = 0;
+
+    if (input_buffers[0][target_vc].size() < (size_t)buffer_size) {
+        f.vc_id = target_vc;
+        input_buffers[0][target_vc].push(f);
+        return true;
     }
     return false;
 }
@@ -113,43 +114,32 @@ void Router::evaluate(int current_time) {
                                     int next_id = next_router->id;
 
                                     // Dimension change logic (e.g., from LOCAL/X to Y)
-                                    // If in_port is LOCAL(0), EAST(2), WEST(4) and out_port is NORTH(1), SOUTH(3)
-                                    if ((in_port == 0 || in_port == 2 || in_port == 4) && (out_port == 1 || out_port == 3)) {
-                                        target_vc = 0; // Reset VC when changing to Y dimension
+                                    // Only applies to Torus/Mesh which have 5 ports.
+                                    if (num_ports == 5) {
+                                        // If in_port is LOCAL(0), EAST(2), WEST(4) and out_port is NORTH(1), SOUTH(3)
+                                        if ((in_port == 0 || in_port == 2 || in_port == 4) && (out_port == 1 || out_port == 3)) {
+                                            target_vc = 0; // Reset VC when changing to Y dimension
+                                        }
                                     }
 
                                     // Detect wraparound edges based on ID difference
-                                    // Torus / Ring wrap checks:
-                                    // X-wrap: diff > 1 (meaning it's not a normal adjacent node in X).
-                                    // Since Torus X adjacent is +1 or -1. Wrap is + (width-1) or - (width-1).
-                                    // Wait, it's safer to just check if distance is greater than 1 in the coordinate space.
-                                    // Let's use simple logic: if abs(next_id - id) > 1 and it's an X-direction move
-                                    // For Y-direction move: abs(next_id - id) > mesh_width
-                                    // We need to know width, but Router doesn't have it directly.
-                                    // Let's use topological connectivity.
                                     // A dateline link on a ring/torus dimension always goes from max to 0 or 0 to max.
-                                    if (id > next_id && out_port == 2) { // 2=EAST, normally id < next_id. If id > next_id, it wrapped max->0
-                                        is_dateline = true;
-                                    } else if (id < next_id && out_port == 4) { // 4=WEST, normally id > next_id. If id < next_id, it wrapped 0->max
-                                        is_dateline = true;
-                                    } else if (id > next_id && out_port == 3) { // 3=SOUTH, normally id < next_id. If id > next_id, it wrapped max->0
-                                        is_dateline = true;
-                                    } else if (id < next_id && out_port == 1) { // 1=NORTH, normally id > next_id. If id < next_id, it wrapped 0->max
-                                        is_dateline = true;
-                                    }
-
-                                    // Special case for Ring: 1=EAST, 2=WEST. The out_port mapping is different!
-                                    // In Topology.cpp RingMapping: 1=EAST, 2=WEST.
-                                    // Wait! Topology RingMapping: 1=EAST, 2=WEST.
-                                    // Mesh/Torus Mapping: 1=NORTH, 2=EAST, 3=SOUTH, 4=WEST.
-                                    // So in Ring, out_port=1 is EAST, out_port=2 is WEST.
-                                    // In Torus, out_port=2 is EAST, out_port=4 is WEST.
-                                    // Let's just check if it's a Ring by checking max ports? Ring has 3 ports (0,1,2). Torus has 5 ports (0,1,2,3,4).
                                     if (num_ports == 3) {
-                                        // Ring
+                                        // Special case for Ring: 1=EAST, 2=WEST. The out_port mapping is different!
                                         if (id > next_id && out_port == 1) { // EAST max->0
                                             is_dateline = true;
                                         } else if (id < next_id && out_port == 2) { // WEST 0->max
+                                            is_dateline = true;
+                                        }
+                                    } else {
+                                        // Torus / Mesh
+                                        if (id > next_id && out_port == 2) { // 2=EAST, normally id < next_id. If id > next_id, it wrapped max->0
+                                            is_dateline = true;
+                                        } else if (id < next_id && out_port == 4) { // 4=WEST, normally id > next_id. If id < next_id, it wrapped 0->max
+                                            is_dateline = true;
+                                        } else if (id > next_id && out_port == 3) { // 3=SOUTH, normally id < next_id. If id > next_id, it wrapped max->0
+                                            is_dateline = true;
+                                        } else if (id < next_id && out_port == 1) { // 1=NORTH, normally id > next_id. If id < next_id, it wrapped 0->max
                                             is_dateline = true;
                                         }
                                     }
