@@ -42,3 +42,19 @@ rings:
     EXPECT_FALSE(cfg.parse("bad_config2.yaml"));
     std::remove("bad_config2.yaml");
 }
+
+TEST(ConfigTest, MissingAINodesThrows) {
+    std::ofstream out("bad_config3.yaml");
+    out << R"(
+topology: ai_processor
+nodes:
+  vertical:
+    - type: AICORE
+      # missing count_per_ring
+)";
+    out.close();
+
+    Config cfg;
+    EXPECT_FALSE(cfg.parse("bad_config3.yaml"));
+    std::remove("bad_config3.yaml");
+}

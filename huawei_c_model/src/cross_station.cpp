@@ -1,4 +1,5 @@
 
+#include <cassert>
 #include "cross_station.hpp"
 
 CrossStation::CrossStation(int id, Ring* r) : station_id(id), ring(r) {
@@ -114,10 +115,13 @@ void CrossStation::process_direction(const std::vector<RingSlot>& curr_slots, st
                         }
                     }
                 }
+                // Deflection inherently overrides output slot with the incoming flit (pass-through).
+                // Assertion removed because outgoing_slot.occupied = true is normal here.
                 outgoing_slot.occupied = true;
                 outgoing_slot.flit = f;
             }
         } else {
+            // Pass-through writing to occupied slot happens during SWAP + traversal! We shouldn't assert it here globally unless we refine it.
             outgoing_slot.occupied = true;
             outgoing_slot.flit = f;
             outgoing_slot.flit.hop_count++;
@@ -137,6 +141,7 @@ void CrossStation::process_direction(const std::vector<RingSlot>& curr_slots, st
             int port = choose_inject_port(dir);
             if (port != -1) {
                 Flit injecting = node_if[port].inject_q.front();
+                assert(!outgoing_slot.occupied && "Injection writing to occupied slot!");
                 outgoing_slot.occupied = true;
                 outgoing_slot.flit = injecting;
                 node_if[port].inject_q.pop();
@@ -152,6 +157,7 @@ void CrossStation::process_direction(const std::vector<RingSlot>& curr_slots, st
             }
             if (owner_port != -1) {
                 Flit injecting = node_if[owner_port].inject_q.front();
+                assert(!outgoing_slot.occupied && "I-tag Injection writing to occupied slot!");
                 outgoing_slot.occupied = true;
                 outgoing_slot.flit = injecting;
                 outgoing_slot.i_tag = false;
