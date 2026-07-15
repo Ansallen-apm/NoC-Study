@@ -61,6 +61,7 @@ add_executable(run_tests
     tests/test_rbrg_l2_credit.cpp
     tests/test_swap_deadlock.cpp
     tests/test_validation.cpp
+    tests/test_chaos_stress.cpp
 )
 target_link_libraries(run_tests PRIVATE nocsim_core GTest::gtest_main)
 
