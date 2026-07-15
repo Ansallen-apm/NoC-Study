@@ -1,0 +1,16 @@
+Configured torus: 3x3
+Loaded 3 packets (12 flits).
+All packets received at cycle 15
+Simulation finished.
+Total Received: 3/3
+Average Latency: 4.66667 cycles
+Max Latency: 5 cycles
+Total Throughput: 0.2 packets/cycle
+Router 0 received 4 flits.
+Router 0 Port 4 ActiveCycles: 4
+Router 1 Port 1 ActiveCycles: 4
+Router 2 Port 1 ActiveCycles: 4
+Router 6 Port 3 ActiveCycles: 4
+Router 7 received 4 flits.
+Router 8 received 4 flits.
+Router 8 Port 2 ActiveCycles: 4
