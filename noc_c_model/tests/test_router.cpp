@@ -55,6 +55,18 @@ protected:
         }
         topo->build_network(raw_routers);
     }
+
+    void setup_mesh(int width, int height) {
+        buffer_size = 2;
+        int size = width * height;
+        topo.reset(new MeshTopology(width, height));
+        routing.reset(new XYRouting(width, height));
+        for (int i = 0; i < size; ++i) {
+            routers.push_back(std::unique_ptr<Router>(new Router(i, topo->get_max_ports(), num_vcs, buffer_size, routing.get())));
+            raw_routers.push_back(routers.back().get());
+        }
+        topo->build_network(raw_routers);
+    }
 };
 
 TEST_F(RouterInvariantTest, InvariantsAndDateline) {
@@ -253,4 +265,58 @@ TEST_F(RouterInvariantTest, TorusInvariants) {
     EXPECT_EQ(get_total_ejected_flits(), total_injected);
     EXPECT_TRUE(saw_vc1);
     EXPECT_TRUE(saw_vc0_after_dim_change);
+}
+
+TEST_F(RouterInvariantTest, CreditExhaustion) {
+    setup_mesh(2, 1); // 2-node Mesh, Nodes 0 and 1
+
+    std::queue<Flit> source_queue;
+
+    // Enqueue 8 flits from 0 to 1. Buffer size is 2.
+    for (int i = 0; i < 8; ++i) {
+        Flit f(0, 1, 0, i, (i == 0) ? HEAD : (i == 7 ? TAIL : BODY), 0, 0);
+        source_queue.push(f);
+    }
+
+    int total_injected = 0;
+
+    // We intentionally only evaluate and update Router 0.
+    // Router 1 acts as a black hole that receives flits into its buffer but never processes or ejects them.
+    // This will force Router 0 to exhaust its credits and stall if flow control is working correctly.
+    for (int cycle = 0; cycle < 30; ++cycle) {
+        // Injection Phase for Router 0 only
+        while (!source_queue.empty()) {
+            Flit f = source_queue.front();
+            if (routers[0]->inject_flit(f)) {
+                source_queue.pop();
+                total_injected++;
+            } else {
+                break;
+            }
+        }
+
+        routers[0]->evaluate(cycle);
+
+        routers[0]->update();
+
+        // Assertions on credit limits and buffer sizes
+        // Router 0 port 2 (EAST) connects to Router 1 port 4 (WEST)
+        int out_port = 2;
+        int ingress_port = 4;
+
+        for (int v = 0; v < num_vcs; ++v) {
+            int current_credits = routers[0]->downstream_credits[out_port][v];
+            int receiving_buffer_occupancy = routers[1]->input_buffers[ingress_port][v].size();
+
+            // Credits must NEVER go negative
+            EXPECT_GE(current_credits, 0) << "Credits went negative during simulated blockage!";
+
+            // The receiving buffer must NEVER hold more flits than the max buffer size
+            EXPECT_LE(receiving_buffer_occupancy, buffer_size) << "Buffer overflow on receiving node!";
+        }
+    }
+
+    // Because Router 1 is not clearing its buffers, Router 0 should only be able to send up to the buffer limit,
+    // plus whatever can fit in its own buffers, but it should ultimately stall and not inject all 8 flits if
+    // credits are exhausted. If credit checks are removed, all 8 might get injected and overflow Router 1.
 }
