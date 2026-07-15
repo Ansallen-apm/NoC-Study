@@ -15,8 +15,15 @@ int sim_time = 0;
 
 int main(int argc, char* argv[]) {
     if (argc < 3) {
-        std::cerr << "Usage: " << argv[0] << " <config_file> <trace_file>" << std::endl;
+        std::cerr << "Usage: " << argv[0] << " <config_file> <trace_file> [--verify-invariants]" << std::endl;
         return 1;
+    }
+
+    bool verify_invariants = false;
+    for (int i = 3; i < argc; ++i) {
+        if (std::string(argv[i]) == "--verify-invariants") {
+            verify_invariants = true;
+        }
     }
 
     // 0. 讀取 YAML 配置 (Load YAML Config)
@@ -135,6 +142,8 @@ int main(int argc, char* argv[]) {
     // but haven't been injected into the network yet.
     std::vector<std::queue<Flit>> source_queues(global_config.get_num_nodes());
 
+    size_t total_flits_injected_successfully = 0;
+
     // 4. Simulation Loop (模擬迴圈)
     size_t total_received = 0;
     size_t last_total_received = 0;
@@ -169,6 +178,9 @@ int main(int argc, char* argv[]) {
                 Flit f = source_queues[i].front();
                 if (routers[i]->inject_flit(f)) {
                     source_queues[i].pop();
+                    if (verify_invariants) {
+                        total_flits_injected_successfully++;
+                    }
                 } else {
                     break;
                 }
@@ -223,6 +235,25 @@ int main(int argc, char* argv[]) {
         // Update all routers (階段二：更新緩衝區)
         for (const auto& r : routers) {
             r->update();
+        }
+
+        if (verify_invariants) {
+            size_t total_buffered_and_ejected = 0;
+            for (const auto& r : routers) {
+                total_buffered_and_ejected += r->received_flits;
+                for (int p = 0; p < r->num_ports; ++p) {
+                    for (int v = 0; v < global_config.num_vcs; ++v) {
+                        total_buffered_and_ejected += r->input_buffers[p][v].size();
+                        total_buffered_and_ejected += r->next_input_buffers[p][v].size();
+                    }
+                }
+            }
+            if (total_flits_injected_successfully != total_buffered_and_ejected) {
+                std::cerr << "[FATAL ERROR] Consistency assertion failed at cycle " << sim_time
+                          << ": Injected " << total_flits_injected_successfully
+                          << ", but network holds/ejected " << total_buffered_and_ejected << " flits!" << std::endl;
+                return 3;
+            }
         }
     }
 

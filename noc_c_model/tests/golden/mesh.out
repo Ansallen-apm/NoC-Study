@@ -1,0 +1,17 @@
+Configured mesh: 2x2
+Loaded 3 packets (12 flits).
+All packets received at cycle 16
+Simulation finished.
+Total Received: 3/3
+Average Latency: 5 cycles
+Max Latency: 5 cycles
+Total Throughput: 0.1875 packets/cycle
+Router 0 received 4 flits.
+Router 0 Port 2 ActiveCycles: 4
+Router 0 Port 3 ActiveCycles: 4
+Router 1 Port 3 ActiveCycles: 4
+Router 1 Port 4 ActiveCycles: 4
+Router 2 received 4 flits.
+Router 2 Port 1 ActiveCycles: 4
+Router 3 received 4 flits.
+Router 3 Port 4 ActiveCycles: 4
