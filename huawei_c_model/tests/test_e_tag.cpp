@@ -78,6 +78,34 @@ nodes:
         }
     }
 
+    // Run blocking traffic for 10 cycles to fill the ejection queue at station 2
+    for (int i = 0; i < 10; ++i) {
+        // Continuous blocking traffic from station 1 to station 2, going CW
+        for (CrossStation* cs : sim.stations) {
+            if (cs->station_id == 1) {
+                Flit f_block;
+                f_block.id = 2000 + i;
+                f_block.valid = true;
+                f_block.src_node = 1;
+                f_block.dst_node = 2;
+                f_block.dir = Direction::CW;
+                if (cs->node_if[0].inject_q.can_push()) {
+                    cs->node_if[0].inject_q.push(f_block);
+                }
+            }
+        }
+
+        sim.run(1);
+
+        // Don't pop from station 2 to let it fill up
+        for (CrossStation* cs : sim.stations) {
+            if (cs->station_id != 2) {
+                while (cs->node_if[0].eject_q.size() > 0) cs->node_if[0].eject_q.pop_oldest();
+                while (cs->node_if[1].eject_q.size() > 0) cs->node_if[1].eject_q.pop_oldest();
+            }
+        }
+    }
+
     // Target flit from station 0 to station 2
     Flit f_target;
     f_target.id = 888;
@@ -92,7 +120,7 @@ nodes:
         if (cs->station_id == 0) cs->node_if[0].inject_q.push(f_target);
     }
 
-    for (int i = 0; i < 50; ++i) {
+    for (int i = 10; i < 60; ++i) {
         // Continuous blocking traffic from station 1 to station 2, going CW
         // This hits station 2 just before station 0's flit arrives or simultaneously
         for (CrossStation* cs : sim.stations) {
@@ -130,7 +158,7 @@ nodes:
     // Thanks to E-tag mechanism, the deflected flit 888 should have reserved a slot
     // and successfully ejected on its next round trip (e.g. < 20 cycles).
     EXPECT_TRUE(spy.eject_success) << "E-tag failed: Flit livelocked and never ejected!";
-    EXPECT_LT(spy.success_cycle, 30) << "E-tag failed: Took too long to resolve livelock.";
+    EXPECT_LT(spy.success_cycle, 10 + 30) << "E-tag failed: Took too long to resolve livelock.";
 
     std::remove("etag_test.yaml");
 }

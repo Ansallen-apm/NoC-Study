@@ -64,9 +64,33 @@ nodes:
 
     // Setup: Fill the ring with continuous traffic that bypasses station 1
     // to simulate high load and prevent station 1 from injecting naturally.
-    // We will do this by injecting from station 0 continuously.
+    // We will do this by injecting from station 0 continuously for 10 cycles first.
 
-    // Attempt to inject flit 999 at station 1
+    for (int i = 0; i < 10; ++i) {
+        for (CrossStation* cs : sim.stations) {
+            if (cs->station_id == 0) {
+                Flit f_block;
+                f_block.id = 1000 + i;
+                f_block.valid = true;
+                f_block.src_node = 0;
+                f_block.dst_node = 2; // Pass through station 1
+                f_block.dir = Direction::CW;
+                if (cs->node_if[0].inject_q.can_push()) {
+                    cs->node_if[0].inject_q.push(f_block);
+                }
+            }
+        }
+
+        sim.run(1);
+
+        // Remove flits at destination to free up eject Qs
+        for (CrossStation* cs : sim.stations) {
+            while (cs->node_if[0].eject_q.size() > 0) cs->node_if[0].eject_q.pop_oldest();
+            while (cs->node_if[1].eject_q.size() > 0) cs->node_if[1].eject_q.pop_oldest();
+        }
+    }
+
+    // Now attempt to inject flit 999 at station 1
     Flit f_target;
     f_target.id = 999;
     f_target.valid = true;
@@ -82,7 +106,7 @@ nodes:
         }
     }
 
-    for (int i = 0; i < 50; ++i) {
+    for (int i = 10; i < 60; ++i) {
         // Continuous blocking traffic from station 0 to station 2, going CW
         // This ensures the slot arriving at station 1 is always occupied.
         for (CrossStation* cs : sim.stations) {
@@ -114,7 +138,7 @@ nodes:
     // Thanks to I-tag mechanism, station 1 should be able to reserve a slot upstream
     // and successfully inject within a small bounded number of cycles (e.g., < 20).
     EXPECT_TRUE(spy.inject_success) << "I-tag failed: Flit starved and never injected under high load!";
-    EXPECT_LT(spy.success_cycle, 30) << "I-tag failed: Took too long to resolve starvation.";
+    EXPECT_LT(spy.success_cycle, 10 + 30) << "I-tag failed: Took too long to resolve starvation.";
 
     std::remove("itag_test.yaml");
 }
