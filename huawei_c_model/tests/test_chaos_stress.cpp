@@ -47,39 +47,25 @@ TEST(ChaosStressTest, FlitConservationAndLiveness) {
     // Generate an extreme chaos config
     std::ofstream out("chaos_test_extreme.yaml");
     out << R"(
-topology: server_cpu
+topology: ai_processor
 flit_bytes: 64
-rings:
-  - id: 0
-    type: CPU
-    stations: 4
-  - id: 1
-    type: MEM
-    stations: 4
-nodes:
-  - id: 0
-    type: CPU
-    ring: 0
-    station: 0
-  - id: 1
-    type: CPU
-    ring: 0
-    station: 1
-  - id: 2
-    type: MEM
-    ring: 1
-    station: 0
-  - id: 3
-    type: MEM
-    ring: 1
-    station: 1
-bridges:
-  - type: RBRG_L1
-    local_ring: 0
-    remote_ring: 1
-    local_station: 2
-    remote_station: 2
-    d2d_latency_cycles: 1
+vertical_rings:
+  count: 2
+  stations_per_ring: 4
+  type: full
+horizontal_rings:
+  count: 2
+  stations_per_ring: 4
+  type: full
+vertical_nodes:
+  - type: AICORE
+    count_per_ring: 2
+horizontal_nodes:
+  - type: LLC
+    count_per_ring: 2
+rbrg_l1:
+  at_each_intersection: true
+  queue_depth: 1
 routing:
   mode: shortest_path
 deadlock:
@@ -118,8 +104,8 @@ deadlock:
                 f.id = counter++;
                 f.valid = true;
                 f.src_ring = cs->ring->ring_id;
-                f.dst_ring = 1 - cs->ring->ring_id;
-                f.dst_node = -1;
+                f.dst_ring = (cs->ring->ring_id + 1) % sim.rings.size(); // To remote ring
+                f.dst_node = 0; // Target node 0 on remote ring to ensure crossing
                 if (cs->node_if[0].inject_q.can_push()) {
                     spy.record_inject(f.id, i);
                     cs->node_if[0].inject_q.push(f);
