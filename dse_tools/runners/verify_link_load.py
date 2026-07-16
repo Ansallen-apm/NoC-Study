@@ -181,6 +181,7 @@ def verify_link_load(topo_type, size, rate=0.01, sim_cycles=100000):
         expected_utils = {edge: theory_loads.get(edge, 0.0) * actual_node_rate for edge in actual_utils.keys()}
 
         # 6. Compare
+        assert len(actual_utils) > 0, "No actual utilization data parsed from simulator! Is 'Link Utilizations' outputting correctly?"
         max_err = 0.0
         print(f"{'Edge':<10} | {'Theory Util':<15} | {'Actual Util':<15} | {'Error':<15}")
         for edge in actual_utils:

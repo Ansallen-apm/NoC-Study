@@ -1,6 +1,44 @@
 Configured torus: 3x3
 Loaded 3 packets (12 flits).
 All packets received at cycle 15
+
+--- Link Utilizations ---
+Edge 0->6 Utilization: 0
+Edge 0->1 Utilization: 0
+Edge 0->3 Utilization: 0
+Edge 0->2 Utilization: 0.266667
+Edge 1->7 Utilization: 0.266667
+Edge 1->2 Utilization: 0
+Edge 1->4 Utilization: 0
+Edge 1->0 Utilization: 0
+Edge 2->8 Utilization: 0.266667
+Edge 2->0 Utilization: 0
+Edge 2->5 Utilization: 0
+Edge 2->1 Utilization: 0
+Edge 3->0 Utilization: 0
+Edge 3->4 Utilization: 0
+Edge 3->6 Utilization: 0
+Edge 3->5 Utilization: 0
+Edge 4->1 Utilization: 0
+Edge 4->5 Utilization: 0
+Edge 4->7 Utilization: 0
+Edge 4->3 Utilization: 0
+Edge 5->2 Utilization: 0
+Edge 5->3 Utilization: 0
+Edge 5->8 Utilization: 0
+Edge 5->4 Utilization: 0
+Edge 6->3 Utilization: 0
+Edge 6->7 Utilization: 0
+Edge 6->0 Utilization: 0.266667
+Edge 6->8 Utilization: 0
+Edge 7->4 Utilization: 0
+Edge 7->8 Utilization: 0
+Edge 7->1 Utilization: 0
+Edge 7->6 Utilization: 0
+Edge 8->5 Utilization: 0
+Edge 8->6 Utilization: 0.266667
+Edge 8->2 Utilization: 0
+Edge 8->7 Utilization: 0
 Simulation finished.
 Total Received: 3/3
 Average Latency: 4.66667 cycles
