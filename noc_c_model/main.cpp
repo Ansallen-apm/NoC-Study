@@ -174,15 +174,14 @@ int main(int argc, char* argv[]) {
 
         // Injection Phase: Move from source queue into Router port 0
         for (int i = 0; i < global_config.get_num_nodes(); ++i) {
-            while (!source_queues[i].empty()) {
+            // Limit injection to 1 flit per node per cycle to match crossbar bandwidth limits
+            if (!source_queues[i].empty()) {
                 Flit f = source_queues[i].front();
                 if (routers[i]->inject_flit(f)) {
                     source_queues[i].pop();
                     if (verify_invariants) {
                         total_flits_injected_successfully++;
                     }
-                } else {
-                    break;
                 }
             }
         }
@@ -253,6 +252,17 @@ int main(int argc, char* argv[]) {
                           << ": Injected " << total_flits_injected_successfully
                           << ", but network holds/ejected " << total_buffered_and_ejected << " flits!" << std::endl;
                 return 3;
+            }
+        }
+    }
+
+    std::cout << "\n--- Link Utilizations ---" << std::endl;
+    for (const auto& r : routers) {
+        for (int p = 1; p < topology->get_max_ports(); ++p) {
+            if (r->neighbors[p] != nullptr) {
+                double util = sim_time > 0 ? (double)r->port_active_cycles[p] / sim_time : 0.0;
+                std::cout << "Edge " << r->id << "->" << r->neighbors[p]->id
+                          << " Utilization: " << util << std::endl;
             }
         }
     }
