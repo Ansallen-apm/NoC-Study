@@ -191,10 +191,10 @@
 *(基於使用者回報的程式碼審查結果，尚未實作)*
 
 ### Huawei C Model — 嚴重問題
-*   [x] **恢復 8fc4963 修正 (Chaos Test & RBRG eject bug)**：找回 `test_chaos_stress.cpp`，並修復 `rbrg_l1.cpp` / `rbrg_l2.cpp` 中 eject 判斷從 `curr_slots` 改為 `next_cw_slots`/`next_ccw_slots`，以避免 flit 重複。
-*   [x] **EjectQueue 大小限制**：在 `EjectQueue::can_reserve()` 加上 `q.size()` 檢查，防止 tiny buffer 時超過設定容量。
-*   [x] **YAML 缺欄位驗證**：在 `config.cpp` 加上必填欄位檢查與預設值（例如 `RingConfig::stations`），防止未初始化變數導致溢位、除零或記憶體爆量。
-*   [x] **E-tag / I-tag 真實測試**：補齊 `test_e_tag.cpp` / `test_i_tag.cpp`，移除空殼 `EXPECT_TRUE(true)`，寫入真正測試防餓死與防死鎖邏輯的程式碼。
+*   [ ] **恢復 8fc4963 修正 (Chaos Test & RBRG eject bug)**：找回 `test_chaos_stress.cpp`，並修復 `rbrg_l1.cpp` / `rbrg_l2.cpp` 中 eject 判斷從 `curr_slots` 改為 `next_cw_slots`/`next_ccw_slots`，以避免 flit 重複。
+*   [ ] **EjectQueue 大小限制**：在 `EjectQueue::can_reserve()` 加上 `q.size()` 檢查，防止 tiny buffer 時超過設定容量。
+*   [ ] **YAML 缺欄位驗證**：在 `config.cpp` 加上必填欄位檢查與預設值（例如 `RingConfig::stations`），防止未初始化變數導致溢位、除零或記憶體爆量。
+*   [ ] **E-tag / I-tag 真實測試**：補齊 `test_e_tag.cpp` / `test_i_tag.cpp`，移除空殼 `EXPECT_TRUE(true)`，寫入真正測試防餓死與防死鎖邏輯的程式碼。
 
 ### Huawei C Model — 中等問題
 *   [ ] **Latency 統計修正**：確保 `create_cycle` 與 `inject_cycle` 有正確賦值，讓 latency 記錄真實 cycle 而非 hop count。

@@ -105,22 +105,16 @@ bool Config::parse(const std::string& filepath) {
             if (config["nodes"]["vertical"]) {
                  for (const auto& n : config["nodes"]["vertical"]) {
                      NodeConfig nc;
-                     if (!n["type"] || !n["count_per_ring"]) {
-                         throw std::runtime_error("nodes.vertical missing required fields (type or count_per_ring)");
-                     }
-                     nc.type = n["type"].as<std::string>();
-                     nc.count_per_ring = n["count_per_ring"].as<int>();
+                     if (n["type"]) nc.type = n["type"].as<std::string>();
+                     if (n["count_per_ring"]) nc.count_per_ring = n["count_per_ring"].as<int>();
                      vertical_nodes.push_back(nc);
                  }
             }
             if (config["nodes"]["horizontal"]) {
                  for (const auto& n : config["nodes"]["horizontal"]) {
                      NodeConfig nc;
-                     if (!n["type"] || !n["count_per_ring"]) {
-                         throw std::runtime_error("nodes.horizontal missing required fields (type or count_per_ring)");
-                     }
-                     nc.type = n["type"].as<std::string>();
-                     nc.count_per_ring = n["count_per_ring"].as<int>();
+                     if (n["type"]) nc.type = n["type"].as<std::string>();
+                     if (n["count_per_ring"]) nc.count_per_ring = n["count_per_ring"].as<int>();
                      horizontal_nodes.push_back(nc);
                  }
             }
