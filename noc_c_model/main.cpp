@@ -299,6 +299,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Average Latency: " << avg_latency << " cycles" << std::endl;
     std::cout << "Max Latency: " << max_latency << " cycles" << std::endl;
     std::cout << "Total Throughput: " << throughput << " packets/cycle" << std::endl;
+    std::cout << "Bandwidth: " << bw_gbps << " GB/s" << std::endl;
 
     // Dump specific reception info (輸出特定接收資訊)
     for (const auto& r : routers) {
