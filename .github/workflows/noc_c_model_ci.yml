@@ -23,7 +23,15 @@ jobs:
     - name: Install System Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libyaml-cpp-dev libgtest-dev
+        sudo apt-get install -y libyaml-cpp-dev libgtest-dev cmake build-essential
+
+    - name: Compile GTest (Fallback)
+      run: |
+        # Ubuntu often provides only source in libgtest-dev, so we compile and install the static libs just in case
+        cd /usr/src/gtest || exit 0
+        sudo cmake .
+        sudo make
+        sudo cp lib/*.a /usr/lib || true
 
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -38,3 +46,4 @@ jobs:
     - name: Build and Run C Model Tests
       run: |
         make -C noc_c_model test
+        python3 dse_tools/runners/verify_link_load.py
