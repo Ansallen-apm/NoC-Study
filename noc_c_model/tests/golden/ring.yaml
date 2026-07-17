@@ -1,0 +1,12 @@
+architecture:
+  topology: ring
+  routing: shortest_path
+  width: 5
+  height: 1
+  buffer_size: 4
+  frequency_mhz: 1000
+  flit_width_bits: 128
+  num_vcs: 2
+  packet_size: 4
+simulation:
+  max_cycles: 10000

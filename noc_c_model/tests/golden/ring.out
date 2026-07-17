@@ -1,0 +1,28 @@
+Configured ring: 5x1
+Loaded 3 packets (12 flits).
+All packets received at cycle 16
+
+--- Link Utilizations ---
+Edge 0->1 Utilization: 0.25
+Edge 0->4 Utilization: 0.25
+Edge 1->2 Utilization: 0.25
+Edge 1->0 Utilization: 0
+Edge 2->3 Utilization: 0.25
+Edge 2->1 Utilization: 0
+Edge 3->4 Utilization: 0
+Edge 3->2 Utilization: 0
+Edge 4->0 Utilization: 0.25
+Edge 4->3 Utilization: 0
+Simulation finished.
+Total Received: 3/3
+Average Latency: 4.66667 cycles
+Max Latency: 5 cycles
+Total Throughput: 0.1875 packets/cycle
+Router 0 Port 1 ActiveCycles: 4
+Router 0 Port 2 ActiveCycles: 4
+Router 1 received 4 flits.
+Router 1 Port 1 ActiveCycles: 4
+Router 2 Port 1 ActiveCycles: 4
+Router 3 received 4 flits.
+Router 4 received 4 flits.
+Router 4 Port 1 ActiveCycles: 4

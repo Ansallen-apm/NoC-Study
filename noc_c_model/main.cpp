@@ -15,14 +15,21 @@ int sim_time = 0;
 
 int main(int argc, char* argv[]) {
     if (argc < 3) {
-        std::cerr << "Usage: " << argv[0] << " <config_file> <trace_file>" << std::endl;
+        std::cerr << "Usage: " << argv[0] << " <config_file> <trace_file> [--verify-invariants]" << std::endl;
         return 1;
+    }
+
+    bool verify_invariants = false;
+    for (int i = 3; i < argc; ++i) {
+        if (std::string(argv[i]) == "--verify-invariants") {
+            verify_invariants = true;
+        }
     }
 
     // 0. 讀取 YAML 配置 (Load YAML Config)
     Config global_config;
     std::string topo_type = "mesh";
-    std::string routing_type = "xy";
+    std::string routing_type = "";
     constexpr int DEFAULT_MAX_CYCLES = 10000;
     int max_cycles = DEFAULT_MAX_CYCLES;
 
@@ -56,21 +63,46 @@ int main(int argc, char* argv[]) {
     std::unique_ptr<Topology> topology;
     std::unique_ptr<RoutingAlgorithm> routing;
 
+    // Convert routing_type to lowercase
+    for (char &c : routing_type) {
+        c = std::tolower(c);
+    }
+
     if (topo_type == "mesh") {
+        if (routing_type != "" && routing_type != "xy") {
+            std::cerr << "Error: Routing '" << routing_type << "' is not supported for topology 'mesh'." << std::endl;
+            return 1;
+        }
+        routing_type = "xy"; // default for mesh
         topology.reset(new MeshTopology(global_config.mesh_width, global_config.mesh_height));
+        routing.reset(new XYRouting(global_config.mesh_width, global_config.mesh_height));
     } else if (topo_type == "torus") {
+        if (global_config.num_vcs < 2) {
+            std::cerr << "Error: Torus topology requires at least 2 VCs for deadlock safety." << std::endl;
+            return 1;
+        }
+        if (routing_type != "" && routing_type != "xy" && routing_type != "dim_order") {
+            std::cerr << "Error: Routing '" << routing_type << "' is not supported for topology 'torus'." << std::endl;
+            return 1;
+        }
+        routing_type = "dim_order"; // effective routing for torus
         topology.reset(new TorusTopology(global_config.mesh_width, global_config.mesh_height));
+        routing.reset(new TorusRouting(global_config.mesh_width, global_config.mesh_height));
     } else if (topo_type == "ring") {
+        if (global_config.num_vcs < 2) {
+            std::cerr << "Error: Ring topology requires at least 2 VCs for deadlock safety." << std::endl;
+            return 1;
+        }
+        if (routing_type != "" && routing_type != "shortest_path") {
+            std::cerr << "Error: Routing '" << routing_type << "' is not supported for topology 'ring'." << std::endl;
+            return 1;
+        }
+        routing_type = "shortest_path"; // default for ring
         topology.reset(new RingTopology(global_config.get_num_nodes()));
+        routing.reset(new RingRouting(global_config.get_num_nodes()));
     } else {
         std::cerr << "Unsupported topology: " << topo_type << std::endl;
         return 1;
-    }
-
-    if (topo_type == "ring") {
-        routing.reset(new RingRouting(global_config.get_num_nodes()));
-    } else {
-        routing.reset(new XYRouting(global_config.mesh_width, global_config.mesh_height)); // Default to XY for mesh
     }
 
     // 2. Setup Routers & Network (建立路由器與網路)
@@ -110,6 +142,8 @@ int main(int argc, char* argv[]) {
     // but haven't been injected into the network yet.
     std::vector<std::queue<Flit>> source_queues(global_config.get_num_nodes());
 
+    size_t total_flits_injected_successfully = 0;
+
     // 4. Simulation Loop (模擬迴圈)
     size_t total_received = 0;
     size_t last_total_received = 0;
@@ -140,12 +174,14 @@ int main(int argc, char* argv[]) {
 
         // Injection Phase: Move from source queue into Router port 0
         for (int i = 0; i < global_config.get_num_nodes(); ++i) {
-            while (!source_queues[i].empty()) {
+            // Limit injection to 1 flit per node per cycle to match crossbar bandwidth limits
+            if (!source_queues[i].empty()) {
                 Flit f = source_queues[i].front();
                 if (routers[i]->inject_flit(f)) {
                     source_queues[i].pop();
-                } else {
-                    break;
+                    if (verify_invariants) {
+                        total_flits_injected_successfully++;
+                    }
                 }
             }
         }
@@ -184,7 +220,7 @@ int main(int argc, char* argv[]) {
             }
 
             if ((sim_time - last_progress_cycle) > DEADLOCK_THRESHOLD && total_received < total_packets && packets_in_flight) {
-                std::cerr << "[DEADLOCK DETECTED] at cycle " << sim_time << "!" << std::endl;
+                std::cerr << "[ERROR] Deadlock detected at cycle " << sim_time << "!" << std::endl;
                 is_deadlocked = true;
                 break;
             }
@@ -199,6 +235,36 @@ int main(int argc, char* argv[]) {
         for (const auto& r : routers) {
             r->update();
         }
+
+        if (verify_invariants) {
+            size_t total_buffered_and_ejected = 0;
+            for (const auto& r : routers) {
+                total_buffered_and_ejected += r->received_flits;
+                for (int p = 0; p < r->num_ports; ++p) {
+                    for (int v = 0; v < global_config.num_vcs; ++v) {
+                        total_buffered_and_ejected += r->input_buffers[p][v].size();
+                        total_buffered_and_ejected += r->next_input_buffers[p][v].size();
+                    }
+                }
+            }
+            if (total_flits_injected_successfully != total_buffered_and_ejected) {
+                std::cerr << "[FATAL ERROR] Consistency assertion failed at cycle " << sim_time
+                          << ": Injected " << total_flits_injected_successfully
+                          << ", but network holds/ejected " << total_buffered_and_ejected << " flits!" << std::endl;
+                return 3;
+            }
+        }
+    }
+
+    std::cout << "\n--- Link Utilizations ---" << std::endl;
+    for (const auto& r : routers) {
+        for (int p = 1; p < topology->get_max_ports(); ++p) {
+            if (r->neighbors[p] != nullptr) {
+                double util = sim_time > 0 ? (double)r->port_active_cycles[p] / sim_time : 0.0;
+                std::cout << "Edge " << r->id << "->" << r->neighbors[p]->id
+                          << " Utilization: " << util << std::endl;
+            }
+        }
     }
 
     // 5. Report (報告)
@@ -207,6 +273,9 @@ int main(int argc, char* argv[]) {
 
     if (total_received != total_packets) {
         std::cout << "Pending Packets: " << pending_packets.size() << std::endl;
+        if (!is_deadlocked) {
+            std::cerr << "[ERROR] Simulation incomplete at max_cycles" << std::endl;
+        }
     }
 
     // Calculate latency and throughput (計算延遲與吞吐量)
@@ -230,6 +299,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Average Latency: " << avg_latency << " cycles" << std::endl;
     std::cout << "Max Latency: " << max_latency << " cycles" << std::endl;
     std::cout << "Total Throughput: " << throughput << " packets/cycle" << std::endl;
+    std::cout << "Bandwidth: " << bw_gbps << " GB/s" << std::endl;
 
     // Dump specific reception info (輸出特定接收資訊)
     for (const auto& r : routers) {
@@ -243,6 +313,10 @@ int main(int argc, char* argv[]) {
                 std::cout << "Router " << r->id << " Port " << p << " ActiveCycles: " << r->port_active_cycles[p] << std::endl;
             }
         }
+    }
+
+    if (is_deadlocked || total_received != total_packets) {
+        return 2;
     }
 
     return 0;
