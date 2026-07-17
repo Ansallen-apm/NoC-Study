@@ -34,7 +34,6 @@ public:
 class EjectQueue {
 public:
     size_t capacity = 16;
-    size_t max_reservations = 1;
     std::deque<Flit> q;
     std::unordered_set<uint64_t> reserved_flit_ids;
 
@@ -54,14 +53,15 @@ public:
 
     bool has_space() const {
         // Normal injection requires actual space (not exceeding capacity with reserves)
-        // A normal flit can only enter if doing so wouldn't steal a reserved spot.
-        // So we need: current size + number of reservations < total capacity
-        return (q.size() + reserved_flit_ids.size()) < capacity;
+        return q.size() < capacity && (q.size() + reserved_flit_ids.size()) < capacity;
     }
 
+    // Checks if the EjectQueue has capacity to grant a NEW reservation
+    // A reservation can be granted as long as the total number of reservations
+    // doesn't exceed the queue's MAX capacity. We also need to check current size
+    // to avoid exceeding capacity in tiny buffer scenarios.
     bool can_reserve() const {
-        // A flit can reserve a spot as long as we haven't hit the reservation limit.
-        return reserved_flit_ids.size() < max_reservations;
+        return (q.size() + reserved_flit_ids.size()) < capacity;
     }
 
     void reserve(uint64_t flit_id) {
