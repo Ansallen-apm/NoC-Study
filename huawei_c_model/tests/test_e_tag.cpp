@@ -2,29 +2,32 @@
 #include "simulator.hpp"
 #include <fstream>
 #include <memory>
+#include <iostream>
 
 class ETagSpy {
 public:
     Simulator* sim;
     bool eject_success = false;
     uint64_t success_cycle = 0;
+    int target_deflect_count = 0;
 
     ETagSpy(Simulator* s) : sim(s) {}
 
     void verify_cycle(uint64_t cycle) {
         for (CrossStation* cs : sim->stations) {
             if (cs->station_id == 2) {
-                // Check if flit 888 reached station 2 eject queue
                 for (const auto& f : cs->node_if[0].eject_q.q) {
                     if (f.id == 888) {
                         eject_success = true;
                         if (success_cycle == 0) success_cycle = cycle;
+                        target_deflect_count = f.deflect_count;
                     }
                 }
                 for (const auto& f : cs->node_if[1].eject_q.q) {
                     if (f.id == 888) {
                         eject_success = true;
                         if (success_cycle == 0) success_cycle = cycle;
+                        target_deflect_count = f.deflect_count;
                     }
                 }
             }
@@ -69,8 +72,6 @@ nodes:
     ETagSpy spy(&sim);
 
     // Setup: Restrict eject Q capacity at station 2 to exactly 1.
-    // We will fill it constantly with traffic from station 1 so that our target flit from station 0
-    // always gets deflected.
     for (CrossStation* cs : sim.stations) {
         if (cs->station_id == 2) {
             cs->node_if[0].eject_q.capacity = 1;
@@ -78,26 +79,26 @@ nodes:
         }
     }
 
-    // Run blocking traffic for 10 cycles to fill the ejection queue at station 2
+    // Run 10 cycles to fill the queue
     for (int i = 0; i < 10; ++i) {
-        // Continuous blocking traffic from station 1 to station 2, going CW
+        // We inject from station 3 to station 2 going CCW.
+        // It takes 1 cycle to reach station 2.
         for (CrossStation* cs : sim.stations) {
-            if (cs->station_id == 1) {
+            if (cs->station_id == 3) {
                 Flit f_block;
                 f_block.id = 2000 + i;
                 f_block.valid = true;
-                f_block.src_node = 1;
+                f_block.src_node = 3;
                 f_block.dst_node = 2;
-                f_block.dir = Direction::CW;
+                f_block.dir = Direction::CCW;
                 if (cs->node_if[0].inject_q.can_push()) {
                     cs->node_if[0].inject_q.push(f_block);
                 }
             }
         }
-
         sim.run(1);
 
-        // Don't pop from station 2 to let it fill up
+        // Never pop from station 2 during setup, ensuring it stays full.
         for (CrossStation* cs : sim.stations) {
             if (cs->station_id != 2) {
                 while (cs->node_if[0].eject_q.size() > 0) cs->node_if[0].eject_q.pop_oldest();
@@ -106,7 +107,8 @@ nodes:
         }
     }
 
-    // Target flit from station 0 to station 2
+    // Now inject the target flit from station 0 to station 2.
+    // It will arrive at station 2 in 2 cycles (CW).
     Flit f_target;
     f_target.id = 888;
     f_target.valid = true;
@@ -120,17 +122,16 @@ nodes:
         if (cs->station_id == 0) cs->node_if[0].inject_q.push(f_target);
     }
 
-    for (int i = 10; i < 60; ++i) {
-        // Continuous blocking traffic from station 1 to station 2, going CW
-        // This hits station 2 just before station 0's flit arrives or simultaneously
+    for (int i = 10; i < 50; ++i) {
+        // Keep injecting blocking traffic from station 3 to keep queue full,
         for (CrossStation* cs : sim.stations) {
-            if (cs->station_id == 1) {
+            if (cs->station_id == 3) {
                 Flit f_block;
                 f_block.id = 2000 + i;
                 f_block.valid = true;
-                f_block.src_node = 1;
+                f_block.src_node = 3;
                 f_block.dst_node = 2;
-                f_block.dir = Direction::CW;
+                f_block.dir = Direction::CCW;
                 if (cs->node_if[0].inject_q.can_push()) {
                     cs->node_if[0].inject_q.push(f_block);
                 }
@@ -140,10 +141,14 @@ nodes:
         sim.run(1);
         spy.verify_cycle(i);
 
-        // At station 2, we pop 1 item to simulate slow consumption, but since it has capacity 1
-        // and we inject 1 every cycle from station 1, it might stay full for the deflected flit
+        // Pop from station 2 only after we're sure flit 888 has been deflected.
+        // It arrives at cycle 12. So we can start popping slowly around cycle 14.
         for (CrossStation* cs : sim.stations) {
-            if (cs->station_id == 2 && i % 4 == 0) { // pop slowly, E-tag will guarantee it catches it
+            if (cs->station_id == 2 && i >= 14 && i % 4 == 0) {
+                // Only pop if the queue is actually full, and don't pop the E-tag reserved spot
+                // Wait, if we pop, it frees up space. The blocking traffic is CCW.
+                // The target traffic is CW.
+                // If E-tag works, it reserves a spot for CW.
                 if (cs->node_if[0].eject_q.size() > 0) cs->node_if[0].eject_q.pop_oldest();
                 if (cs->node_if[1].eject_q.size() > 0) cs->node_if[1].eject_q.pop_oldest();
             } else if (cs->station_id != 2) {
@@ -155,10 +160,9 @@ nodes:
         if (spy.eject_success) break;
     }
 
-    // Thanks to E-tag mechanism, the deflected flit 888 should have reserved a slot
-    // and successfully ejected on its next round trip (e.g. < 20 cycles).
     EXPECT_TRUE(spy.eject_success) << "E-tag failed: Flit livelocked and never ejected!";
-    EXPECT_LT(spy.success_cycle, 10 + 30) << "E-tag failed: Took too long to resolve livelock.";
+    EXPECT_LT(spy.success_cycle, 40) << "E-tag failed: Took too long to resolve livelock.";
+    EXPECT_GT(spy.target_deflect_count, 0) << "E-tag test invalid: Flit was never deflected!";
 
     std::remove("etag_test.yaml");
 }
