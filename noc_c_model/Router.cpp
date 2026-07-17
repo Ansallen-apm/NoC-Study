@@ -33,15 +33,14 @@ void Router::connect(int my_port, Router* neighbor, int neighbor_ingress_port) {
 }
 
 bool Router::inject_flit(Flit f) {
-    // 為了保證 Dateline 的死結避免機制，新注入的封包必須強制放入 VC 0。
-    // 如果 VC 0 滿了，我們必須等待，不能將其注入 VC 1 (或更高的 VC)，
-    // 否則會破壞資源依賴的無環保證（cyclic dependency invariants）。
-    int target_vc = 0;
-
-    if (input_buffers[0][target_vc].size() < (size_t)buffer_size) {
-        f.vc_id = target_vc;
-        input_buffers[0][target_vc].push(f);
-        return true;
+    // 嘗試找到一個有空間的 VC 注入 (簡單的 VC Allocation: 第一個有空的)
+    // 實務上通常固定分配給 VC 0，或是 Round Robin。這裡先找第一個有空的。
+    for (int v = 0; v < num_vcs; ++v) {
+        if (input_buffers[0][v].size() < (size_t)buffer_size) {
+            f.vc_id = v;
+            input_buffers[0][v].push(f);
+            return true;
+        }
     }
     return false;
 }
@@ -109,45 +108,6 @@ void Router::evaluate(int current_time) {
                                 // 若為 Ring 拓撲且發生 wrap-around，強制切換 VC
                                 // 這裡利用 id 判斷，若送往比自己 id 小且不是直接相鄰 (或是相反)，可以實作 dateline。
                                 // 為求單純化並支援通用性，我們讓它保持目前 v。真正的 Dateline 實作需要配合路由演算法。
-                                if (num_vcs >= 2) {
-                                    bool is_dateline = false;
-                                    int next_id = next_router->id;
-
-                                    // Dimension change logic (e.g., from LOCAL/X to Y)
-                                    // Only applies to Torus/Mesh which have 5 ports.
-                                    if (num_ports == 5) {
-                                        // If in_port is LOCAL(0), EAST(2), WEST(4) and out_port is NORTH(1), SOUTH(3)
-                                        if ((in_port == 0 || in_port == 2 || in_port == 4) && (out_port == 1 || out_port == 3)) {
-                                            target_vc = 0; // Reset VC when changing to Y dimension
-                                        }
-                                    }
-
-                                    // Detect wraparound edges based on ID difference
-                                    // A dateline link on a ring/torus dimension always goes from max to 0 or 0 to max.
-                                    if (num_ports == 3) {
-                                        // Special case for Ring: 1=EAST, 2=WEST. The out_port mapping is different!
-                                        if (id > next_id && out_port == 1) { // EAST max->0
-                                            is_dateline = true;
-                                        } else if (id < next_id && out_port == 2) { // WEST 0->max
-                                            is_dateline = true;
-                                        }
-                                    } else {
-                                        // Torus / Mesh
-                                        if (id > next_id && out_port == 2) { // 2=EAST, normally id < next_id. If id > next_id, it wrapped max->0
-                                            is_dateline = true;
-                                        } else if (id < next_id && out_port == 4) { // 4=WEST, normally id > next_id. If id < next_id, it wrapped 0->max
-                                            is_dateline = true;
-                                        } else if (id > next_id && out_port == 3) { // 3=SOUTH, normally id < next_id. If id > next_id, it wrapped max->0
-                                            is_dateline = true;
-                                        } else if (id < next_id && out_port == 1) { // 1=NORTH, normally id > next_id. If id < next_id, it wrapped 0->max
-                                            is_dateline = true;
-                                        }
-                                    }
-
-                                    if (is_dateline) {
-                                        target_vc = 1;
-                                    }
-                                }
 
                                 // Check Flow Control (Credit based equivalent)
                                 if (downstream_credits[out_port][target_vc] > 0) {

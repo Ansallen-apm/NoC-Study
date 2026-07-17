@@ -163,7 +163,7 @@ nodes:
     EXPECT_TRUE(spy.eject_success) << "E-tag failed: Flit livelocked and never ejected!";
     EXPECT_LT(spy.success_cycle, 40) << "E-tag failed: Took too long to resolve livelock.";
     EXPECT_GT(spy.target_deflect_count, 0) << "E-tag test invalid: Flit was never deflected!";
-    EXPECT_LE(spy.target_deflect_count, 3) << "E-tag test invalid: Flit was deflected too many times (E-tag not working effectively)!";
+    EXPECT_LE(spy.target_deflect_count, 2) << "E-tag test invalid: Flit was deflected too many times (E-tag not working effectively)!";
 
     std::remove("etag_test.yaml");
 }

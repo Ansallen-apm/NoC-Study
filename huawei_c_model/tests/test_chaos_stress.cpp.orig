@@ -116,7 +116,7 @@ deadlock:
         sim.run(1);
 
         // 2. Poll ejections from EjectQueues occasionally to force congestion and trigger E-tags
-        if (i % 2 == 0) {
+        if (i % 3 == 0) {
             for (CrossStation* cs : sim.stations) {
                 for (int k = 0; k < 2; ++k) {
                     while (cs->node_if[k].eject_q.size() > 0) {
@@ -144,7 +144,7 @@ deadlock:
             }
         }
 
-        if (i % 50 == 0) spy.check_liveness(i, 400); // Max allowed latency 400 cycles because of congestion
+        if (i % 50 == 0) spy.check_liveness(i, 200); // Max allowed latency 200 cycles
     }
 
     // Flush any remaining active flits and check conservation

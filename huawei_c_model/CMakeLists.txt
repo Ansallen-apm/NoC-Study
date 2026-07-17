@@ -55,6 +55,7 @@ add_executable(run_tests
     tests/test_full_ring.cpp
     tests/test_i_tag.cpp
     tests/test_e_tag.cpp
+    tests/test_fuzz_eject_queue.cpp
     tests/test_rbrg_l1.cpp
     tests/test_rbrg_l1_backpressure.cpp
     tests/test_rbrg_l2.cpp

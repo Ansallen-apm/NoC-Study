@@ -4,6 +4,7 @@
 #include "flit.hpp"
 #include <deque>
 #include <cstddef>
+#include <unordered_set>
 
 class InjectQueue {
 public:
@@ -29,8 +30,6 @@ public:
     }
 };
 
-#include <unordered_set>
-
 class EjectQueue {
 public:
     size_t capacity = 16;
@@ -38,8 +37,6 @@ public:
     std::deque<Flit> q;
     std::unordered_set<uint64_t> reserved_flit_ids;
 
-    // Checks if there is space for a NORMAL (unreserved) flit
-    // Normal space is capacity minus current actual occupany AND outstanding reservations
     size_t size() const { return q.size(); }
     bool is_full() const {
         return q.size() >= capacity;
@@ -53,9 +50,7 @@ public:
     }
 
     bool has_space() const {
-        // Normal injection requires actual space (not exceeding capacity with reserves)
         // A normal flit can only enter if doing so wouldn't steal a reserved spot.
-        // So we need: current size + number of reservations < total capacity
         return (q.size() + reserved_flit_ids.size()) < capacity;
     }
 
@@ -74,15 +69,35 @@ public:
         return reserved_flit_ids.find(flit_id) != reserved_flit_ids.end();
     }
 
-    void push(const Flit& f) {
-        // If this flit had a reservation, consume it
-        if (is_reserved_for(f.id)) {
-            reserved_flit_ids.erase(f.id);
-            q.push_back(f);
-        } else if (has_space()) {
-            // Normal unreserved injection
-            q.push_back(f);
+    // Centralized logic to determine if the queue can safely accept a specific flit
+    // without exceeding physical capacity.
+    bool can_accept(uint64_t flit_id) const {
+        if (is_reserved_for(flit_id)) {
+            // A reserved flit ONLY needs physical space.
+            return q.size() < capacity;
+        } else {
+            // An unreserved flit needs space AND must not steal from pending reservations.
+            return has_space();
         }
+    }
+
+    // Normal push that enforces capacity invariants.
+    // Returns true if pushed, false if deflected/rejected due to lack of physical space.
+    bool push(const Flit& f) {
+        if (can_accept(f.id)) {
+            if (is_reserved_for(f.id)) {
+                reserved_flit_ids.erase(f.id);
+            }
+            q.push_back(f);
+            return true;
+        }
+        return false;
+    }
+
+    // Used strictly by SWAP mechanisms when they guarantee space by popping a victim first.
+    void force_push(const Flit& f) {
+        if (is_reserved_for(f.id)) reserved_flit_ids.erase(f.id);
+        q.push_back(f);
     }
 };
 

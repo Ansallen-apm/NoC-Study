@@ -56,7 +56,7 @@ void CrossStation::process_direction(const std::vector<RingSlot>& curr_slots, st
 
                         // 2. Eject traversing flit into newly freed eject Q space
                         f.eject_cycle = f.hop_count;
-                        node_if[k].eject_q.force_push(f);
+                        node_if[k].eject_q.push(f);
                         if (incoming_slot.e_tag && incoming_slot.e_tag_flit_id == f.id) {
                             outgoing_slot.e_tag = false;
                         }
@@ -89,9 +89,9 @@ void CrossStation::process_direction(const std::vector<RingSlot>& curr_slots, st
         if (f.dst_node == station_id || f.dst_node == -1) {
             bool ejected = false;
             for (int k = 0; k < 2; ++k) {
-                if (node_if[k].eject_q.can_accept(f.id)) {
+                if (node_if[k].eject_q.is_reserved_for(f.id) || node_if[k].eject_q.has_space()) {
                     f.eject_cycle = f.hop_count;
-                    node_if[k].eject_q.force_push(f);
+                    node_if[k].eject_q.push(f);
                     ejected = true;
                     if (incoming_slot.e_tag && incoming_slot.e_tag_flit_id == f.id) {
                         outgoing_slot.e_tag = false;
