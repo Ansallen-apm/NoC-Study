@@ -56,12 +56,14 @@ public:
         return q.size() < capacity && (q.size() + reserved_flit_ids.size()) < capacity;
     }
 
+    size_t max_reservations = 16;
+
     // Checks if the EjectQueue has capacity to grant a NEW reservation
     // A reservation can be granted as long as the total number of reservations
-    // doesn't exceed the queue's MAX capacity. We also need to check current size
-    // to avoid exceeding capacity in tiny buffer scenarios.
+    // doesn't exceed the queue's MAX capacity. We DO NOT check current size
+    // to allow reservations when the queue is physically full (decoupled).
     bool can_reserve() const {
-        return (q.size() + reserved_flit_ids.size()) < capacity;
+        return reserved_flit_ids.size() < max_reservations;
     }
 
     void reserve(uint64_t flit_id) {
@@ -75,10 +77,14 @@ public:
     }
 
     void push(const Flit& f) {
-        // If this flit had a reservation, consume it
+        // If this flit had a reservation, consume it, BUT ONLY if we have space.
+        // If we don't have space, it gets rejected (fails to push), keeps the reservation,
+        // and caller must deflect it.
         if (is_reserved_for(f.id)) {
-            reserved_flit_ids.erase(f.id);
-            q.push_back(f);
+            if (q.size() < capacity) {
+                reserved_flit_ids.erase(f.id);
+                q.push_back(f);
+            }
         } else if (has_space()) {
             // Normal unreserved injection
             q.push_back(f);

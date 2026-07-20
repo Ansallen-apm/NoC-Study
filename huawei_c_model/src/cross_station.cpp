@@ -88,7 +88,17 @@ void CrossStation::process_direction(const std::vector<RingSlot>& curr_slots, st
         if (f.dst_node == station_id || f.dst_node == -1) {
             bool ejected = false;
             for (int k = 0; k < 2; ++k) {
-                if (node_if[k].eject_q.is_reserved_for(f.id) || node_if[k].eject_q.has_space()) {
+                bool can_eject_now = false;
+                if (node_if[k].eject_q.is_reserved_for(f.id)) {
+                    // Even if reserved, it must not exceed physical capacity to actually eject
+                    if (!node_if[k].eject_q.is_full()) {
+                        can_eject_now = true;
+                    }
+                } else if (node_if[k].eject_q.has_space()) {
+                    can_eject_now = true;
+                }
+
+                if (can_eject_now) {
                     f.eject_cycle = f.hop_count;
                     node_if[k].eject_q.push(f);
                     ejected = true;
