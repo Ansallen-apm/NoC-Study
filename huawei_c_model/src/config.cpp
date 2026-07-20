@@ -104,17 +104,23 @@ bool Config::parse(const std::string& filepath) {
         if (config["nodes"] && config["nodes"].IsMap()) {
             if (config["nodes"]["vertical"]) {
                  for (const auto& n : config["nodes"]["vertical"]) {
+                     if (!n["type"] || !n["count_per_ring"]) {
+                         throw std::runtime_error("Node config missing type or count_per_ring in vertical nodes");
+                     }
                      NodeConfig nc;
-                     if (n["type"]) nc.type = n["type"].as<std::string>();
-                     if (n["count_per_ring"]) nc.count_per_ring = n["count_per_ring"].as<int>();
+                     nc.type = n["type"].as<std::string>();
+                     nc.count_per_ring = n["count_per_ring"].as<int>();
                      vertical_nodes.push_back(nc);
                  }
             }
             if (config["nodes"]["horizontal"]) {
                  for (const auto& n : config["nodes"]["horizontal"]) {
+                     if (!n["type"] || !n["count_per_ring"]) {
+                         throw std::runtime_error("Node config missing type or count_per_ring in horizontal nodes");
+                     }
                      NodeConfig nc;
-                     if (n["type"]) nc.type = n["type"].as<std::string>();
-                     if (n["count_per_ring"]) nc.count_per_ring = n["count_per_ring"].as<int>();
+                     nc.type = n["type"].as<std::string>();
+                     nc.count_per_ring = n["count_per_ring"].as<int>();
                      horizontal_nodes.push_back(nc);
                  }
             }
