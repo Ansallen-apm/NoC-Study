@@ -29,17 +29,11 @@ def export_offline():
                     if item.endswith('.html'):
                         shutil.copy2(os.path.join(html_path, item), dest_topic_path)
 
-    # 2. Copy Static Assets
-    dest_static_path = os.path.join(bundle_dir, 'static')
-    shutil.copytree(static_dir, dest_static_path)
-
-    # 3. Render and place index.html
-    # For the root index.html, we need to generate it.
+    # 2. & 3. Sync static assets and render dynamic index.html
     sys.path.insert(0, base_dir)
-    from scripts.html_gen.lib.html_utils import render_template, save_html
+    from scripts.html_gen.lib.html_utils import sync_root_assets
 
-    index_html = render_template('index.html', base_path='./', datatables=False, chart_js=False)
-    save_html(index_html, os.path.join(bundle_dir, 'index.html'))
+    sync_root_assets(bundle_dir)
 
     # 4. Zip the bundle
     zip_path = os.path.join(base_dir, 'offline_bundle.zip')
