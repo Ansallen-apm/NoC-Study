@@ -1,0 +1,203 @@
+{% set active_page = 'custom_workload' %}
+{% extends "base.html" %}
+
+{% block title %}NoC DSE: Custom Workload Analysis{% endblock %}
+
+{% block head_css %}
+    {{ super() }}
+    <style>
+        .header-panel { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .header-panel h2 { margin-top: 0; color: #2980b9; }
+        .heatmap-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; }
+        .topology-card { background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; width: 400px; }
+        canvas { border: 1px solid #eee; border-radius: 4px; background-color: #fafafa; }
+        .tooltip {
+            position: absolute; background: rgba(0,0,0,0.8); color: white; padding: 5px 10px;
+            border-radius: 4px; pointer-events: none; opacity: 0; transition: opacity 0.2s; font-size: 12px;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <h1>NoC 客製化流量端到端分析報告 (Custom Workload DSE)</h1>
+
+    <div class="header-panel">
+        <h2>環境與設定 (Environmental Settings)</h2>
+        <p><strong>架構規模:</strong> 16 節點 (4x4 Mesh/Torus 或是 16-node Ring)</p>
+        <p><strong>時脈頻率 (Frequency):</strong> 1.5 GHz</p>
+        <p><strong>資料寬度 (Data Width):</strong> 64 Bytes / cycle</p>
+        <p><strong>單一通道極限頻寬 (Link Max BW):</strong> 96 GB/sec</p>
+        <p><strong>流量特徵:</strong> 依據使用者給定之非均勻 16x16 機率矩陣與獨立注入率 (BW Utilization)。部分節點要求 100% (96GB/s) 發送頻寬。</p>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>拓撲結構 (Topology)</th>
+                <th>理論最大通道負載 (FLITs/cycle)</th>
+                <th>C Model 吞吐量 (Packets/cycle)</th>
+                <th>C Model 平均延遲 (Cycles)</th>
+            </tr>
+        </thead>
+        <tbody id="table-body">
+            <!-- Populated via JS -->
+        </tbody>
+    </table>
+
+    <h2 style="text-align:center; color:#2c3e50;">通道負載分佈圖 (Topology Heatmaps)</h2>
+
+    <div style="text-align:center; margin-bottom: 20px;">
+        <label for="dataSource"><strong>選擇資料來源 (Data Source): </strong></label>
+        <select id="dataSource" onchange="drawHeatmaps()">
+            <option value="theory_edge_loads">Theory (理論期望值)</option>
+            <option value="c_model_edge_loads">C Model (實際 Trace 負載)</option>
+            <option value="booksim_edge_loads">BookSim (近似熱點負載)</option>
+        </select>
+    </div>
+
+    <div class="heatmap-container" id="heatmap-container">
+        <!-- Canvas generated via JS -->
+    </div>
+
+    <div id="tooltip" class="tooltip"></div>
+{% endblock %}
+
+{% block extra_scripts %}
+    <script>
+        const dseResults = {{ results | tojson | safe }};
+
+        function populateTable() {
+            const tbody = document.getElementById('table-body');
+            for (const [topo, data] of Object.entries(dseResults)) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${topo.toUpperCase()}</strong></td>
+                    <td>${data.theory_max_load.toFixed(4)}</td>
+                    <td>${data.c_model_throughput.toFixed(4)}</td>
+                    <td>${data.c_model_latency.toFixed(2)}</td>
+                `;
+                tbody.appendChild(tr);
+            }
+        }
+
+        function drawHeatmaps() {
+            const container = document.getElementById('heatmap-container');
+            container.innerHTML = ''; // Clear existing
+
+            const sourceKey = document.getElementById('dataSource').value;
+
+            for (const [topo, data] of Object.entries(dseResults)) {
+                const card = document.createElement('div');
+                card.className = 'topology-card';
+                card.innerHTML = `<h3>${topo.toUpperCase()} Topology</h3><canvas id="canvas-${topo}" width="350" height="350"></canvas>`;
+                container.appendChild(card);
+
+                const canvas = document.getElementById(`canvas-${topo}`);
+                const ctx = canvas.getContext('2d');
+                renderTopology(ctx, topo, data.theory_edge_loads, data.theory_max_load);
+            }
+        }
+
+        function renderTopology(ctx, type, edgesData, maxLoad, isBooksim) {
+            const width = 350;
+            const height = 350;
+            const padding = 40;
+
+            // Calculate coordinates for 16 nodes
+            let coords = {};
+            if (type === 'mesh' || type === 'torus') {
+                const cols = 4, rows = 4;
+                const cellW = (width - 2*padding) / (cols - 1);
+                const cellH = (height - 2*padding) / (rows - 1);
+                for (let i = 0; i < 16; i++) {
+                    coords[i] = { x: padding + (i % cols) * cellW, y: padding + Math.floor(i / cols) * cellH };
+                }
+            } else if (type === 'ring') {
+                const cx = width / 2;
+                const cy = height / 2;
+                const r = width / 2 - padding;
+                for (let i = 0; i < 16; i++) {
+                    const angle = (i * 2 * Math.PI / 16) - Math.PI/2;
+                    coords[i] = { x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle) };
+                }
+            }
+
+            // Draw Edges
+            for (const [edgeStr, load] of Object.entries(edgesData)) {
+                if (load <= 0) continue;
+
+                let u, v;
+                if (isBooksim) {
+                    u = parseInt(edgeStr.split('_')[0].substring(1));
+                    v = u;
+                } else {
+                    const parts = edgeStr.split('->').map(Number);
+                    u = parts[0];
+                    v = parts[1];
+                }
+
+                if (coords[u] && coords[v] && !isBooksim) {
+                    const p1 = coords[u];
+                    const p2 = coords[v];
+
+                    const dx = p2.x - p1.x;
+                    const dy = p2.y - p1.y;
+                    const len = Math.sqrt(dx*dx + dy*dy);
+                    const offsetX = -dy/len * 3;
+                    const offsetY = dx/len * 3;
+
+                    const intensity = maxLoad > 0 ? load / maxLoad : 0;
+                    const r = Math.floor(255 * intensity);
+                    const b = Math.floor(255 * (1 - intensity));
+                    ctx.strokeStyle = `rgb(${r}, 0, ${b})`;
+                    ctx.lineWidth = 1 + (intensity * 3);
+
+                    ctx.beginPath();
+                    if (len > width/2) {
+                        ctx.setLineDash([5, 5]);
+                    } else {
+                        ctx.setLineDash([]);
+                    }
+
+                    ctx.moveTo(p1.x + offsetX, p1.y + offsetY);
+                    ctx.lineTo(p2.x + offsetX, p2.y + offsetY);
+                    ctx.stroke();
+
+                    const headlen = 6;
+                    const angle = Math.atan2(dy, dx);
+                    ctx.beginPath();
+                    ctx.moveTo(p2.x + offsetX, p2.y + offsetY);
+                    ctx.lineTo(p2.x + offsetX - headlen * Math.cos(angle - Math.PI / 6), p2.y + offsetY - headlen * Math.sin(angle - Math.PI / 6));
+                    ctx.lineTo(p2.x + offsetX - headlen * Math.cos(angle + Math.PI / 6), p2.y + offsetY - headlen * Math.sin(angle + Math.PI / 6));
+                    ctx.lineTo(p2.x + offsetX, p2.y + offsetY);
+                    ctx.fillStyle = `rgb(${r}, 0, ${b})`;
+                    ctx.fill();
+                }
+            }
+            ctx.setLineDash([]); // reset
+
+            // Draw Nodes
+            for (let i = 0; i < 16; i++) {
+                const p = coords[i];
+                ctx.fillStyle = '#fff';
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 10, 0, 2*Math.PI);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = '#333';
+                ctx.font = '10px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(i, p.x, p.y);
+            }
+        }
+
+        window.onload = () => {
+            populateTable();
+            drawHeatmaps();
+        };
+    </script>
+{% endblock %}

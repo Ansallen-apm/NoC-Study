@@ -1,0 +1,57 @@
+{% set active_page = 'index' %}
+{% extends "base.html" %}
+
+{% block title %}NoC DSE Reports - Index{% endblock %}
+
+{% block head_css %}
+    {{ super() }}
+    <style>
+        .report-list { list-style-type: none; padding: 0; }
+        .report-list li { margin: 10px 0; background: #fff; padding: 15px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .report-list a { text-decoration: none; color: #2980b9; font-weight: bold; font-size: 1.1em; }
+        .report-list a:hover { color: #3498db; }
+        .report-desc { color: #666; margin-top: 5px; font-size: 0.9em; }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <h1>NoC-Study 報告總覽 (Reports Index)</h1>
+
+    <div class="card">
+        <h2>可用報告列表 (Available Reports)</h2>
+        <ul class="report-list">
+            <li>
+                <a href="{{ base_path }}reports/unified_dashboard/html/unified_dashboard.html">整合儀表板 (Unified Dashboard)</a>
+                <div class="report-desc">提供綜合性的指標與效能總覽。</div>
+            </li>
+            <li>
+                <a href="{{ base_path }}reports/uniform_dse/html/interactive_dse_trends.html">交叉驗證 DSE (Interactive DSE)</a>
+                <div class="report-desc">互動式架構探索與多項參數 (Topology, VCs, Buffers) 影響分析。</div>
+            </li>
+            <li>
+                <a href="{{ base_path }}reports/uniform_dse/html/full_ring_dse_comparison.html">Ring 拓撲報告 (Ring DSE)</a>
+                <div class="report-desc">針對 Ring 拓撲在不同條件下的理論與實際效能報告。</div>
+            </li>
+            <li>
+                <a href="{{ base_path }}reports/uniform_dse/html/advanced_micro_metrics_report.html">微觀指標報告 (Micro Metrics)</a>
+                <div class="report-desc">Queueing Theory 與微觀緩衝區狀態的進階分析。</div>
+            </li>
+            <li>
+                <a href="{{ base_path }}reports/c_model_eval/html/multi_model_cmp.html">多模型比較 (Multi-Model Cmp)</a>
+                <div class="report-desc">比較不同層級模擬模型 (C-model vs. BookSim 等) 的準確度與效能差異。</div>
+            </li>
+            <li>
+                <a href="{{ base_path }}reports/custom_workload/html/custom_workload_report.html">自訂工作負載 (Custom Workload)</a>
+                <div class="report-desc">特定自訂 Traffic Pattern 下的網路效能報告。</div>
+            </li>
+            <li>
+                <a href="{{ base_path }}reports/huawei_c_model/html/ca_visualizer.html">華為 CA 視覺化 (CA Visualizer)</a>
+                <div class="report-desc">Cycle-Accurate 視覺化工具，用於查看封包流動狀態。</div>
+            </li>
+            <li>
+                <a href="{{ base_path }}reports/cmn_dse/html/basic_CMN.html">CMN DSE (CMN Dashboard)</a>
+                <div class="report-desc">針對 CMN 相關架構的探索報告。</div>
+            </li>
+        </ul>
+    </div>
+{% endblock %}

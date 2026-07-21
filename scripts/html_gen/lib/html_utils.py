@@ -1,13 +1,29 @@
 import os
+import jinja2
+
+def get_jinja_env():
+    template_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'templates')
+    return jinja2.Environment(loader=jinja2.FileSystemLoader(template_dir))
+
+def render_template(template_name, **kwargs):
+    env = get_jinja_env()
+    template = env.get_template(template_name)
+    return template.render(**kwargs)
+
+def save_html(html_content, filepath):
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    with open(filepath, 'w', encoding='utf-8') as f:
+        f.write(html_content)
 
 def create_html_scaffold(title, content, js_data_str="", chart_js=True, datatables=False):
+    # This is a legacy function for scripts not yet migrated to Jinja2
     scripts = ""
     if chart_js:
-        scripts += '<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>\n'
+        scripts += '<script src="../../static/js/chart.js"></script>\n'
     if datatables:
-        scripts += '<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.css">\n'
-        scripts += '<script type="text/javascript" charset="utf8" src="https://code.jquery.com/jquery-3.5.1.js"></script>\n'
-        scripts += '<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.js"></script>\n'
+        scripts += '<link rel="stylesheet" type="text/css" href="../../static/css/jquery.dataTables.css">\n'
+        scripts += '<script type="text/javascript" charset="utf8" src="../../static/js/jquery.js"></script>\n'
+        scripts += '<script type="text/javascript" charset="utf8" src="../../static/js/jquery.dataTables.js"></script>\n'
 
     js_section = f"<script>{js_data_str}</script>" if js_data_str else ""
 
@@ -37,8 +53,3 @@ def create_html_scaffold(title, content, js_data_str="", chart_js=True, datatabl
 </body>
 </html>"""
     return html
-
-def save_html(html_content, filepath):
-    os.makedirs(os.path.dirname(filepath), exist_ok=True)
-    with open(filepath, 'w', encoding='utf-8') as f:
-        f.write(html_content)

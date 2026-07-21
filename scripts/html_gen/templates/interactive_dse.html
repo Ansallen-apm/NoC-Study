@@ -1,0 +1,910 @@
+{% set active_page = 'interactive_dse' %}
+{% extends "base.html" %}
+
+{% block title %}互動式 DSE 效能趨勢報告{% endblock %}
+
+{% block head_css %}
+    {{ super() }}
+    <style>
+        .controls { text-align: center; margin: 20px 0; }
+        select { padding: 10px; font-size: 16px; border-radius: 5px; border: 1px solid #ccc; margin-right: 10px; margin-bottom: 10px;}
+        .chart-container { position: relative; height: 60vh; width: 100%; }
+        .mode-btn { padding: 10px 20px; font-weight: bold; background-color: #ccc; color: white; border: none; border-radius: 5px; cursor: pointer; margin-right: 5px;}
+        .mode-btn.active { background-color: #3cb44b; }
+
+        #heatmapTooltip {
+            position: absolute;
+            display: none;
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 5px 10px;
+            border-radius: 5px;
+            pointer-events: none;
+            font-size: 14px;
+            z-index: 100;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <h1>互動式 NoC DSE 效能趨勢 (Latency vs. Load)</h1>
+
+    <div class="controls" style="margin-bottom: 10px;">
+        <button onclick="setMode('A')" id="btnModeA" class="mode-btn active">模式 A: 效能動態曲線 (Latency Curves)</button>
+        <button onclick="setMode('B')" id="btnModeB" class="mode-btn">模式 B: 架構交叉比對 (Scatter Plot)</button>
+        <button onclick="setMode('C')" id="btnModeC" class="mode-btn">模式 C: 通道負載分佈 (Heatmap)</button>
+        <button onclick="setMode('D')" id="btnModeD" class="mode-btn">模式 D: 成本與效能權衡 (Pareto Plot)</button>
+        <button onclick="setMode('E')" id="btnModeE" class="mode-btn">模式 E: 極限壓力測試 (Radar Chart)</button>
+    </div>
+
+    <!-- Mode A Controls -->
+    <div id="modeAControls" class="controls">
+        <fieldset style="border: 1px solid #ddd; padding: 15px; border-radius: 5px; text-align: left; display: inline-block;">
+            <legend><strong>過濾器 (Filters)</strong></legend>
+
+            <label>拓撲 (Topology): </label>
+            <select id="topoSelect" onchange="updateChart()"></select>
+
+            <label>路由 (Routing): </label>
+            <select id="rSelect" onchange="updateChart()"></select>
+
+            <label>流量 (Traffic): </label>
+            <select id="tSelect" onchange="updateChart()"></select>
+
+            <label>封包長度 (Packet Size): </label>
+            <select id="pSelect" onchange="updateChart()"></select>
+
+            <label>緩衝區 (Buffer Size): </label>
+            <select id="bSelect" onchange="updateChart()"></select>
+
+            <label>虛擬通道數 (VCs): </label>
+            <select id="vSelect" onchange="updateChart()"></select>
+
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 10px 0;">
+
+            <label>跨架構比較 (Compare With): </label>
+            <select id="compareSelect" onchange="updateChart()">
+                <option value="none">無 (None)</option>
+                <option value="mesh">Mesh</option>
+                <option value="torus">Torus</option>
+                <option value="ring">Ring</option>
+            </select>
+
+            <label style="margin-left: 20px;"><input type="checkbox" id="keepCurves" onchange="updateChart()"> 保留歷史曲線 (Keep Previous Curves)</label>
+            <button onclick="clearHistory()" style="padding: 5px 10px; margin-left: 10px; cursor: pointer;">清除歷史 (Clear)</button>
+        </fieldset>
+    </div>
+
+    <!-- Mode B Controls -->
+    <div id="modeBControls" class="controls" style="display:none;">
+        <fieldset style="border: 1px solid #ddd; padding: 15px; border-radius: 5px; text-align: left; display: inline-block;">
+            <legend><strong>固定參數 (Fixed Parameters)</strong></legend>
+            <label>封包長度 (Packet Size): </label>
+            <select id="pSelectB" onchange="updateChart()"></select>
+            <label>緩衝區 (Buffer Size): </label>
+            <select id="bSelectB" onchange="updateChart()"></select>
+            <label>虛擬通道數 (VCs): </label>
+            <select id="vSelectB" onchange="updateChart()"></select>
+
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 10px 0;">
+            <label>X 軸指標: </label>
+            <select id="scatterX" onchange="updateChart()">
+                <option value="nodes">總節點數 (Nodes)</option>
+                <option value="theory_bisection_bw">理論二分頻寬 (Bisec BW)</option>
+                <option value="theory_channel_count">總連線數 (Channels)</option>
+            </select>
+            <label>Y 軸指標: </label>
+            <select id="scatterY" onchange="updateChart()">
+                <option value="booksim_actual_sat_rate">飽和吞吐量 (Saturation Rate)</option>
+                <option value="booksim_zero_load_lat">零負載延遲 (Zero-load Latency)</option>
+            </select>
+        </fieldset>
+    </div>
+
+    <!-- Mode C Controls -->
+    <div id="modeCControls" class="controls" style="display:none;">
+        <fieldset style="border: 1px solid #ddd; padding: 15px; border-radius: 5px; text-align: left; display: inline-block;">
+            <legend><strong>理論通道負載分佈 (Theoretical Channel Load Heatmap)</strong></legend>
+            <p style="font-size:0.9em; color:#555;">顯示 Uniform Random 流量下，基於最短路徑路由，各通道的封包乘載率。(預設 Traffic = uniform, VCs = 1 or 2)</p>
+            <label>拓撲 (Topology): </label>
+            <select id="topoSelectC" onchange="updateChart()"></select>
+            <label>維度大小 (Dimension): </label>
+            <select id="dimSelectC" onchange="updateChart()"></select>
+
+            <label style="margin-left:20px;"><input type="checkbox" id="toggleAnim" onchange="updateChart()" checked> 啟用封包流動動畫 (Animation)</label>
+        </fieldset>
+    </div>
+
+    <!-- Mode D Controls -->
+    <div id="modeDControls" class="controls" style="display:none;">
+        <fieldset style="border: 1px solid #ddd; padding: 15px; border-radius: 5px; text-align: left; display: inline-block;">
+            <legend><strong>成本計算權重 (Cost Weights)</strong></legend>
+            <p style="font-size:0.9em; color:#555;">總成本 (Area Cost) = 節點數 &times; (W_Router) + 連線數 &times; (W_Channel) + (Buffer Size &times; VCs &times; Nodes &times; 5) &times; (W_Buffer)</p>
+            <label>Router Weight:</label>
+            <input type="number" id="weightRouter" value="1.0" step="0.1" style="width: 60px;" onchange="updateChart()">
+            <label>Channel Weight:</label>
+            <input type="number" id="weightChannel" value="0.5" step="0.1" style="width: 60px;" onchange="updateChart()">
+            <label>Buffer Weight:</label>
+            <input type="number" id="weightBuffer" value="0.2" step="0.1" style="width: 60px;" onchange="updateChart()">
+
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 10px 0;">
+            <label>Y 軸效能指標: </label>
+            <select id="paretoY" onchange="updateChart()">
+                <option value="booksim_actual_sat_rate">飽和吞吐量 (越高越好)</option>
+                <option value="booksim_zero_load_lat_inv">1 / 零負載延遲 (越高越好)</option>
+            </select>
+        </fieldset>
+    </div>
+
+    <!-- Mode E Controls -->
+    <div id="modeEControls" class="controls" style="display:none;">
+        <fieldset style="border: 1px solid #ddd; padding: 15px; border-radius: 5px; text-align: left; display: inline-block;">
+            <legend><strong>架構雷達圖 (Architecture Radar Chart)</strong></legend>
+            <p style="font-size:0.9em; color:#555;">多維度評估：包含吞吐量、低延遲、硬體成本、連線數量。數值皆經過正規化 (100 為該指標中最優的表現)。</p>
+            <label>選擇比較組 1: </label>
+            <select id="radarConfig1" onchange="updateChart()"><option value="none">無 (None)</option></select><br><br>
+            <label>選擇比較組 2: </label>
+            <select id="radarConfig2" onchange="updateChart()"><option value="none">無 (None)</option></select><br><br>
+            <label>選擇比較組 3: </label>
+            <select id="radarConfig3" onchange="updateChart()"><option value="none">無 (None)</option></select>
+        </fieldset>
+    </div>
+
+    <!-- Chart Container -->
+    <div class="chart-container" style="position: relative;">
+        <canvas id="dseChart"></canvas>
+        <canvas id="heatmapCanvas" style="display:none; width: 100%; height: 100%; position: absolute; top:0; left:0;"></canvas>
+    </div>
+
+    <div id="heatmapTooltip"></div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+    <script>
+        const allData = {{ chart_data | tojson | safe }};
+        const allOptions = {{ options_data | tojson | safe }};
+
+        let currentMode = 'A';
+        let myChart = null;
+        let animId = null;
+        let heatmapNodes = [];
+        let heatmapEdges = [];
+        let globalMaxLoad = 1;
+        let particles = [];
+        let historyCurves = [];
+
+        function setMode(mode) {
+            currentMode = mode;
+            ['A', 'B', 'C', 'D', 'E'].forEach(m => {
+                document.getElementById('mode' + m + 'Controls').style.display = (m === mode) ? 'block' : 'none';
+                document.getElementById('btnMode' + m).className = 'mode-btn' + ((m === mode) ? ' active' : '');
+            });
+
+            if(mode === 'C') {
+                document.getElementById('dseChart').style.display = 'none';
+                document.getElementById('heatmapCanvas').style.display = 'block';
+            } else {
+                document.getElementById('dseChart').style.display = 'block';
+                document.getElementById('heatmapCanvas').style.display = 'none';
+                if(animId) { cancelAnimationFrame(animId); animId = null; }
+            }
+
+            updateChart();
+        }
+
+        function populateSelect(id, optionsArr, includeAll) {
+            const select = document.getElementById(id);
+            select.innerHTML = '';
+            if(includeAll) {
+                const opt = document.createElement('option');
+                opt.value = 'all';
+                opt.text = '全部 (All)';
+                select.appendChild(opt);
+            }
+            optionsArr.forEach(val => {
+                const opt = document.createElement('option');
+                opt.value = val;
+                opt.text = val;
+                select.appendChild(opt);
+            });
+        }
+
+        function populateRadarConfigs() {
+            // Populate select lists for Radar chart
+            let configStrings = [];
+            allData.forEach(d => {
+                if (d.booksim_actual_sat_rate > 0) {
+                    let s = `${d.topology}_${d.dim}x${d.dim}_VC${d.vcs}_Buf${d.buffer_size}`;
+                    configStrings.push({text: s, ref: d});
+                }
+            });
+            // distinct
+            const unique = [];
+            const seen = new Set();
+            for(let item of configStrings) {
+                if(!seen.has(item.text)) {
+                    seen.add(item.text);
+                    unique.push(item);
+                }
+            }
+
+            ['1', '2', '3'].forEach(idSuffix => {
+                const sel = document.getElementById('radarConfig' + idSuffix);
+                unique.forEach((u, i) => {
+                    const opt = document.createElement('option');
+                    opt.value = i;
+                    opt.text = u.text;
+                    sel.appendChild(opt);
+                });
+            });
+            window.radarUniqueData = unique;
+        }
+
+        function clearHistory() {
+            historyCurves = [];
+            updateChart();
+        }
+
+        const colors = ['#e6194B', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4', '#42d4f4', '#f032e6', '#bfef45', '#fabed4'];
+
+        function updateChart() {
+            const ctx = document.getElementById('dseChart').getContext('2d');
+            if (myChart) {
+                myChart.destroy();
+            }
+
+            if (currentMode === 'A') {
+                const t = document.getElementById('topoSelect').value;
+                const r = document.getElementById('rSelect').value;
+                const tr = document.getElementById('tSelect').value;
+                const p = document.getElementById('pSelect').value;
+                const b = document.getElementById('bSelect').value;
+                const v = document.getElementById('vSelect').value;
+                const cmp = document.getElementById('compareSelect').value;
+
+                let datasets = [];
+
+                let filtered = allData.filter(d =>
+                    d.topology === t &&
+                    (r === 'all' || d.routing === r) &&
+                    (tr === 'all' || d.traffic === tr) &&
+                    (p === 'all' || d.packet_size.toString() === p) &&
+                    (b === 'all' || d.buffer_size.toString() === b) &&
+                    (v === 'all' || d.vcs.toString() === v)
+                );
+
+                filtered.forEach((d, i) => {
+                    let label = `${d.topology} (${d.nodes} nodes) [R:${d.routing}, T:${d.traffic}, P:${d.packet_size}, B:${d.buffer_size}, VC:${d.vcs}]`;
+                    datasets.push({
+                        label: label,
+                        data: d.curve,
+                        borderColor: colors[i % colors.length],
+                        backgroundColor: colors[i % colors.length],
+                        fill: false,
+                        tension: 0.1
+                    });
+                });
+
+                if (cmp !== 'none') {
+                    let cmpFiltered = allData.filter(d =>
+                        d.topology === cmp &&
+                        (r === 'all' || d.routing === r) &&
+                        (tr === 'all' || d.traffic === tr) &&
+                        (p === 'all' || d.packet_size.toString() === p) &&
+                        (b === 'all' || d.buffer_size.toString() === b) &&
+                        (v === 'all' || d.vcs.toString() === v)
+                    );
+                    cmpFiltered.forEach((d, i) => {
+                        let label = `(CMP) ${d.topology} (${d.nodes} nodes) [R:${d.routing}, T:${d.traffic}, P:${d.packet_size}, B:${d.buffer_size}, VC:${d.vcs}]`;
+                        datasets.push({
+                            label: label,
+                            data: d.curve,
+                            borderColor: colors[(i + filtered.length) % colors.length],
+                            borderDash: [5, 5],
+                            fill: false,
+                            tension: 0.1
+                        });
+                    });
+                }
+
+                if (document.getElementById('keepCurves').checked) {
+                    datasets.forEach(ds => {
+                        let exists = historyCurves.some(h => h.label === ds.label);
+                        if (!exists) historyCurves.push(ds);
+                    });
+                    datasets = historyCurves;
+                }
+
+                myChart = new Chart(ctx, {
+                    type: 'line',
+                    data: { datasets: datasets },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: { type: 'linear', title: { display: true, text: 'Injection Rate (flits/node/cycle)', font: {size: 14} } },
+                            y: { title: { display: true, text: 'Latency (cycles)', font: {size: 14} }, min: 0 }
+                        },
+                        plugins: {
+                            title: { display: true, text: 'NoC 效能趨勢 (Latency vs. Load)', font: {size: 16} }
+                        }
+                    }
+                });
+
+            } else if (currentMode === 'B') {
+                const pB = document.getElementById('pSelectB').value;
+                const bB = document.getElementById('bSelectB').value;
+                const vB = document.getElementById('vSelectB').value;
+                const xMet = document.getElementById('scatterX').value;
+                const yMet = document.getElementById('scatterY').value;
+
+                let datasets = [];
+                let topos = [...new Set(allData.map(item => item.topology))];
+
+                topos.forEach((topo, idx) => {
+                    let filtered = allData.filter(d =>
+                        d.topology === topo &&
+                        (pB === 'all' || d.packet_size.toString() === pB) &&
+                        (bB === 'all' || d.buffer_size.toString() === bB) &&
+                        (vB === 'all' || d.vcs.toString() === vB) &&
+                        d[yMet] > 0
+                    );
+
+                    let dataPoints = filtered.map(d => ({
+                        x: d[xMet],
+                        y: d[yMet],
+                        label: `${d.dim}x${d.dim}`
+                    }));
+
+                    datasets.push({
+                        label: topo.toUpperCase(),
+                        data: dataPoints,
+                        backgroundColor: colors[idx % colors.length],
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    });
+                });
+
+                myChart = new Chart(ctx, {
+                    type: 'scatter',
+                    data: { datasets: datasets },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: { title: { display: true, text: document.getElementById('scatterX').options[document.getElementById('scatterX').selectedIndex].text } },
+                            y: { title: { display: true, text: document.getElementById('scatterY').options[document.getElementById('scatterY').selectedIndex].text }, min: 0 }
+                        },
+                        plugins: {
+                            title: { display: true, text: '架構交叉比對 (Scatter Plot)', font: {size: 16} },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.dataset.label + ' ' + context.raw.label + ': (' + context.raw.x + ', ' + context.raw.y.toFixed(3) + ')';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+
+            } else if (currentMode === 'D') {
+                const wR = parseFloat(document.getElementById('weightRouter').value);
+                const wC = parseFloat(document.getElementById('weightChannel').value);
+                const wB = parseFloat(document.getElementById('weightBuffer').value);
+                const yMet = document.getElementById('paretoY').value;
+
+                let datasets = [];
+                let topos = [...new Set(allData.map(item => item.topology))];
+
+                topos.forEach((topo, idx) => {
+                    let filtered = allData.filter(d => d.topology === topo && d.booksim_actual_sat_rate > 0);
+
+                    let dataPoints = filtered.map(d => {
+                        let area = (d.nodes * wR) + (d.theory_channel_count * wC) + (d.buffer_size * d.vcs * d.nodes * 5 * wB);
+                        let yVal = yMet === 'booksim_zero_load_lat_inv' ? (1.0 / d.booksim_zero_load_lat) : d.booksim_actual_sat_rate;
+                        return {
+                            x: area,
+                            y: yVal,
+                            label: `${d.dim}x${d.dim}_VC${d.vcs}`
+                        };
+                    });
+
+                    datasets.push({
+                        label: topo.toUpperCase(),
+                        data: dataPoints,
+                        backgroundColor: colors[idx % colors.length],
+                        pointRadius: 5
+                    });
+                });
+
+                myChart = new Chart(ctx, {
+                    type: 'scatter',
+                    data: { datasets: datasets },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        scales: {
+                            x: { title: { display: true, text: '估算硬體成本 (Area Cost)' } },
+                            y: { title: { display: true, text: document.getElementById('paretoY').options[document.getElementById('paretoY').selectedIndex].text } }
+                        },
+                        plugins: {
+                            title: { display: true, text: '成本與效能權衡 (Pareto Plot)', font: {size: 16} },
+                            tooltip: { callbacks: { label: function(context) { return context.dataset.label + ' ' + context.raw.label + ': Area=' + context.raw.x.toFixed(1) + ', Perf=' + context.raw.y.toFixed(4); } } }
+                        }
+                    }
+                });
+            } else if (currentMode === 'E') {
+                if(!window.radarUniqueData) return;
+
+                const c1 = document.getElementById('radarConfig1').value;
+                const c2 = document.getElementById('radarConfig2').value;
+                const c3 = document.getElementById('radarConfig3').value;
+
+                let maxThr = 0, maxZlat = 0, minZlat = 9999, maxCost = 0;
+                window.radarUniqueData.forEach(item => {
+                    let d = item.ref;
+                    if(d.booksim_actual_sat_rate > maxThr) maxThr = d.booksim_actual_sat_rate;
+                    if(d.booksim_zero_load_lat > maxZlat) maxZlat = d.booksim_zero_load_lat;
+                    if(d.booksim_zero_load_lat < minZlat) minZlat = d.booksim_zero_load_lat;
+                    let cost = d.nodes + d.theory_channel_count*0.5 + (d.buffer_size*d.vcs*d.nodes*5)*0.2;
+                    if(cost > maxCost) maxCost = cost;
+                });
+
+                let datasets = [];
+                [c1, c2, c3].forEach((val, idx) => {
+                    if(val !== 'none' && window.radarUniqueData[val]) {
+                        let d = window.radarUniqueData[val].ref;
+
+                        let normThr = (d.booksim_actual_sat_rate / maxThr) * 100;
+                        let normLat = ((maxZlat - d.booksim_zero_load_lat) / (maxZlat - minZlat)) * 100;
+                        let cost = d.nodes + d.theory_channel_count*0.5 + (d.buffer_size*d.vcs*d.nodes*5)*0.2;
+                        let normCost = ((maxCost - cost) / maxCost) * 100; // Lower cost is better (100)
+
+                        let maxHops = Math.max(...window.radarUniqueData.map(u => u.ref.theory_avg_hops || 1));
+                        let normHops = ((maxHops - (d.theory_avg_hops||maxHops)) / maxHops) * 100;
+
+                        datasets.push({
+                            label: window.radarUniqueData[val].text,
+                            data: [normThr, normLat, normCost, normHops],
+                            fill: true,
+                            backgroundColor: hexToRgbA(colors[idx], 0.2),
+                            borderColor: colors[idx],
+                            pointBackgroundColor: colors[idx],
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: colors[idx]
+                        });
+                    }
+                });
+
+                myChart = new Chart(ctx, {
+                    type: 'radar',
+                    data: {
+                        labels: ['高吞吐量 (Throughput)', '低延遲 (Low Latency)', '低成本 (Low Cost)', '少跳數 (Low Hops)'],
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        elements: { line: { borderWidth: 3 } },
+                        scales: { r: { min: 0, max: 100, ticks: {stepSize: 20} } },
+                        plugins: {
+                            title: { display: true, text: 'NoC 極限壓力測試雷達圖 (Radar Chart)', font: {size: 16} }
+                        }
+                    }
+                });
+
+            } else if (currentMode === 'C') {
+                const topo = document.getElementById('topoSelectC').value;
+                const dim = parseInt(document.getElementById('dimSelectC').value);
+
+                let record = allData.find(d =>
+                    d.topology === topo &&
+                    d.dim === dim &&
+                    d.traffic === 'uniform' &&
+                    (d.vcs === 1 || d.vcs === 2)
+                );
+
+                if (record && record.theory_edge_loads) {
+                    drawHeatmap(topo, dim, record.theory_edge_loads);
+                } else {
+                    drawHeatmap(topo, dim, null);
+                }
+            }
+        }
+
+        function hexToRgbA(hex, alpha){
+            var c;
+            if(/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)){
+                c= hex.substring(1).split('');
+                if(c.length== 3){
+                    c= [c[0], c[0], c[1], c[1], c[2], c[2]];
+                }
+                c= '0x'+c.join('');
+                return 'rgba('+[(c>>16)&255, (c>>8)&255, c&255].join(',')+','+alpha+')';
+            }
+            return `rgba(0,0,0,${alpha})`;
+        }
+
+        // ============================
+        // MODE C: Heatmap & Animation
+        // ============================
+        function getColorForLoad(load, maxLoad) {
+            if (maxLoad === 0) return 'rgb(200, 200, 200)';
+            let ratio = load / maxLoad;
+            let r = Math.floor(255 * ratio);
+            let b = Math.floor(255 * (1 - ratio));
+            return `rgb(${r}, 0, ${b})`;
+        }
+
+        function drawHeatmap(topo, dim, edgeLoads) {
+            const canvas = document.getElementById('heatmapCanvas');
+            const ctx = canvas.getContext('2d');
+
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight || 500;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            heatmapNodes = [];
+            heatmapEdges = [];
+            particles = [];
+            if (animId) {
+                cancelAnimationFrame(animId);
+                animId = null;
+            }
+
+            if (!edgeLoads || Object.keys(edgeLoads).length === 0) {
+                ctx.fillStyle = 'black';
+                ctx.font = '20px Arial';
+                ctx.fillText("尚無該拓撲的通道負載資料 (No edge load data available)", 50, 50);
+                return;
+            }
+
+            let maxLoad = 0;
+            for (let key in edgeLoads) {
+                if (edgeLoads[key] > maxLoad) maxLoad = edgeLoads[key];
+            }
+            globalMaxLoad = maxLoad;
+
+            const padding = 50;
+            const drawWidth = canvas.width - padding * 2;
+            const drawHeight = canvas.height - padding * 2;
+
+            let nodes = [];
+            let width = dim;
+            let height = dim;
+
+            if (topo === 'ring') {
+                width = dim;
+                height = 1;
+                const radius = Math.min(drawWidth, drawHeight) / 2;
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                for (let i = 0; i < dim; i++) {
+                    const angle = (i / dim) * 2 * Math.PI - Math.PI / 2;
+                    nodes.push({
+                        id: i,
+                        x: centerX + radius * Math.cos(angle),
+                        y: centerY + radius * Math.sin(angle)
+                    });
+                }
+            } else { // mesh or torus
+                const stepX = drawWidth / (width > 1 ? width - 1 : 1);
+                const stepY = drawHeight / (height > 1 ? height - 1 : 1);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        nodes.push({
+                            id: y * width + x,
+                            x: padding + x * stepX,
+                            y: padding + y * stepY
+                        });
+                    }
+                }
+            }
+
+            heatmapNodes = nodes;
+
+            for (let key in edgeLoads) {
+                const parts = key.split('->');
+                if (parts.length === 2) {
+                    const u = parseInt(parts[0]);
+                    const v = parseInt(parts[1]);
+                    const load = edgeLoads[key];
+                    const nodeU = nodes.find(n => n.id === u);
+                    const nodeV = nodes.find(n => n.id === v);
+
+                    if (nodeU && nodeV) {
+                        let isWrapAround = false;
+                        if (topo === 'torus' && (Math.abs(nodeU.x - nodeV.x) > drawWidth * 0.8 || Math.abs(nodeU.y - nodeV.y) > drawHeight * 0.8)) {
+                            isWrapAround = true;
+                        }
+
+                        const dx = nodeV.x - nodeU.x;
+                        const dy = nodeV.y - nodeU.y;
+                        const length = Math.sqrt(dx * dx + dy * dy);
+
+                        let nx = 0, ny = 0;
+                        if (length > 0) {
+                            nx = -dy / length;
+                            ny = dx / length;
+                        }
+
+                        const offset = 12;
+                        const shiftX = nx * offset;
+                        const shiftY = ny * offset;
+
+                        heatmapEdges.push({
+                            u: u, v: v,
+                            x1: nodeU.x + shiftX, y1: nodeU.y + shiftY,
+                            x2: nodeV.x + shiftX, y2: nodeV.y + shiftY,
+                            load: load,
+                            color: getColorForLoad(load, maxLoad),
+                            isWrapAround: isWrapAround
+                        });
+                    }
+                }
+            }
+
+            for (let edge of heatmapEdges) {
+                if (edge.isWrapAround) {
+                    let midX1 = edge.x1;
+                    let midY1 = edge.y1;
+                    let midX2 = edge.x2;
+                    let midY2 = edge.y2;
+                    const extend = 80;
+
+                    if (Math.abs(edge.x1 - edge.x2) > drawWidth * 0.8) {
+                        midX1 = edge.x1 > edge.x2 ? edge.x1 + extend : edge.x1 - extend;
+                        midX2 = edge.x2 > edge.x1 ? edge.x2 + extend : edge.x2 - extend;
+                    }
+                    if (Math.abs(edge.y1 - edge.y2) > drawHeight * 0.8) {
+                        midY1 = edge.y1 > edge.y2 ? edge.y1 + extend : edge.y1 - extend;
+                        midY2 = edge.y2 > edge.y1 ? edge.y2 + extend : edge.y2 - extend;
+                    }
+                    edge.mid1 = {x: midX1, y: midY1};
+                    edge.mid2 = {x: midX2, y: midY2};
+                }
+            }
+
+            if (document.getElementById('toggleAnim').checked) {
+                if (!animId) animateHeatmap();
+            } else {
+                renderHeatmapBase(ctx);
+            }
+        }
+
+        function renderHeatmapBase(ctx) {
+            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+            // Draw edges
+            ctx.lineWidth = 4;
+            for (let edge of heatmapEdges) {
+                ctx.strokeStyle = edge.color;
+                ctx.beginPath();
+                if (edge.isWrapAround) {
+                    ctx.moveTo(edge.x1, edge.y1);
+                    ctx.lineTo(edge.mid1.x, edge.mid1.y);
+                    ctx.stroke();
+
+                    ctx.beginPath();
+                    ctx.moveTo(edge.x2, edge.y2);
+                    ctx.lineTo(edge.mid2.x, edge.mid2.y);
+                    ctx.stroke();
+                } else {
+                    ctx.moveTo(edge.x1, edge.y1);
+                    ctx.lineTo(edge.x2, edge.y2);
+                    ctx.stroke();
+                }
+
+                // Arrow
+                if(!edge.isWrapAround) {
+                    drawArrow(ctx, edge.x1, edge.y1, edge.x2, edge.y2, edge.color);
+                } else {
+                    drawArrow(ctx, edge.mid2.x, edge.mid2.y, edge.x2, edge.y2, edge.color);
+                }
+            }
+
+            // Draw nodes
+            for (let node of heatmapNodes) {
+                ctx.fillStyle = '#fff';
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, 15, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = '#333';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(node.id, node.x, node.y);
+            }
+        }
+
+        function drawArrow(ctx, fromx, fromy, tox, toy, color) {
+            var headlen = 10; // length of head in pixels
+            var dx = tox - fromx;
+            var dy = toy - fromy;
+            var angle = Math.atan2(dy, dx);
+
+            // move tox, toy back a bit so arrow head doesn't sit exactly on node
+            const backOff = 15;
+            const fx = tox - backOff * Math.cos(angle);
+            const fy = toy - backOff * Math.sin(angle);
+
+            ctx.beginPath();
+            ctx.moveTo(fx, fy);
+            ctx.lineTo(fx - headlen * Math.cos(angle - Math.PI / 6), fy - headlen * Math.sin(angle - Math.PI / 6));
+            ctx.lineTo(fx - headlen * Math.cos(angle + Math.PI / 6), fy - headlen * Math.sin(angle + Math.PI / 6));
+            ctx.closePath();
+            ctx.fillStyle = color;
+            ctx.fill();
+        }
+
+        function animateHeatmap() {
+            const canvas = document.getElementById('heatmapCanvas');
+            const ctx = canvas.getContext('2d');
+
+            renderHeatmapBase(ctx);
+
+            // Generate particles
+            if (Math.random() < 0.5) {
+                // Pick a random edge based on load probability
+                let totalLoad = heatmapEdges.reduce((sum, e) => sum + e.load, 0);
+                if (totalLoad > 0) {
+                    let rand = Math.random() * totalLoad;
+                    let selectedEdge = null;
+                    for (let edge of heatmapEdges) {
+                        rand -= edge.load;
+                        if (rand <= 0) {
+                            selectedEdge = edge;
+                            break;
+                        }
+                    }
+
+                    if (selectedEdge) {
+                        particles.push({
+                            edge: selectedEdge,
+                            progress: 0,
+                            speed: 0.01 + Math.random() * 0.02
+                        });
+                    }
+                }
+            }
+
+            // Draw particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.progress += p.speed;
+                if (p.progress >= 1) {
+                    particles.splice(i, 1);
+                    continue;
+                }
+
+                let px, py;
+                if (p.edge.isWrapAround) {
+                    if (p.progress < 0.5) {
+                        let t = p.progress * 2;
+                        px = p.edge.x1 + (p.edge.mid1.x - p.edge.x1) * t;
+                        py = p.edge.y1 + (p.edge.mid1.y - p.edge.y1) * t;
+                    } else {
+                        let t = (p.progress - 0.5) * 2;
+                        px = p.edge.mid2.x + (p.edge.x2 - p.edge.mid2.x) * t;
+                        py = p.edge.mid2.y + (p.edge.y2 - p.edge.mid2.y) * t;
+                    }
+                } else {
+                    px = p.edge.x1 + (p.edge.x2 - p.edge.x1) * p.progress;
+                    py = p.edge.y1 + (p.edge.y2 - p.edge.y1) * p.progress;
+                }
+
+                ctx.beginPath();
+                ctx.arc(px, py, 4, 0, 2 * Math.PI);
+                ctx.fillStyle = 'yellow';
+                ctx.fill();
+                ctx.lineWidth = 1;
+                ctx.strokeStyle = 'black';
+                ctx.stroke();
+            }
+
+            animId = requestAnimationFrame(animateHeatmap);
+        }
+
+        function pointLineDistance(px, py, x1, y1, x2, y2) {
+            const A = px - x1;
+            const B = py - y1;
+            const C = x2 - x1;
+            const D = y2 - y1;
+
+            const dot = A * C + B * D;
+            const len_sq = C * C + D * D;
+            let param = -1;
+            if (len_sq != 0)
+                param = dot / len_sq;
+
+            let xx, yy;
+
+            if (param < 0) {
+                xx = x1;
+                yy = y1;
+            }
+            else if (param > 1) {
+                xx = x2;
+                yy = y2;
+            }
+            else {
+                xx = x1 + param * C;
+                yy = y1 + param * D;
+            }
+
+            const dx = px - xx;
+            const dy = py - yy;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        document.getElementById('heatmapCanvas').addEventListener('mousemove', function(e) {
+            if (currentMode !== 'C') return;
+            const rect = this.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            let hoveredEdge = null;
+            for (let edge of heatmapEdges) {
+                let distance = 9999;
+                if (edge.isWrapAround) {
+                    const dist1 = pointLineDistance(mouseX, mouseY, edge.x1, edge.y1, edge.mid1.x, edge.mid1.y);
+                    const dist2 = pointLineDistance(mouseX, mouseY, edge.x2, edge.y2, edge.mid2.x, edge.mid2.y);
+                    distance = Math.min(dist1, dist2);
+                } else {
+                    distance = pointLineDistance(mouseX, mouseY, edge.x1, edge.y1, edge.x2, edge.y2);
+                }
+
+                if (distance < 5) { // 5px tolerance
+                    hoveredEdge = edge;
+                    break;
+                }
+            }
+
+            const tooltip = document.getElementById('heatmapTooltip');
+            if (hoveredEdge) {
+                tooltip.style.display = 'block';
+                tooltip.style.left = (e.clientX - rect.left + 15) + 'px';
+                tooltip.style.top = (e.clientY - rect.top + 15) + 'px';
+                tooltip.innerHTML = `連線 (Edge): ${hoveredEdge.u} &rarr; ${hoveredEdge.v}<br>負載 (Load): ${hoveredEdge.load}`;
+                this.style.cursor = 'pointer';
+            } else {
+                tooltip.style.display = 'none';
+                this.style.cursor = 'default';
+            }
+        });
+
+        // 初始化
+        window.onload = function() {
+            let dims = [...new Set(allData.map(item => item.dim))].sort((a,b) => a-b);
+
+            populateSelect('topoSelect', allOptions.topology, false);
+            populateSelect('rSelect', allOptions.routing, true);
+            populateSelect('tSelect', allOptions.traffic, true);
+            populateSelect('pSelect', allOptions.packet_size, true);
+            populateSelect('bSelect', allOptions.buffer_size, true);
+            populateSelect('vSelect', allOptions.vcs, true);
+
+            populateSelect('pSelectB', allOptions.packet_size, true);
+            populateSelect('bSelectB', allOptions.buffer_size, true);
+            populateSelect('vSelectB', allOptions.vcs, true);
+
+            populateSelect('topoSelectC', allOptions.topology, false);
+            populateSelect('dimSelectC', dims, false);
+
+            populateRadarConfigs();
+
+            if(allOptions.topology.includes('ring')) {
+                document.getElementById('topoSelect').value = 'ring';
+                document.getElementById('topoSelectC').value = 'ring';
+            }
+            document.getElementById('pSelectB').value = '1';
+            document.getElementById('bSelectB').value = '8';
+            updateChart();
+        };
+    </script>
+{% endblock %}

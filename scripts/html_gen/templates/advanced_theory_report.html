@@ -1,0 +1,89 @@
+{% set active_page = 'uniform_dse_micro' %}
+{% extends "base.html" %}
+
+{% block title %}Phase 1.5 Advanced Theory Report{% endblock %}
+
+{% block content %}
+    <h1>Phase 1.5: Advanced Micro-Metrics & Queueing Theory Verification</h1>
+
+    <div class="card">
+        <h2>1. Queueing Theory Curve Fitting</h2>
+        <p><strong>Fitted Model:</strong> L = Base + Scaling * [ Rate / (Max_Rate - Rate) ]</p>
+        <ul>
+            <li><strong>Base Latency (Zero-load):</strong> {{ "%.4f"|format(base_fit) }} cycles</li>
+            <li><strong>Estimated Saturation (Max Rate):</strong> {{ "%.4f"|format(max_rate_fit) }} flits/cycle/node</li>
+            <li><strong>Scaling Factor:</strong> {{ "%.4f"|format(scaling_fit) }}</li>
+        </ul>
+        <div class="chart-container" style="height: 400px;">
+            <canvas id="delayChart"></canvas>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>2. Variance and Buffer Occupancy (Markov Chain & BookSim)</h2>
+        <table class="display">
+            <thead>
+                <tr>
+                    <th>Injection Rate</th>
+                    <th>BookSim Avg Latency</th>
+                    <th>BookSim Max Latency</th>
+                    <th>BookSim Latency Variance</th>
+                    <th>Avg Buffer Writes (Per Port)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for pt in micro_data %}
+                <tr>
+                    <td>{{ "%.3f"|format(pt['rate']) }}</td>
+                    <td>{{ "%.2f"|format(pt['latency']) if pt['latency'] != inf and pt['latency'] != "inf" else "Saturation" }}</td>
+                    <td>{{ pt['max_latency'] }}</td>
+                    <td>{{ "%.2f"|format(pt['variance']) }}</td>
+                    <td>{{ "%.2f"|format(pt.get('avg_buffer_writes', 0.0)) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}
+
+{% block extra_scripts %}
+    <script>
+        const ctx = document.getElementById('delayChart').getContext('2d');
+        const dataRates = {{ dataRates | tojson | safe }};
+        const dataLats = {{ dataLats | tojson | safe }};
+        const fitRates = {{ fitRates | tojson | safe }};
+        const fitLats = {{ fitLats | tojson | safe }};
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                datasets: [
+                    {
+                        label: 'BookSim Empirical Data',
+                        data: dataRates.map((r, i) => ({x: r, y: dataLats[i]})),
+                        borderColor: 'blue',
+                        backgroundColor: 'blue',
+                        showLine: false,
+                        pointRadius: 5
+                    },
+                    {
+                        label: 'Queueing Theory Fit',
+                        data: fitRates.map((r, i) => ({x: r, y: fitLats[i]})),
+                        borderColor: 'red',
+                        borderDash: [5, 5],
+                        fill: false,
+                        pointRadius: 0
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { type: 'linear', title: { display: true, text: 'Injection Rate' } },
+                    y: { title: { display: true, text: 'Latency' } }
+                }
+            }
+        });
+    </script>
+{% endblock %}
