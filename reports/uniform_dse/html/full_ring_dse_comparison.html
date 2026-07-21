@@ -1,329 +1,368 @@
 
-    <!DOCTYPE html>
-    <html lang="zh-TW">
-    <head>
-        <meta charset="UTF-8">
-        <title>NoC DSE: Ring Topology Case Study Report</title>
-        <style>
-            body { font-family: Arial, sans-serif; margin: 40px; background-color: #f4f4f9; color: #333; }
-            h1, h2, h3 { color: #0056b3; }
-            .container { max-width: 1200px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-            table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-            th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
-            th { background-color: #0056b3; color: white; }
-            tr:nth-child(even) { background-color: #f2f2f2; }
-            .deadlock { background-color: #ffcccc !important; color: #cc0000; font-weight: bold; }
-            .success { color: #008000; font-weight: bold; }
-            .note { font-size: 0.9em; color: #666; margin-bottom: 20px; }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h1>片上網路架構探索 (NoC DSE)</h1>
-            <h2>Ring 拓撲 Case Study 比較報告</h2>
-            <p class="note">本報告匯集了 Python 理論推導與 BookSim 實際模擬的交叉驗證結果。</p>
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-width=1.0">
+    <title>NoC DSE: Ring Topology Case Study Report</title>
 
-            <h3>1. 理論分析 (Theoretical Analysis)</h3>
-            <table>
-                <tr>
-                    <th>節點數 (Nodes)</th>
-                    <th>平均跳數 (Avg Hops)</th>
-                    <th>二分頻寬 (Bisection BW)</th>
-                    <th>最大理論注入率 (Max Inj Rate)</th>
-                </tr>
 
-            </table>
 
-            <h3>2. BookSim 模擬結果 (BookSim Simulation Results)</h3>
-            <p class="note">比較不同配置在注入率 0.2 時的表現。注意：在 1D Torus (Ring) 中，若 VC=1 且使用 shortest path routing，必定發生死結 (Deadlock/Infinity Latency)。</p>
-            <table>
-                <tr>
-                    <th>拓撲 (Topology)</th>
-                    <th>封包大小 (Packet Size)</th>
-                    <th>緩衝區大小 (Buffer Size)</th>
-                    <th>虛擬通道數 (VCs)</th>
-                    <th>延遲 (Latency) [Inj Rate=0.2]</th>
-                    <th>狀態 (Status)</th>
-                </tr>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; color: #333; margin: 0; padding: 0; }
+        .navbar { background-color: #34495e; overflow: hidden; display: flex; flex-wrap: wrap; }
+        .navbar a { float: left; display: block; color: #f2f2f2; text-align: center; padding: 14px 16px; text-decoration: none; font-size: 14px; }
+        .navbar a:hover { background-color: #ddd; color: black; }
+        .navbar a.active { background-color: #3498db; color: white; }
+        .content-container { max-width: 1200px; margin: 20px auto; padding: 0 20px; }
+        h1 { color: #2c3e50; text-align: center; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        h2, h3 { color: #2c3e50; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background: #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: center; }
+        th { background-color: #34495e; color: white; }
+        .chart-container { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    </style>
 
-                        <tr class="deadlock">
-                            <td>Ring (Nodes: 4)</td>
-                            <td>2 flits</td>
-                            <td>8 flits</td>
-                            <td>1</td>
-                            <td>∞</td>
-                            <td class="deadlock">Deadlock / Saturated</td>
-                        </tr>
+    <style>
+        .deadlock { background-color: #ffcccc !important; color: #cc0000; font-weight: bold; }
+        .success { color: #008000; font-weight: bold; }
+        .note { font-size: 0.9em; color: #666; margin-bottom: 20px; }
+    </style>
 
-                        <tr class="">
-                            <td>Ring (Nodes: 4)</td>
-                            <td>2 flits</td>
-                            <td>8 flits</td>
-                            <td>2</td>
-                            <td>21.37 cycles</td>
-                            <td class="success">Success</td>
-                        </tr>
 
-                        <tr class="">
-                            <td>Ring (Nodes: 4)</td>
-                            <td>2 flits</td>
-                            <td>8 flits</td>
-                            <td>4</td>
-                            <td>17.27 cycles</td>
-                            <td class="success">Success</td>
-                        </tr>
 
-                        <tr class="deadlock">
-                            <td>Ring (Nodes: 4)</td>
-                            <td>4 flits</td>
-                            <td>8 flits</td>
-                            <td>1</td>
-                            <td>∞</td>
-                            <td class="deadlock">Deadlock / Saturated</td>
-                        </tr>
 
-                        <tr class="">
-                            <td>Ring (Nodes: 4)</td>
-                            <td>4 flits</td>
-                            <td>8 flits</td>
-                            <td>2</td>
-                            <td>660.12 cycles</td>
-                            <td class="success">Success</td>
-                        </tr>
 
-                        <tr class="">
-                            <td>Ring (Nodes: 4)</td>
-                            <td>4 flits</td>
-                            <td>8 flits</td>
-                            <td>4</td>
-                            <td>517.08 cycles</td>
-                            <td class="success">Success</td>
-                        </tr>
+</head>
+<body>
 
-                        <tr class="deadlock">
-                            <td>Ring (Nodes: 6)</td>
-                            <td>2 flits</td>
-                            <td>8 flits</td>
-                            <td>1</td>
-                            <td>∞</td>
-                            <td class="deadlock">Deadlock / Saturated</td>
-                        </tr>
+    <div class="navbar">
+        <a href="../../../index.html" class="">首頁 (Home)</a>
+        <a href="../../../reports/unified_dashboard/html/unified_dashboard.html" class="">整合儀表板 (Unified Dashboard)</a>
+        <a href="../../../reports/uniform_dse/html/interactive_dse_trends.html" class="">交叉驗證 DSE (Interactive DSE)</a>
+        <a href="../../../reports/uniform_dse/html/full_ring_dse_comparison.html" class="active">Ring 拓撲報告 (Ring DSE)</a>
+        <a href="../../../reports/uniform_dse/html/advanced_micro_metrics_report.html" class="">微觀指標報告 (Micro Metrics)</a>
+        <a href="../../../reports/c_model_eval/html/multi_model_cmp.html" class="">多模型比較 (Multi-Model Cmp)</a>
+        <a href="../../../reports/custom_workload/html/custom_workload_report.html" class="">自訂工作負載 (Custom Workload)</a>
+        <a href="../../../reports/huawei_c_model/html/ca_visualizer.html" class="">華為 CA 視覺化 (CA Visualizer)</a>
+        <a href="../../../reports/cmn_dse/html/basic_CMN.html" class="">CMN DSE (CMN Dashboard)</a>
+    </div>
 
-                        <tr class="">
-                            <td>Ring (Nodes: 6)</td>
-                            <td>2 flits</td>
-                            <td>8 flits</td>
-                            <td>2</td>
-                            <td>449.71 cycles</td>
-                            <td class="success">Success</td>
-                        </tr>
+    <div class="content-container">
 
-                        <tr class="">
-                            <td>Ring (Nodes: 6)</td>
-                            <td>2 flits</td>
-                            <td>8 flits</td>
-                            <td>4</td>
-                            <td>22.68 cycles</td>
-                            <td class="success">Success</td>
-                        </tr>
+    <h1>片上網路架構探索 (NoC DSE)</h1>
+    <h2>Ring 拓撲 Case Study 比較報告</h2>
+    <p class="note">本報告匯集了 Python 理論推導與 BookSim 實際模擬的交叉驗證結果。</p>
 
-                        <tr class="deadlock">
-                            <td>Ring (Nodes: 6)</td>
-                            <td>4 flits</td>
-                            <td>8 flits</td>
-                            <td>1</td>
-                            <td>∞</td>
-                            <td class="deadlock">Deadlock / Saturated</td>
-                        </tr>
+    <h3>1. 理論分析 (Theoretical Analysis)</h3>
+    <table>
+        <tr>
+            <th>節點數 (Nodes)</th>
+            <th>平均跳數 (Avg Hops)</th>
+            <th>二分頻寬 (Bisection BW)</th>
+            <th>最大理論注入率 (Max Inj Rate)</th>
+        </tr>
 
-                        <tr class="">
-                            <td>Ring (Nodes: 6)</td>
-                            <td>4 flits</td>
-                            <td>8 flits</td>
-                            <td>2</td>
-                            <td>694.07 cycles</td>
-                            <td class="success">Success</td>
-                        </tr>
+    </table>
 
-                        <tr class="">
-                            <td>Ring (Nodes: 6)</td>
-                            <td>4 flits</td>
-                            <td>8 flits</td>
-                            <td>4</td>
-                            <td>471.45 cycles</td>
-                            <td class="success">Success</td>
-                        </tr>
+    <h3>2. BookSim 模擬結果 (BookSim Simulation Results)</h3>
+    <p class="note">比較不同配置在注入率 0.2 時的表現。注意：在 1D Torus (Ring) 中，若 VC=1 且使用 shortest path routing，必定發生死結 (Deadlock/Infinity Latency)。</p>
+    <table>
+        <tr>
+            <th>拓撲 (Topology)</th>
+            <th>封包大小 (Packet Size)</th>
+            <th>緩衝區大小 (Buffer Size)</th>
+            <th>虛擬通道數 (VCs)</th>
+            <th>延遲 (Latency) [Inj Rate=0.3]</th>
+            <th>狀態 (Status)</th>
+        </tr>
 
-                        <tr class="deadlock">
-                            <td>Ring (Nodes: 8)</td>
-                            <td>2 flits</td>
-                            <td>8 flits</td>
-                            <td>1</td>
-                            <td>∞</td>
-                            <td class="deadlock">Deadlock / Saturated</td>
-                        </tr>
+        <tr class="deadlock">
+            <td>Ring (Nodes: 4)</td>
+            <td>2 flits</td>
+            <td>8 flits</td>
+            <td>1</td>
+            <td>∞</td>
+            <td class="deadlock">Deadlock / Saturated</td>
+        </tr>
 
-                        <tr class="">
-                            <td>Ring (Nodes: 8)</td>
-                            <td>2 flits</td>
-                            <td>8 flits</td>
-                            <td>2</td>
-                            <td>502.49 cycles</td>
-                            <td class="success">Success</td>
-                        </tr>
+        <tr class="success">
+            <td>Ring (Nodes: 4)</td>
+            <td>2 flits</td>
+            <td>8 flits</td>
+            <td>2</td>
+            <td>21.37 cycles</td>
+            <td class="success">Success</td>
+        </tr>
 
-                        <tr class="">
-                            <td>Ring (Nodes: 8)</td>
-                            <td>2 flits</td>
-                            <td>8 flits</td>
-                            <td>4</td>
-                            <td>42.11 cycles</td>
-                            <td class="success">Success</td>
-                        </tr>
+        <tr class="success">
+            <td>Ring (Nodes: 4)</td>
+            <td>2 flits</td>
+            <td>8 flits</td>
+            <td>4</td>
+            <td>17.27 cycles</td>
+            <td class="success">Success</td>
+        </tr>
 
-                        <tr class="deadlock">
-                            <td>Ring (Nodes: 8)</td>
-                            <td>4 flits</td>
-                            <td>8 flits</td>
-                            <td>1</td>
-                            <td>∞</td>
-                            <td class="deadlock">Deadlock / Saturated</td>
-                        </tr>
+        <tr class="deadlock">
+            <td>Ring (Nodes: 4)</td>
+            <td>4 flits</td>
+            <td>8 flits</td>
+            <td>1</td>
+            <td>∞</td>
+            <td class="deadlock">Deadlock / Saturated</td>
+        </tr>
 
-                        <tr class="">
-                            <td>Ring (Nodes: 8)</td>
-                            <td>4 flits</td>
-                            <td>8 flits</td>
-                            <td>2</td>
-                            <td>814.54 cycles</td>
-                            <td class="success">Success</td>
-                        </tr>
+        <tr class="success">
+            <td>Ring (Nodes: 4)</td>
+            <td>4 flits</td>
+            <td>8 flits</td>
+            <td>2</td>
+            <td>660.12 cycles</td>
+            <td class="success">Success</td>
+        </tr>
 
-                        <tr class="">
-                            <td>Ring (Nodes: 8)</td>
-                            <td>4 flits</td>
-                            <td>8 flits</td>
-                            <td>4</td>
-                            <td>660.12 cycles</td>
-                            <td class="success">Success</td>
-                        </tr>
+        <tr class="success">
+            <td>Ring (Nodes: 4)</td>
+            <td>4 flits</td>
+            <td>8 flits</td>
+            <td>4</td>
+            <td>517.08 cycles</td>
+            <td class="success">Success</td>
+        </tr>
 
-                        <tr class="deadlock">
-                            <td>Ring (Nodes: 10)</td>
-                            <td>2 flits</td>
-                            <td>8 flits</td>
-                            <td>1</td>
-                            <td>∞</td>
-                            <td class="deadlock">Deadlock / Saturated</td>
-                        </tr>
+        <tr class="deadlock">
+            <td>Ring (Nodes: 6)</td>
+            <td>2 flits</td>
+            <td>8 flits</td>
+            <td>1</td>
+            <td>∞</td>
+            <td class="deadlock">Deadlock / Saturated</td>
+        </tr>
 
-                        <tr class="">
-                            <td>Ring (Nodes: 10)</td>
-                            <td>2 flits</td>
-                            <td>8 flits</td>
-                            <td>2</td>
-                            <td>613.61 cycles</td>
-                            <td class="success">Success</td>
-                        </tr>
+        <tr class="success">
+            <td>Ring (Nodes: 6)</td>
+            <td>2 flits</td>
+            <td>8 flits</td>
+            <td>2</td>
+            <td>449.71 cycles</td>
+            <td class="success">Success</td>
+        </tr>
 
-                        <tr class="">
-                            <td>Ring (Nodes: 10)</td>
-                            <td>2 flits</td>
-                            <td>8 flits</td>
-                            <td>4</td>
-                            <td>391.61 cycles</td>
-                            <td class="success">Success</td>
-                        </tr>
+        <tr class="success">
+            <td>Ring (Nodes: 6)</td>
+            <td>2 flits</td>
+            <td>8 flits</td>
+            <td>4</td>
+            <td>22.68 cycles</td>
+            <td class="success">Success</td>
+        </tr>
 
-                        <tr class="deadlock">
-                            <td>Ring (Nodes: 10)</td>
-                            <td>4 flits</td>
-                            <td>8 flits</td>
-                            <td>1</td>
-                            <td>∞</td>
-                            <td class="deadlock">Deadlock / Saturated</td>
-                        </tr>
+        <tr class="deadlock">
+            <td>Ring (Nodes: 6)</td>
+            <td>4 flits</td>
+            <td>8 flits</td>
+            <td>1</td>
+            <td>∞</td>
+            <td class="deadlock">Deadlock / Saturated</td>
+        </tr>
 
-                        <tr class="">
-                            <td>Ring (Nodes: 10)</td>
-                            <td>4 flits</td>
-                            <td>8 flits</td>
-                            <td>2</td>
-                            <td>856.70 cycles</td>
-                            <td class="success">Success</td>
-                        </tr>
+        <tr class="success">
+            <td>Ring (Nodes: 6)</td>
+            <td>4 flits</td>
+            <td>8 flits</td>
+            <td>2</td>
+            <td>694.07 cycles</td>
+            <td class="success">Success</td>
+        </tr>
 
-                        <tr class="">
-                            <td>Ring (Nodes: 10)</td>
-                            <td>4 flits</td>
-                            <td>8 flits</td>
-                            <td>4</td>
-                            <td>701.73 cycles</td>
-                            <td class="success">Success</td>
-                        </tr>
+        <tr class="success">
+            <td>Ring (Nodes: 6)</td>
+            <td>4 flits</td>
+            <td>8 flits</td>
+            <td>4</td>
+            <td>471.45 cycles</td>
+            <td class="success">Success</td>
+        </tr>
 
-                        <tr class="deadlock">
-                            <td>Ring (Nodes: 16)</td>
-                            <td>2 flits</td>
-                            <td>8 flits</td>
-                            <td>1</td>
-                            <td>∞</td>
-                            <td class="deadlock">Deadlock / Saturated</td>
-                        </tr>
+        <tr class="deadlock">
+            <td>Ring (Nodes: 8)</td>
+            <td>2 flits</td>
+            <td>8 flits</td>
+            <td>1</td>
+            <td>∞</td>
+            <td class="deadlock">Deadlock / Saturated</td>
+        </tr>
 
-                        <tr class="">
-                            <td>Ring (Nodes: 16)</td>
-                            <td>2 flits</td>
-                            <td>8 flits</td>
-                            <td>2</td>
-                            <td>785.72 cycles</td>
-                            <td class="success">Success</td>
-                        </tr>
+        <tr class="success">
+            <td>Ring (Nodes: 8)</td>
+            <td>2 flits</td>
+            <td>8 flits</td>
+            <td>2</td>
+            <td>502.49 cycles</td>
+            <td class="success">Success</td>
+        </tr>
 
-                        <tr class="">
-                            <td>Ring (Nodes: 16)</td>
-                            <td>2 flits</td>
-                            <td>8 flits</td>
-                            <td>4</td>
-                            <td>470.04 cycles</td>
-                            <td class="success">Success</td>
-                        </tr>
+        <tr class="success">
+            <td>Ring (Nodes: 8)</td>
+            <td>2 flits</td>
+            <td>8 flits</td>
+            <td>4</td>
+            <td>42.11 cycles</td>
+            <td class="success">Success</td>
+        </tr>
 
-                        <tr class="deadlock">
-                            <td>Ring (Nodes: 16)</td>
-                            <td>4 flits</td>
-                            <td>8 flits</td>
-                            <td>1</td>
-                            <td>∞</td>
-                            <td class="deadlock">Deadlock / Saturated</td>
-                        </tr>
+        <tr class="deadlock">
+            <td>Ring (Nodes: 8)</td>
+            <td>4 flits</td>
+            <td>8 flits</td>
+            <td>1</td>
+            <td>∞</td>
+            <td class="deadlock">Deadlock / Saturated</td>
+        </tr>
 
-                        <tr class="">
-                            <td>Ring (Nodes: 16)</td>
-                            <td>4 flits</td>
-                            <td>8 flits</td>
-                            <td>2</td>
-                            <td>359.50 cycles</td>
-                            <td class="success">Success</td>
-                        </tr>
+        <tr class="success">
+            <td>Ring (Nodes: 8)</td>
+            <td>4 flits</td>
+            <td>8 flits</td>
+            <td>2</td>
+            <td>814.54 cycles</td>
+            <td class="success">Success</td>
+        </tr>
 
-                        <tr class="">
-                            <td>Ring (Nodes: 16)</td>
-                            <td>4 flits</td>
-                            <td>8 flits</td>
-                            <td>4</td>
-                            <td>294.01 cycles</td>
-                            <td class="success">Success</td>
-                        </tr>
+        <tr class="success">
+            <td>Ring (Nodes: 8)</td>
+            <td>4 flits</td>
+            <td>8 flits</td>
+            <td>4</td>
+            <td>660.12 cycles</td>
+            <td class="success">Success</td>
+        </tr>
 
-            </table>
+        <tr class="deadlock">
+            <td>Ring (Nodes: 10)</td>
+            <td>2 flits</td>
+            <td>8 flits</td>
+            <td>1</td>
+            <td>∞</td>
+            <td class="deadlock">Deadlock / Saturated</td>
+        </tr>
 
-            <h3>3. 交叉驗證結論 (Cross-Verification Conclusion)</h3>
-            <ul>
-                <li><strong>理論 vs. 實際：</strong> 理論模型成功計算出 Ring 拓撲隨節點增加而遞減的「最大理論注入率」。這與 BookSim 在高節點數時容易遇到瓶頸的現象一致。</li>
-                <li><strong>死結驗證 (Deadlock Verification)：</strong> 在 <code>dim_order</code> (最短路徑) 路由下，BookSim 完美印證了理論：<strong>當 VC=1 時，封包循環等待造成死結</strong>；當 VC=2 時，BookSim 的 dateline 機制成功打破循環，網路能正常運作。</li>
-                <li><strong>封包與延遲：</strong> 在相同的注入率與 Buffer 大小下，封包大小 (Packet Size) 越長，Head-of-Line Blocking 越嚴重，導致平均延遲上升。</li>
-            </ul>
-        </div>
-    </body>
-    </html>
+        <tr class="success">
+            <td>Ring (Nodes: 10)</td>
+            <td>2 flits</td>
+            <td>8 flits</td>
+            <td>2</td>
+            <td>613.61 cycles</td>
+            <td class="success">Success</td>
+        </tr>
+
+        <tr class="success">
+            <td>Ring (Nodes: 10)</td>
+            <td>2 flits</td>
+            <td>8 flits</td>
+            <td>4</td>
+            <td>391.61 cycles</td>
+            <td class="success">Success</td>
+        </tr>
+
+        <tr class="deadlock">
+            <td>Ring (Nodes: 10)</td>
+            <td>4 flits</td>
+            <td>8 flits</td>
+            <td>1</td>
+            <td>∞</td>
+            <td class="deadlock">Deadlock / Saturated</td>
+        </tr>
+
+        <tr class="success">
+            <td>Ring (Nodes: 10)</td>
+            <td>4 flits</td>
+            <td>8 flits</td>
+            <td>2</td>
+            <td>856.70 cycles</td>
+            <td class="success">Success</td>
+        </tr>
+
+        <tr class="success">
+            <td>Ring (Nodes: 10)</td>
+            <td>4 flits</td>
+            <td>8 flits</td>
+            <td>4</td>
+            <td>701.73 cycles</td>
+            <td class="success">Success</td>
+        </tr>
+
+        <tr class="deadlock">
+            <td>Ring (Nodes: 16)</td>
+            <td>2 flits</td>
+            <td>8 flits</td>
+            <td>1</td>
+            <td>∞</td>
+            <td class="deadlock">Deadlock / Saturated</td>
+        </tr>
+
+        <tr class="success">
+            <td>Ring (Nodes: 16)</td>
+            <td>2 flits</td>
+            <td>8 flits</td>
+            <td>2</td>
+            <td>785.72 cycles</td>
+            <td class="success">Success</td>
+        </tr>
+
+        <tr class="success">
+            <td>Ring (Nodes: 16)</td>
+            <td>2 flits</td>
+            <td>8 flits</td>
+            <td>4</td>
+            <td>470.04 cycles</td>
+            <td class="success">Success</td>
+        </tr>
+
+        <tr class="deadlock">
+            <td>Ring (Nodes: 16)</td>
+            <td>4 flits</td>
+            <td>8 flits</td>
+            <td>1</td>
+            <td>∞</td>
+            <td class="deadlock">Deadlock / Saturated</td>
+        </tr>
+
+        <tr class="success">
+            <td>Ring (Nodes: 16)</td>
+            <td>4 flits</td>
+            <td>8 flits</td>
+            <td>2</td>
+            <td>359.50 cycles</td>
+            <td class="success">Success</td>
+        </tr>
+
+        <tr class="success">
+            <td>Ring (Nodes: 16)</td>
+            <td>4 flits</td>
+            <td>8 flits</td>
+            <td>4</td>
+            <td>294.01 cycles</td>
+            <td class="success">Success</td>
+        </tr>
+
+    </table>
+
+    <h3>3. 交叉驗證結論 (Cross-Verification Conclusion)</h3>
+    <ul>
+        <li><strong>理論 vs. 實際：</strong> 理論模型成功計算出 Ring 拓撲隨節點增加而遞減的「最大理論注入率」。這與 BookSim 在高節點數時容易遇到瓶頸的現象一致。</li>
+        <li><strong>死結驗證 (Deadlock Verification)：</strong> 在 <code>dim_order</code> (最短路徑) 路由下，BookSim 完美印證了理論：<strong>當 VC=1 時，封包循環等待造成死結</strong>；當 VC=2 時，BookSim 的 dateline 機制成功打破循環，網路能正常運作。</li>
+        <li><strong>封包與延遲：</strong> 在相同的注入率與 Buffer 大小下，封包大小 (Packet Size) 越長，Head-of-Line Blocking 越嚴重，導致平均延遲上升。</li>
+    </ul>
+
+    </div>
+
+
+
+
+
+
+</body>
+</html>

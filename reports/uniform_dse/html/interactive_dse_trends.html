@@ -1,0 +1,957 @@
+
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-width=1.0">
+    <title>互動式 DSE 效能趨勢報告</title>
+
+
+
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; color: #333; margin: 0; padding: 0; }
+        .navbar { background-color: #34495e; overflow: hidden; display: flex; flex-wrap: wrap; }
+        .navbar a { float: left; display: block; color: #f2f2f2; text-align: center; padding: 14px 16px; text-decoration: none; font-size: 14px; }
+        .navbar a:hover { background-color: #ddd; color: black; }
+        .navbar a.active { background-color: #3498db; color: white; }
+        .content-container { max-width: 1200px; margin: 20px auto; padding: 0 20px; }
+        h1 { color: #2c3e50; text-align: center; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        h2, h3 { color: #2c3e50; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background: #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: center; }
+        th { background-color: #34495e; color: white; }
+        .chart-container { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    </style>
+
+    <style>
+        .controls { text-align: center; margin: 20px 0; }
+        select { padding: 10px; font-size: 16px; border-radius: 5px; border: 1px solid #ccc; margin-right: 10px; margin-bottom: 10px;}
+        .chart-container { position: relative; height: 60vh; width: 100%; }
+        .mode-btn { padding: 10px 20px; font-weight: bold; background-color: #ccc; color: white; border: none; border-radius: 5px; cursor: pointer; margin-right: 5px;}
+        .mode-btn.active { background-color: #3cb44b; }
+
+        #heatmapTooltip {
+            position: absolute;
+            display: none;
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 5px 10px;
+            border-radius: 5px;
+            pointer-events: none;
+            font-size: 14px;
+            z-index: 100;
+        }
+    </style>
+
+
+
+
+
+</head>
+<body>
+
+    <div class="navbar">
+        <a href="../../../index.html" class="">首頁 (Home)</a>
+        <a href="../../../reports/unified_dashboard/html/unified_dashboard.html" class="">整合儀表板 (Unified Dashboard)</a>
+        <a href="../../../reports/uniform_dse/html/interactive_dse_trends.html" class="active">交叉驗證 DSE (Interactive DSE)</a>
+        <a href="../../../reports/uniform_dse/html/full_ring_dse_comparison.html" class="">Ring 拓撲報告 (Ring DSE)</a>
+        <a href="../../../reports/uniform_dse/html/advanced_micro_metrics_report.html" class="">微觀指標報告 (Micro Metrics)</a>
+        <a href="../../../reports/c_model_eval/html/multi_model_cmp.html" class="">多模型比較 (Multi-Model Cmp)</a>
+        <a href="../../../reports/custom_workload/html/custom_workload_report.html" class="">自訂工作負載 (Custom Workload)</a>
+        <a href="../../../reports/huawei_c_model/html/ca_visualizer.html" class="">華為 CA 視覺化 (CA Visualizer)</a>
+        <a href="../../../reports/cmn_dse/html/basic_CMN.html" class="">CMN DSE (CMN Dashboard)</a>
+    </div>
+
+    <div class="content-container">
+
+    <h1>互動式 NoC DSE 效能趨勢 (Latency vs. Load)</h1>
+
+    <div class="controls" style="margin-bottom: 10px;">
+        <button onclick="setMode('A')" id="btnModeA" class="mode-btn active">模式 A: 效能動態曲線 (Latency Curves)</button>
+        <button onclick="setMode('B')" id="btnModeB" class="mode-btn">模式 B: 架構交叉比對 (Scatter Plot)</button>
+        <button onclick="setMode('C')" id="btnModeC" class="mode-btn">模式 C: 通道負載分佈 (Heatmap)</button>
+        <button onclick="setMode('D')" id="btnModeD" class="mode-btn">模式 D: 成本與效能權衡 (Pareto Plot)</button>
+        <button onclick="setMode('E')" id="btnModeE" class="mode-btn">模式 E: 極限壓力測試 (Radar Chart)</button>
+    </div>
+
+    <!-- Mode A Controls -->
+    <div id="modeAControls" class="controls">
+        <fieldset style="border: 1px solid #ddd; padding: 15px; border-radius: 5px; text-align: left; display: inline-block;">
+            <legend><strong>過濾器 (Filters)</strong></legend>
+
+            <label>拓撲 (Topology): </label>
+            <select id="topoSelect" onchange="updateChart()"></select>
+
+            <label>路由 (Routing): </label>
+            <select id="rSelect" onchange="updateChart()"></select>
+
+            <label>流量 (Traffic): </label>
+            <select id="tSelect" onchange="updateChart()"></select>
+
+            <label>封包長度 (Packet Size): </label>
+            <select id="pSelect" onchange="updateChart()"></select>
+
+            <label>緩衝區 (Buffer Size): </label>
+            <select id="bSelect" onchange="updateChart()"></select>
+
+            <label>虛擬通道數 (VCs): </label>
+            <select id="vSelect" onchange="updateChart()"></select>
+
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 10px 0;">
+
+            <label>跨架構比較 (Compare With): </label>
+            <select id="compareSelect" onchange="updateChart()">
+                <option value="none">無 (None)</option>
+                <option value="mesh">Mesh</option>
+                <option value="torus">Torus</option>
+                <option value="ring">Ring</option>
+            </select>
+
+            <label style="margin-left: 20px;"><input type="checkbox" id="keepCurves" onchange="updateChart()"> 保留歷史曲線 (Keep Previous Curves)</label>
+            <button onclick="clearHistory()" style="padding: 5px 10px; margin-left: 10px; cursor: pointer;">清除歷史 (Clear)</button>
+        </fieldset>
+    </div>
+
+    <!-- Mode B Controls -->
+    <div id="modeBControls" class="controls" style="display:none;">
+        <fieldset style="border: 1px solid #ddd; padding: 15px; border-radius: 5px; text-align: left; display: inline-block;">
+            <legend><strong>固定參數 (Fixed Parameters)</strong></legend>
+            <label>封包長度 (Packet Size): </label>
+            <select id="pSelectB" onchange="updateChart()"></select>
+            <label>緩衝區 (Buffer Size): </label>
+            <select id="bSelectB" onchange="updateChart()"></select>
+            <label>虛擬通道數 (VCs): </label>
+            <select id="vSelectB" onchange="updateChart()"></select>
+
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 10px 0;">
+            <label>X 軸指標: </label>
+            <select id="scatterX" onchange="updateChart()">
+                <option value="nodes">總節點數 (Nodes)</option>
+                <option value="theory_bisection_bw">理論二分頻寬 (Bisec BW)</option>
+                <option value="theory_channel_count">總連線數 (Channels)</option>
+            </select>
+            <label>Y 軸指標: </label>
+            <select id="scatterY" onchange="updateChart()">
+                <option value="booksim_actual_sat_rate">飽和吞吐量 (Saturation Rate)</option>
+                <option value="booksim_zero_load_lat">零負載延遲 (Zero-load Latency)</option>
+            </select>
+        </fieldset>
+    </div>
+
+    <!-- Mode C Controls -->
+    <div id="modeCControls" class="controls" style="display:none;">
+        <fieldset style="border: 1px solid #ddd; padding: 15px; border-radius: 5px; text-align: left; display: inline-block;">
+            <legend><strong>理論通道負載分佈 (Theoretical Channel Load Heatmap)</strong></legend>
+            <p style="font-size:0.9em; color:#555;">顯示 Uniform Random 流量下，基於最短路徑路由，各通道的封包乘載率。(預設 Traffic = uniform, VCs = 1 or 2)</p>
+            <label>拓撲 (Topology): </label>
+            <select id="topoSelectC" onchange="updateChart()"></select>
+            <label>維度大小 (Dimension): </label>
+            <select id="dimSelectC" onchange="updateChart()"></select>
+
+            <label style="margin-left:20px;"><input type="checkbox" id="toggleAnim" onchange="updateChart()" checked> 啟用封包流動動畫 (Animation)</label>
+        </fieldset>
+    </div>
+
+    <!-- Mode D Controls -->
+    <div id="modeDControls" class="controls" style="display:none;">
+        <fieldset style="border: 1px solid #ddd; padding: 15px; border-radius: 5px; text-align: left; display: inline-block;">
+            <legend><strong>成本計算權重 (Cost Weights)</strong></legend>
+            <p style="font-size:0.9em; color:#555;">總成本 (Area Cost) = 節點數 &times; (W_Router) + 連線數 &times; (W_Channel) + (Buffer Size &times; VCs &times; Nodes &times; 5) &times; (W_Buffer)</p>
+            <label>Router Weight:</label>
+            <input type="number" id="weightRouter" value="1.0" step="0.1" style="width: 60px;" onchange="updateChart()">
+            <label>Channel Weight:</label>
+            <input type="number" id="weightChannel" value="0.5" step="0.1" style="width: 60px;" onchange="updateChart()">
+            <label>Buffer Weight:</label>
+            <input type="number" id="weightBuffer" value="0.2" step="0.1" style="width: 60px;" onchange="updateChart()">
+
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 10px 0;">
+            <label>Y 軸效能指標: </label>
+            <select id="paretoY" onchange="updateChart()">
+                <option value="booksim_actual_sat_rate">飽和吞吐量 (越高越好)</option>
+                <option value="booksim_zero_load_lat_inv">1 / 零負載延遲 (越高越好)</option>
+            </select>
+        </fieldset>
+    </div>
+
+    <!-- Mode E Controls -->
+    <div id="modeEControls" class="controls" style="display:none;">
+        <fieldset style="border: 1px solid #ddd; padding: 15px; border-radius: 5px; text-align: left; display: inline-block;">
+            <legend><strong>架構雷達圖 (Architecture Radar Chart)</strong></legend>
+            <p style="font-size:0.9em; color:#555;">多維度評估：包含吞吐量、低延遲、硬體成本、連線數量。數值皆經過正規化 (100 為該指標中最優的表現)。</p>
+            <label>選擇比較組 1: </label>
+            <select id="radarConfig1" onchange="updateChart()"><option value="none">無 (None)</option></select><br><br>
+            <label>選擇比較組 2: </label>
+            <select id="radarConfig2" onchange="updateChart()"><option value="none">無 (None)</option></select><br><br>
+            <label>選擇比較組 3: </label>
+            <select id="radarConfig3" onchange="updateChart()"><option value="none">無 (None)</option></select>
+        </fieldset>
+    </div>
+
+    <!-- Chart Container -->
+    <div class="chart-container" style="position: relative;">
+        <canvas id="dseChart"></canvas>
+        <canvas id="heatmapCanvas" style="display:none; width: 100%; height: 100%; position: absolute; top:0; left:0;"></canvas>
+    </div>
+
+    <div id="heatmapTooltip"></div>
+
+
+    </div>
+
+
+    <script src="../../../static/js/chart.js"></script>
+
+
+
+
+
+    <script>
+        const allData = [{"booksim_actual_sat_rate": 0.3, "booksim_total_throughput": 1.2, "booksim_zero_load_lat": 11.9574, "buffer_size": 8, "curve": [{"x": 0.01, "y": 11.9574}, {"x": 0.05, "y": 11.9192}, {"x": 0.1, "y": 12.5949}, {"x": 0.15, "y": 13.202}, {"x": 0.2, "y": 14.1646}, {"x": 0.25, "y": 17.8589}, {"x": 0.3, "y": 32.2339}, {"x": 0.35, "y": 225.184}], "dim": 2, "nodes": 4, "packet_size": 1, "routing": "xy", "theory_avg_hops": 1.3333333333333333, "theory_bisection_bw": 128, "theory_channel_count": 4, "theory_edge_loads": {"0-\u003e1": 1.3333, "0-\u003e2": 1.3333, "1-\u003e3": 1.3333, "2-\u003e3": 1.3333}, "theory_max_load": 1.3333, "theory_max_rate": 0.7500187504687618, "topology": "mesh", "traffic": "uniform", "vcs": 1}, {"booksim_actual_sat_rate": 0.3, "booksim_total_throughput": 2.6999999999999997, "booksim_zero_load_lat": 17.2941, "buffer_size": 8, "curve": [{"x": 0.01, "y": 17.2941}, {"x": 0.05, "y": 16.1121}, {"x": 0.1, "y": 16.9466}, {"x": 0.15, "y": 17.2404}, {"x": 0.2, "y": 19.059}, {"x": 0.25, "y": 21.9908}, {"x": 0.3, "y": 48.2298}, {"x": 0.35, "y": 267.982}], "dim": 3, "nodes": 9, "packet_size": 1, "routing": "xy", "theory_avg_hops": 2.0, "theory_bisection_bw": 192, "theory_channel_count": 12, "theory_edge_loads": {"0-\u003e1": 1.5, "0-\u003e3": 1.5, "1-\u003e2": 1.5, "1-\u003e4": 1.5, "2-\u003e5": 1.5, "3-\u003e4": 1.5, "3-\u003e6": 1.5, "4-\u003e5": 1.5, "4-\u003e7": 1.5, "5-\u003e8": 1.5, "6-\u003e7": 1.5, "7-\u003e8": 1.5}, "theory_max_load": 1.5, "theory_max_rate": 0.6666666666666666, "topology": "mesh", "traffic": "uniform", "vcs": 1}, {"booksim_actual_sat_rate": 0.25, "booksim_total_throughput": 4.0, "booksim_zero_load_lat": 19.1613, "buffer_size": 8, "curve": [{"x": 0.01, "y": 19.1613}, {"x": 0.05, "y": 19.8195}, {"x": 0.1, "y": 20.608}, {"x": 0.15, "y": 22.1939}, {"x": 0.2, "y": 25.0048}, {"x": 0.25, "y": 33.9927}, {"x": 0.3, "y": 252.588}], "dim": 4, "nodes": 16, "packet_size": 1, "routing": "xy", "theory_avg_hops": 2.6666666666666665, "theory_bisection_bw": 256, "theory_channel_count": 24, "theory_edge_loads": {"0-\u003e1": 1.6, "0-\u003e4": 1.6, "1-\u003e2": 2.1333, "1-\u003e5": 1.6, "10-\u003e11": 1.6, "10-\u003e14": 1.6, "11-\u003e15": 1.6, "12-\u003e13": 1.6, "13-\u003e14": 2.1333, "14-\u003e15": 1.6, "2-\u003e3": 1.6, "2-\u003e6": 1.6, "3-\u003e7": 1.6, "4-\u003e5": 1.6, "4-\u003e8": 2.1333, "5-\u003e6": 2.1333, "5-\u003e9": 2.1333, "6-\u003e10": 2.1333, "6-\u003e7": 1.6, "7-\u003e11": 2.1333, "8-\u003e12": 1.6, "8-\u003e9": 1.6, "9-\u003e10": 2.1333, "9-\u003e13": 1.6}, "theory_max_load": 2.1333, "theory_max_rate": 0.46875732433319267, "topology": "mesh", "traffic": "uniform", "vcs": 1}, {"booksim_actual_sat_rate": 0.2, "booksim_total_throughput": 5.0, "booksim_zero_load_lat": 23.2521, "buffer_size": 8, "curve": [{"x": 0.01, "y": 23.2521}, {"x": 0.05, "y": 23.9751}, {"x": 0.1, "y": 25.0072}, {"x": 0.15, "y": 27.4199}, {"x": 0.2, "y": 33.7834}, {"x": 0.25, "y": 249.63}], "dim": 5, "nodes": 25, "packet_size": 1, "routing": "xy", "theory_avg_hops": 3.3333333333333344, "theory_bisection_bw": 320, "theory_channel_count": 40, "theory_edge_loads": {"0-\u003e1": 1.6667, "0-\u003e5": 1.6667, "1-\u003e2": 2.5, "1-\u003e6": 1.6667, "10-\u003e11": 1.6667, "10-\u003e15": 2.5, "11-\u003e12": 2.5, "11-\u003e16": 2.5, "12-\u003e13": 2.5, "12-\u003e17": 2.5, "13-\u003e14": 1.6667, "13-\u003e18": 2.5, "14-\u003e19": 2.5, "15-\u003e16": 1.6667, "15-\u003e20": 1.6667, "16-\u003e17": 2.5, "16-\u003e21": 1.6667, "17-\u003e18": 2.5, "17-\u003e22": 1.6667, "18-\u003e19": 1.6667, "18-\u003e23": 1.6667, "19-\u003e24": 1.6667, "2-\u003e3": 2.5, "2-\u003e7": 1.6667, "20-\u003e21": 1.6667, "21-\u003e22": 2.5, "22-\u003e23": 2.5, "23-\u003e24": 1.6667, "3-\u003e4": 1.6667, "3-\u003e8": 1.6667, "4-\u003e9": 1.6667, "5-\u003e10": 2.5, "5-\u003e6": 1.6667, "6-\u003e11": 2.5, "6-\u003e7": 2.5, "7-\u003e12": 2.5, "7-\u003e8": 2.5, "8-\u003e13": 2.5, "8-\u003e9": 1.6667, "9-\u003e14": 2.5}, "theory_max_load": 2.5, "theory_max_rate": 0.4, "topology": "mesh", "traffic": "uniform", "vcs": 1}, {"booksim_actual_sat_rate": 0.6, "booksim_total_throughput": 2.4, "booksim_zero_load_lat": 12.766, "buffer_size": 8, "curve": [{"x": 0.01, "y": 12.766}, {"x": 0.05, "y": 13.4293}, {"x": 0.1, "y": 12.9038}, {"x": 0.15, "y": 13.4156}, {"x": 0.2, "y": 13.3543}, {"x": 0.25, "y": 13.7543}, {"x": 0.3, "y": 13.7529}, {"x": 0.35, "y": 13.8797}, {"x": 0.4, "y": 13.9774}, {"x": 0.45, "y": 14.521}, {"x": 0.5, "y": 15.3997}, {"x": 0.6, "y": 29.0946}, {"x": 0.7, "y": 285.735}], "dim": 2, "nodes": 4, "packet_size": 1, "routing": "dim_order", "theory_avg_hops": 1.3333333333333333, "theory_bisection_bw": 256, "theory_channel_count": 4, "theory_edge_loads": {"0-\u003e1": 1.3333, "0-\u003e2": 1.3333, "1-\u003e3": 1.3333, "2-\u003e3": 1.3333}, "theory_max_load": 1.3333, "theory_max_rate": 0.7500187504687618, "topology": "torus", "traffic": "uniform", "vcs": 2}, {"booksim_actual_sat_rate": 0.15, "booksim_total_throughput": 5.3999999999999995, "booksim_zero_load_lat": 26.6006, "buffer_size": 8, "curve": [{"x": 0.01, "y": 26.6006}, {"x": 0.05, "y": 27.4262}, {"x": 0.1, "y": 29.1403}, {"x": 0.15, "y": 33.1667}, {"x": 0.2, "y": 149.635}], "dim": 6, "nodes": 36, "packet_size": 1, "routing": "xy", "theory_avg_hops": 4.00000000000004, "theory_bisection_bw": 384, "theory_channel_count": 60, "theory_edge_loads": {"0-\u003e1": 1.7143, "0-\u003e6": 1.7143, "1-\u003e2": 2.7429, "1-\u003e7": 1.7143, "10-\u003e11": 1.7143, "10-\u003e16": 2.7429, "11-\u003e17": 2.7429, "12-\u003e13": 1.7143, "12-\u003e18": 3.0857, "13-\u003e14": 2.7429, "13-\u003e19": 3.0857, "14-\u003e15": 3.0857, "14-\u003e20": 3.0857, "15-\u003e16": 2.7429, "15-\u003e21": 3.0857, "16-\u003e17": 1.7143, "16-\u003e22": 3.0857, "17-\u003e23": 3.0857, "18-\u003e19": 1.7143, "18-\u003e24": 2.7429, "19-\u003e20": 2.7429, "19-\u003e25": 2.7429, "2-\u003e3": 3.0857, "2-\u003e8": 1.7143, "20-\u003e21": 3.0857, "20-\u003e26": 2.7429, "21-\u003e22": 2.7429, "21-\u003e27": 2.7429, "22-\u003e23": 1.7143, "22-\u003e28": 2.7429, "23-\u003e29": 2.7429, "24-\u003e25": 1.7143, "24-\u003e30": 1.7143, "25-\u003e26": 2.7429, "25-\u003e31": 1.7143, "26-\u003e27": 3.0857, "26-\u003e32": 1.7143, "27-\u003e28": 2.7429, "27-\u003e33": 1.7143, "28-\u003e29": 1.7143, "28-\u003e34": 1.7143, "29-\u003e35": 1.7143, "3-\u003e4": 2.7429, "3-\u003e9": 1.7143, "30-\u003e31": 1.7143, "31-\u003e32": 2.7429, "32-\u003e33": 3.0857, "33-\u003e34": 2.7429, "34-\u003e35": 1.7143, "4-\u003e10": 1.7143, "4-\u003e5": 1.7143, "5-\u003e11": 1.7143, "6-\u003e12": 2.7429, "6-\u003e7": 1.7143, "7-\u003e13": 2.7429, "7-\u003e8": 2.7429, "8-\u003e14": 2.7429, "8-\u003e9": 3.0857, "9-\u003e10": 2.7429, "9-\u003e15": 2.7429}, "theory_max_load": 3.0857, "theory_max_rate": 0.3240755744239557, "topology": "mesh", "traffic": "uniform", "vcs": 1}, {"booksim_actual_sat_rate": 0.6, "booksim_total_throughput": 5.3999999999999995, "booksim_zero_load_lat": 15.8382, "buffer_size": 8, "curve": [{"x": 0.01, "y": 15.8382}, {"x": 0.05, "y": 14.9731}, {"x": 0.1, "y": 15.3551}, {"x": 0.15, "y": 15.1245}, {"x": 0.2, "y": 15.6884}, {"x": 0.25, "y": 15.7703}, {"x": 0.3, "y": 15.8581}, {"x": 0.35, "y": 16.3177}, {"x": 0.4, "y": 16.8521}, {"x": 0.45, "y": 17.6918}, {"x": 0.5, "y": 18.5768}, {"x": 0.6, "y": 39.2129}, {"x": 0.7, "y": 315.037}], "dim": 3, "nodes": 9, "packet_size": 1, "routing": "dim_order", "theory_avg_hops": 1.5, "theory_bisection_bw": 384, "theory_channel_count": 18, "theory_edge_loads": {"0-\u003e1": 0.75, "0-\u003e2": 0.75, "0-\u003e3": 0.75, "0-\u003e6": 0.75, "1-\u003e2": 0.75, "1-\u003e4": 0.75, "1-\u003e7": 0.75, "2-\u003e5": 0.75, "2-\u003e8": 0.75, "3-\u003e4": 0.75, "3-\u003e5": 0.75, "3-\u003e6": 0.75, "4-\u003e5": 0.75, "4-\u003e7": 0.75, "5-\u003e8": 0.75, "6-\u003e7": 0.75, "6-\u003e8": 0.75, "7-\u003e8": 0.75}, "theory_max_load": 0.75, "theory_max_rate": 1.3333333333333333, "topology": "torus", "traffic": "uniform", "vcs": 2}, {"booksim_actual_sat_rate": 0.5, "booksim_total_throughput": 2.0, "booksim_zero_load_lat": 12.4894, "buffer_size": 8, "curve": [{"x": 0.01, "y": 12.4894}, {"x": 0.05, "y": 12.798}, {"x": 0.1, "y": 13.2203}, {"x": 0.15, "y": 13.356}, {"x": 0.2, "y": 13.5653}, {"x": 0.25, "y": 13.6}, {"x": 0.3, "y": 14.2655}, {"x": 0.35, "y": 14.4262}, {"x": 0.4, "y": 15.2878}, {"x": 0.45, "y": 16.2499}, {"x": 0.5, "y": 18.0369}, {"x": 0.6, "y": 145.211}], "dim": 4, "nodes": 4, "packet_size": 1, "routing": "dim_order", "theory_avg_hops": 1.3333333333333333, "theory_bisection_bw": 128, "theory_channel_count": 4, "theory_edge_loads": {"0-\u003e1": 1.3333, "0-\u003e3": 0.6667, "1-\u003e2": 2.0, "2-\u003e3": 1.3333}, "theory_max_load": 2.0, "theory_max_rate": 0.5, "topology": "ring", "traffic": "uniform", "vcs": 2}, {"booksim_actual_sat_rate": 0.45, "booksim_total_throughput": 2.25, "booksim_zero_load_lat": 14.1667, "buffer_size": 8, "curve": [{"x": 0.01, "y": 14.1667}, {"x": 0.05, "y": 14.2933}, {"x": 0.1, "y": 14.414}, {"x": 0.15, "y": 14.3716}, {"x": 0.2, "y": 14.6425}, {"x": 0.25, "y": 15.5429}, {"x": 0.3, "y": 15.9557}, {"x": 0.35, "y": 16.1933}, {"x": 0.4, "y": 18.3996}, {"x": 0.45, "y": 20.2682}, {"x": 0.5, "y": 92.8125}], "dim": 5, "nodes": 5, "packet_size": 1, "routing": "dim_order", "theory_avg_hops": 1.5, "theory_bisection_bw": 128, "theory_channel_count": 5, "theory_edge_loads": {"0-\u003e1": 1.5, "0-\u003e4": 1.5, "1-\u003e2": 1.5, "2-\u003e3": 1.5, "3-\u003e4": 1.5}, "theory_max_load": 1.5, "theory_max_rate": 0.6666666666666666, "topology": "ring", "traffic": "uniform", "vcs": 2}, {"booksim_actual_sat_rate": 0.5, "booksim_total_throughput": 8.0, "booksim_zero_load_lat": 18.7097, "buffer_size": 8, "curve": [{"x": 0.01, "y": 18.7097}, {"x": 0.05, "y": 19.5303}, {"x": 0.1, "y": 19.3719}, {"x": 0.15, "y": 19.4487}, {"x": 0.2, "y": 20.0513}, {"x": 0.25, "y": 20.3661}, {"x": 0.3, "y": 21.1047}, {"x": 0.35, "y": 21.6854}, {"x": 0.4, "y": 23.5238}, {"x": 0.45, "y": 25.351}, {"x": 0.5, "y": 36.4431}, {"x": 0.6, "y": 283.888}], "dim": 4, "nodes": 16, "packet_size": 1, "routing": "dim_order", "theory_avg_hops": 2.13333333333333, "theory_bisection_bw": 512, "theory_channel_count": 32, "theory_edge_loads": {"0-\u003e1": 1.0667, "0-\u003e12": 0.5333, "0-\u003e3": 0.5333, "0-\u003e4": 1.0667, "1-\u003e13": 0.5333, "1-\u003e2": 1.6, "1-\u003e5": 1.0667, "10-\u003e11": 1.0667, "10-\u003e14": 1.0667, "11-\u003e15": 1.0667, "12-\u003e13": 1.0667, "12-\u003e15": 0.5333, "13-\u003e14": 1.6, "14-\u003e15": 1.0667, "2-\u003e14": 0.5333, "2-\u003e3": 1.0667, "2-\u003e6": 1.0667, "3-\u003e15": 0.5333, "3-\u003e7": 1.0667, "4-\u003e5": 1.0667, "4-\u003e7": 0.5333, "4-\u003e8": 1.6, "5-\u003e6": 1.6, "5-\u003e9": 1.6, "6-\u003e10": 1.6, "6-\u003e7": 1.0667, "7-\u003e11": 1.6, "8-\u003e11": 0.5333, "8-\u003e12": 1.0667, "8-\u003e9": 1.0667, "9-\u003e10": 1.6, "9-\u003e13": 1.0667}, "theory_max_load": 1.6, "theory_max_rate": 0.625, "topology": "torus", "traffic": "uniform", "vcs": 2}, {"booksim_actual_sat_rate": 0.35, "booksim_total_throughput": 2.0999999999999996, "booksim_zero_load_lat": 15.5, "buffer_size": 8, "curve": [{"x": 0.01, "y": 15.5}, {"x": 0.05, "y": 15.6949}, {"x": 0.1, "y": 15.8719}, {"x": 0.15, "y": 16.5795}, {"x": 0.2, "y": 17.0548}, {"x": 0.25, "y": 17.8369}, {"x": 0.3, "y": 18.6373}, {"x": 0.35, "y": 20.7526}, {"x": 0.4, "y": 99.9259}], "dim": 6, "nodes": 6, "packet_size": 1, "routing": "dim_order", "theory_avg_hops": 1.7999999999999998, "theory_bisection_bw": 128, "theory_channel_count": 6, "theory_edge_loads": {"0-\u003e1": 1.6, "0-\u003e5": 1.2, "1-\u003e2": 2.0, "2-\u003e3": 2.4, "3-\u003e4": 2.0, "4-\u003e5": 1.6}, "theory_max_load": 2.4, "theory_max_rate": 0.4166666666666667, "topology": "ring", "traffic": "uniform", "vcs": 2}, {"booksim_actual_sat_rate": 0.3, "booksim_total_throughput": 2.1, "booksim_zero_load_lat": 16.5077, "buffer_size": 8, "curve": [{"x": 0.01, "y": 16.5077}, {"x": 0.05, "y": 16.928}, {"x": 0.1, "y": 17.5299}, {"x": 0.15, "y": 18.3486}, {"x": 0.2, "y": 19.2025}, {"x": 0.25, "y": 19.865}, {"x": 0.3, "y": 23.587}, {"x": 0.35, "y": 253.417}], "dim": 7, "nodes": 7, "packet_size": 1, "routing": "dim_order", "theory_avg_hops": 2.0, "theory_bisection_bw": 128, "theory_channel_count": 7, "theory_edge_loads": {"0-\u003e1": 2.0, "0-\u003e6": 2.0, "1-\u003e2": 2.0, "2-\u003e3": 2.0, "3-\u003e4": 2.0, "4-\u003e5": 2.0, "5-\u003e6": 2.0}, "theory_max_load": 2.0, "theory_max_rate": 0.5, "topology": "ring", "traffic": "uniform", "vcs": 2}, {"booksim_actual_sat_rate": 0.4, "booksim_total_throughput": 10.0, "booksim_zero_load_lat": 21.7149, "buffer_size": 8, "curve": [{"x": 0.01, "y": 21.7149}, {"x": 0.05, "y": 21.8538}, {"x": 0.1, "y": 22.1427}, {"x": 0.15, "y": 22.3191}, {"x": 0.2, "y": 22.9023}, {"x": 0.25, "y": 23.7628}, {"x": 0.3, "y": 24.8401}, {"x": 0.35, "y": 26.8341}, {"x": 0.4, "y": 30.3635}, {"x": 0.45, "y": 138.748}], "dim": 5, "nodes": 25, "packet_size": 1, "routing": "dim_order", "theory_avg_hops": 2.5000000000000004, "theory_bisection_bw": 640, "theory_channel_count": 50, "theory_edge_loads": {"0-\u003e1": 1.25, "0-\u003e20": 1.25, "0-\u003e4": 1.25, "0-\u003e5": 1.25, "1-\u003e2": 1.25, "1-\u003e21": 1.25, "1-\u003e6": 1.25, "10-\u003e11": 1.25, "10-\u003e14": 1.25, "10-\u003e15": 1.25, "11-\u003e12": 1.25, "11-\u003e16": 1.25, "12-\u003e13": 1.25, "12-\u003e17": 1.25, "13-\u003e14": 1.25, "13-\u003e18": 1.25, "14-\u003e19": 1.25, "15-\u003e16": 1.25, "15-\u003e19": 1.25, "15-\u003e20": 1.25, "16-\u003e17": 1.25, "16-\u003e21": 1.25, "17-\u003e18": 1.25, "17-\u003e22": 1.25, "18-\u003e19": 1.25, "18-\u003e23": 1.25, "19-\u003e24": 1.25, "2-\u003e22": 1.25, "2-\u003e3": 1.25, "2-\u003e7": 1.25, "20-\u003e21": 1.25, "20-\u003e24": 1.25, "21-\u003e22": 1.25, "22-\u003e23": 1.25, "23-\u003e24": 1.25, "3-\u003e23": 1.25, "3-\u003e4": 1.25, "3-\u003e8": 1.25, "4-\u003e24": 1.25, "4-\u003e9": 1.25, "5-\u003e10": 1.25, "5-\u003e6": 1.25, "5-\u003e9": 1.25, "6-\u003e11": 1.25, "6-\u003e7": 1.25, "7-\u003e12": 1.25, "7-\u003e8": 1.25, "8-\u003e13": 1.25, "8-\u003e9": 1.25, "9-\u003e14": 1.25}, "theory_max_load": 1.25, "theory_max_rate": 0.8, "topology": "torus", "traffic": "uniform", "vcs": 2}, {"booksim_actual_sat_rate": 0.25, "booksim_total_throughput": 2.0, "booksim_zero_load_lat": 19.7903, "buffer_size": 8, "curve": [{"x": 0.01, "y": 19.7903}, {"x": 0.05, "y": 19.3159}, {"x": 0.1, "y": 19.747}, {"x": 0.15, "y": 20.3691}, {"x": 0.2, "y": 20.9994}, {"x": 0.25, "y": 23.1729}, {"x": 0.3, "y": 133.73}], "dim": 8, "nodes": 8, "packet_size": 1, "routing": "dim_order", "theory_avg_hops": 2.2857142857142856, "theory_bisection_bw": 128, "theory_channel_count": 8, "theory_edge_loads": {"0-\u003e1": 2.0, "0-\u003e7": 1.7143, "1-\u003e2": 2.2857, "2-\u003e3": 2.5714, "3-\u003e4": 2.8571, "4-\u003e5": 2.5714, "5-\u003e6": 2.2857, "6-\u003e7": 2.0}, "theory_max_load": 2.8571, "theory_max_rate": 0.35000525007875116, "topology": "ring", "traffic": "uniform", "vcs": 2}, {"booksim_actual_sat_rate": 0.15, "booksim_total_throughput": 1.7999999999999998, "booksim_zero_load_lat": 25.5726, "buffer_size": 8, "curve": [{"x": 0.01, "y": 25.5726}, {"x": 0.05, "y": 25.0218}, {"x": 0.1, "y": 26.6285}, {"x": 0.15, "y": 27.6961}, {"x": 0.2, "y": 223.194}], "dim": 12, "nodes": 12, "packet_size": 1, "routing": "dim_order", "theory_avg_hops": 3.2727272727272747, "theory_bisection_bw": 128, "theory_channel_count": 12, "theory_edge_loads": {"0-\u003e1": 2.9091, "0-\u003e11": 2.7273, "1-\u003e2": 3.0909, "10-\u003e11": 2.9091, "2-\u003e3": 3.2727, "3-\u003e4": 3.4545, "4-\u003e5": 3.6364, "5-\u003e6": 3.8182, "6-\u003e7": 3.6364, "7-\u003e8": 3.4545, "8-\u003e9": 3.2727, "9-\u003e10": 3.0909}, "theory_max_load": 3.8182, "theory_max_rate": 0.2619035147451679, "topology": "ring", "traffic": "uniform", "vcs": 2}, {"booksim_actual_sat_rate": 0.15, "booksim_total_throughput": 2.4, "booksim_zero_load_lat": 32.3613, "buffer_size": 8, "curve": [{"x": 0.01, "y": 32.3613}, {"x": 0.05, "y": 32.2398}, {"x": 0.1, "y": 34.0225}, {"x": 0.15, "y": 64.4269}, {"x": 0.2, "y": 219.311}], "dim": 16, "nodes": 16, "packet_size": 1, "routing": "dim_order", "theory_avg_hops": 4.26666666666667, "theory_bisection_bw": 128, "theory_channel_count": 16, "theory_edge_loads": {"0-\u003e1": 3.8667, "0-\u003e15": 3.7333, "1-\u003e2": 4.0, "10-\u003e11": 4.4, "11-\u003e12": 4.2667, "12-\u003e13": 4.1333, "13-\u003e14": 4.0, "14-\u003e15": 3.8667, "2-\u003e3": 4.1333, "3-\u003e4": 4.2667, "4-\u003e5": 4.4, "5-\u003e6": 4.5333, "6-\u003e7": 4.6667, "7-\u003e8": 4.8, "8-\u003e9": 4.6667, "9-\u003e10": 4.5333}, "theory_max_load": 4.8, "theory_max_rate": 0.20833333333333334, "topology": "ring", "traffic": "uniform", "vcs": 2}, {"booksim_actual_sat_rate": 0.1, "booksim_total_throughput": 2.4000000000000004, "booksim_zero_load_lat": 43.4573, "buffer_size": 8, "curve": [{"x": 0.01, "y": 43.4573}, {"x": 0.05, "y": 44.2786}, {"x": 0.1, "y": 78.6394}, {"x": 0.15, "y": 279.762}], "dim": 24, "nodes": 24, "packet_size": 1, "routing": "dim_order", "theory_avg_hops": 6.260869565217395, "theory_bisection_bw": 128, "theory_channel_count": 24, "theory_edge_loads": {"0-\u003e1": 5.8261, "0-\u003e23": 5.7391, "1-\u003e2": 5.913, "10-\u003e11": 6.6957, "11-\u003e12": 6.7826, "12-\u003e13": 6.6957, "13-\u003e14": 6.6087, "14-\u003e15": 6.5217, "15-\u003e16": 6.4348, "16-\u003e17": 6.3478, "17-\u003e18": 6.2609, "18-\u003e19": 6.1739, "19-\u003e20": 6.087, "2-\u003e3": 6.0, "20-\u003e21": 6.0, "21-\u003e22": 5.913, "22-\u003e23": 5.8261, "3-\u003e4": 6.087, "4-\u003e5": 6.1739, "5-\u003e6": 6.2609, "6-\u003e7": 6.3478, "7-\u003e8": 6.4348, "8-\u003e9": 6.5217, "9-\u003e10": 6.6087}, "theory_max_load": 6.7826, "theory_max_rate": 0.1474360864565211, "topology": "ring", "traffic": "uniform", "vcs": 2}, {"booksim_actual_sat_rate": 0.35, "booksim_total_throughput": 12.6, "booksim_zero_load_lat": 25.5823, "buffer_size": 8, "curve": [{"x": 0.01, "y": 25.5823}, {"x": 0.05, "y": 25.4599}, {"x": 0.1, "y": 25.6197}, {"x": 0.15, "y": 26.4397}, {"x": 0.2, "y": 27.1041}, {"x": 0.25, "y": 29.102}, {"x": 0.3, "y": 32.3896}, {"x": 0.35, "y": 55.8284}, {"x": 0.4, "y": 306.901}], "dim": 6, "nodes": 36, "packet_size": 1, "routing": "dim_order", "theory_avg_hops": 3.085714285714324, "theory_bisection_bw": 768, "theory_channel_count": 72, "theory_edge_loads": {"0-\u003e1": 1.3714, "0-\u003e30": 1.0286, "0-\u003e5": 1.0286, "0-\u003e6": 1.3714, "1-\u003e2": 1.7143, "1-\u003e31": 1.0286, "1-\u003e7": 1.3714, "10-\u003e11": 1.3714, "10-\u003e16": 1.7143, "11-\u003e17": 1.7143, "12-\u003e13": 1.3714, "12-\u003e17": 1.0286, "12-\u003e18": 2.0571, "13-\u003e14": 1.7143, "13-\u003e19": 2.0571, "14-\u003e15": 2.0571, "14-\u003e20": 2.0571, "15-\u003e16": 1.7143, "15-\u003e21": 2.0571, "16-\u003e17": 1.3714, "16-\u003e22": 2.0571, "17-\u003e23": 2.0571, "18-\u003e19": 1.3714, "18-\u003e23": 1.0286, "18-\u003e24": 1.7143, "19-\u003e20": 1.7143, "19-\u003e25": 1.7143, "2-\u003e3": 2.0571, "2-\u003e32": 1.0286, "2-\u003e8": 1.3714, "20-\u003e21": 2.0571, "20-\u003e26": 1.7143, "21-\u003e22": 1.7143, "21-\u003e27": 1.7143, "22-\u003e23": 1.3714, "22-\u003e28": 1.7143, "23-\u003e29": 1.7143, "24-\u003e25": 1.3714, "24-\u003e29": 1.0286, "24-\u003e30": 1.3714, "25-\u003e26": 1.7143, "25-\u003e31": 1.3714, "26-\u003e27": 2.0571, "26-\u003e32": 1.3714, "27-\u003e28": 1.7143, "27-\u003e33": 1.3714, "28-\u003e29": 1.3714, "28-\u003e34": 1.3714, "29-\u003e35": 1.3714, "3-\u003e33": 1.0286, "3-\u003e4": 1.7143, "3-\u003e9": 1.3714, "30-\u003e31": 1.3714, "30-\u003e35": 1.0286, "31-\u003e32": 1.7143, "32-\u003e33": 2.0571, "33-\u003e34": 1.7143, "34-\u003e35": 1.3714, "4-\u003e10": 1.3714, "4-\u003e34": 1.0286, "4-\u003e5": 1.3714, "5-\u003e11": 1.3714, "5-\u003e35": 1.0286, "6-\u003e11": 1.0286, "6-\u003e12": 1.7143, "6-\u003e7": 1.3714, "7-\u003e13": 1.7143, "7-\u003e8": 1.7143, "8-\u003e14": 1.7143, "8-\u003e9": 2.0571, "9-\u003e10": 1.7143, "9-\u003e15": 1.7143}, "theory_max_load": 2.0571, "theory_max_rate": 0.48612123863691603, "topology": "torus", "traffic": "uniform", "vcs": 2}, {"buffer_size": 2, "curve": [{"x": 0.1, "y": 13.3722}, {"x": 0.3, "y": 22.4975}, {"x": 0.5, "y": 594.911}], "dim": 4, "nodes": 4, "packet_size": 1, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 2, "curve": [{"x": 0.1, "y": 13.1089}, {"x": 0.3, "y": 13.7361}, {"x": 0.5, "y": 15.3468}], "dim": 4, "nodes": 4, "packet_size": 1, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 4, "curve": [{"x": 0.1, "y": 13.2203}, {"x": 0.3, "y": 14.3773}, {"x": 0.5, "y": 38.7204}], "dim": 4, "nodes": 4, "packet_size": 1, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 4, "curve": [{"x": 0.1, "y": 13.0886}, {"x": 0.3, "y": 13.4605}, {"x": 0.5, "y": 14.1467}], "dim": 4, "nodes": 4, "packet_size": 1, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 8, "curve": [{"x": 0.1, "y": 13.2203}, {"x": 0.3, "y": 14.2655}, {"x": 0.5, "y": 18.0369}], "dim": 4, "nodes": 4, "packet_size": 1, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 8, "curve": [{"x": 0.1, "y": 13.0886}, {"x": 0.3, "y": 13.4605}, {"x": 0.5, "y": 13.979}], "dim": 4, "nodes": 4, "packet_size": 1, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 16, "curve": [{"x": 0.1, "y": 13.2203}, {"x": 0.3, "y": 14.2655}, {"x": 0.5, "y": 17.4546}], "dim": 4, "nodes": 4, "packet_size": 1, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 16, "curve": [{"x": 0.1, "y": 13.0886}, {"x": 0.3, "y": 13.4605}, {"x": 0.5, "y": 13.979}], "dim": 4, "nodes": 4, "packet_size": 1, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 2, "curve": [{"x": 0.1, "y": 18.1396}, {"x": 0.3, "y": 566.756}, {"x": 0.5, "y": 873.264}], "dim": 4, "nodes": 4, "packet_size": 2, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 2, "curve": [{"x": 0.1, "y": 15.4253}, {"x": 0.3, "y": 57.3451}, {"x": 0.5, "y": 658.521}], "dim": 4, "nodes": 4, "packet_size": 2, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 4, "curve": [{"x": 0.1, "y": 14.8}, {"x": 0.3, "y": 113.533}, {"x": 0.5, "y": 581.04}], "dim": 4, "nodes": 4, "packet_size": 2, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 4, "curve": [{"x": 0.1, "y": 14.5519}, {"x": 0.3, "y": 17.5467}, {"x": 0.5, "y": 463.935}], "dim": 4, "nodes": 4, "packet_size": 2, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 8, "curve": [{"x": 0.1, "y": 14.762}, {"x": 0.3, "y": 21.3692}, {"x": 0.5, "y": 552.714}], "dim": 4, "nodes": 4, "packet_size": 2, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 8, "curve": [{"x": 0.1, "y": 14.5519}, {"x": 0.3, "y": 17.2675}, {"x": 0.5, "y": 343.975}], "dim": 4, "nodes": 4, "packet_size": 2, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 16, "curve": [{"x": 0.1, "y": 14.762}, {"x": 0.3, "y": 21.4365}, {"x": 0.5, "y": 511.063}], "dim": 4, "nodes": 4, "packet_size": 2, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 16, "curve": [{"x": 0.1, "y": 14.5519}, {"x": 0.3, "y": 17.2675}, {"x": 0.5, "y": 306.702}], "dim": 4, "nodes": 4, "packet_size": 2, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 4, "curve": [{"x": 0.1, "y": 22.8219}, {"x": 0.3, "y": 637.342}, {"x": 0.5, "y": 883.29}], "dim": 4, "nodes": 4, "packet_size": 4, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 4, "curve": [{"x": 0.1, "y": 19.7646}, {"x": 0.3, "y": 573.095}, {"x": 0.5, "y": 773.271}], "dim": 4, "nodes": 4, "packet_size": 4, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 8, "curve": [{"x": 0.1, "y": 19.1949}, {"x": 0.3, "y": 660.117}, {"x": 0.5, "y": 823.723}], "dim": 4, "nodes": 4, "packet_size": 4, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 8, "curve": [{"x": 0.1, "y": 18.4937}, {"x": 0.3, "y": 517.082}, {"x": 0.5, "y": 750.019}], "dim": 4, "nodes": 4, "packet_size": 4, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 16, "curve": [{"x": 0.1, "y": 19.1291}, {"x": 0.3, "y": 587.876}, {"x": 0.5, "y": 781.766}], "dim": 4, "nodes": 4, "packet_size": 4, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 16, "curve": [{"x": 0.1, "y": 18.4937}, {"x": 0.3, "y": 526.846}, {"x": 0.5, "y": 722.026}], "dim": 4, "nodes": 4, "packet_size": 4, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 8, "curve": [{"x": 0.1, "y": 184.282}, {"x": 0.3, "y": 882.899}, {"x": 0.5, "y": 431.444}], "dim": 4, "nodes": 4, "packet_size": 8, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 8, "curve": [{"x": 0.1, "y": 62.2836}, {"x": 0.3, "y": 826.211}, {"x": 0.5, "y": 426.905}], "dim": 4, "nodes": 4, "packet_size": 8, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 16, "curve": [{"x": 0.1, "y": 119.856}, {"x": 0.3, "y": 855.958}, {"x": 0.5, "y": 420.947}], "dim": 4, "nodes": 4, "packet_size": 8, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 16, "curve": [{"x": 0.1, "y": 65.0351}, {"x": 0.3, "y": 807.796}, {"x": 0.5, "y": 420.48}], "dim": 4, "nodes": 4, "packet_size": 8, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 2, "curve": [{"x": 0.1, "y": 16.4659}, {"x": 0.3, "y": 596.861}, {"x": 0.5, "y": 757.296}], "dim": 6, "nodes": 6, "packet_size": 1, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 2, "curve": [{"x": 0.1, "y": 15.6772}, {"x": 0.3, "y": 17.8688}, {"x": 0.5, "y": 380.11}], "dim": 6, "nodes": 6, "packet_size": 1, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 4, "curve": [{"x": 0.1, "y": 15.8719}, {"x": 0.3, "y": 19.1505}, {"x": 0.5, "y": 544.838}], "dim": 6, "nodes": 6, "packet_size": 1, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 4, "curve": [{"x": 0.1, "y": 15.6023}, {"x": 0.3, "y": 16.7078}, {"x": 0.5, "y": 18.1014}], "dim": 6, "nodes": 6, "packet_size": 1, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 8, "curve": [{"x": 0.1, "y": 15.8719}, {"x": 0.3, "y": 18.6373}, {"x": 0.5, "y": 443.15}], "dim": 6, "nodes": 6, "packet_size": 1, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 8, "curve": [{"x": 0.1, "y": 15.6023}, {"x": 0.3, "y": 16.7062}, {"x": 0.5, "y": 18.1456}], "dim": 6, "nodes": 6, "packet_size": 1, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 16, "curve": [{"x": 0.1, "y": 15.8719}, {"x": 0.3, "y": 18.6373}, {"x": 0.5, "y": 424.149}], "dim": 6, "nodes": 6, "packet_size": 1, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 16, "curve": [{"x": 0.1, "y": 15.6023}, {"x": 0.3, "y": 16.7062}, {"x": 0.5, "y": 18.1456}], "dim": 6, "nodes": 6, "packet_size": 1, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 2, "curve": [{"x": 0.1, "y": 97.1727}, {"x": 0.3, "y": 799.765}, {"x": 0.5, "y": 1021.6}], "dim": 6, "nodes": 6, "packet_size": 2, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 2, "curve": [{"x": 0.1, "y": 19.6362}, {"x": 0.3, "y": 545.607}, {"x": 0.5, "y": 761.691}], "dim": 6, "nodes": 6, "packet_size": 2, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 4, "curve": [{"x": 0.1, "y": 19.2708}, {"x": 0.3, "y": 621.842}, {"x": 0.5, "y": 767.037}], "dim": 6, "nodes": 6, "packet_size": 2, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 4, "curve": [{"x": 0.1, "y": 18.0997}, {"x": 0.3, "y": 27.2271}, {"x": 0.5, "y": 605.527}], "dim": 6, "nodes": 6, "packet_size": 2, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 8, "curve": [{"x": 0.1, "y": 18.5415}, {"x": 0.3, "y": 449.709}, {"x": 0.5, "y": 629.847}], "dim": 6, "nodes": 6, "packet_size": 2, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 8, "curve": [{"x": 0.1, "y": 18.0748}, {"x": 0.3, "y": 22.6836}, {"x": 0.5, "y": 540.958}], "dim": 6, "nodes": 6, "packet_size": 2, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 16, "curve": [{"x": 0.1, "y": 18.5415}, {"x": 0.3, "y": 251.272}, {"x": 0.5, "y": 622.802}], "dim": 6, "nodes": 6, "packet_size": 2, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 16, "curve": [{"x": 0.1, "y": 18.0748}, {"x": 0.3, "y": 22.6599}, {"x": 0.5, "y": 515.458}], "dim": 6, "nodes": 6, "packet_size": 2, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 4, "curve": [{"x": 0.1, "y": 117.942}, {"x": 0.3, "y": 867.955}, {"x": 0.5, "y": 1011.86}], "dim": 6, "nodes": 6, "packet_size": 4, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 4, "curve": [{"x": 0.1, "y": 23.7088}, {"x": 0.3, "y": 514.9}, {"x": 0.5, "y": 828.292}], "dim": 6, "nodes": 6, "packet_size": 4, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 8, "curve": [{"x": 0.1, "y": 25.2163}, {"x": 0.3, "y": 694.065}, {"x": 0.5, "y": 925.059}], "dim": 6, "nodes": 6, "packet_size": 4, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 8, "curve": [{"x": 0.1, "y": 23.0998}, {"x": 0.3, "y": 471.452}, {"x": 0.5, "y": 811.622}], "dim": 6, "nodes": 6, "packet_size": 4, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 16, "curve": [{"x": 0.1, "y": 24.5774}, {"x": 0.3, "y": 607.303}, {"x": 0.5, "y": 886.316}], "dim": 6, "nodes": 6, "packet_size": 4, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 16, "curve": [{"x": 0.1, "y": 23.0765}, {"x": 0.3, "y": 451.723}, {"x": 0.5, "y": 791.405}], "dim": 6, "nodes": 6, "packet_size": 4, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 8, "curve": [{"x": 0.1, "y": 507.684}, {"x": 0.3, "y": 954.448}, {"x": 0.5, "y": 428.105}], "dim": 6, "nodes": 6, "packet_size": 8, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 8, "curve": [{"x": 0.1, "y": 172.785}, {"x": 0.3, "y": 874.057}, {"x": 0.5, "y": 421.332}], "dim": 6, "nodes": 6, "packet_size": 8, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 16, "curve": [{"x": 0.1, "y": 374.936}, {"x": 0.3, "y": 384.792}, {"x": 0.5, "y": 414.211}], "dim": 6, "nodes": 6, "packet_size": 8, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 16, "curve": [{"x": 0.1, "y": 235.739}, {"x": 0.3, "y": 371.414}, {"x": 0.5, "y": 415.425}], "dim": 6, "nodes": 6, "packet_size": 8, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 2, "curve": [{"x": 0.1, "y": 20.8814}, {"x": 0.3, "y": 654.623}, {"x": 0.5, "y": 925.157}], "dim": 8, "nodes": 8, "packet_size": 1, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 2, "curve": [{"x": 0.1, "y": 19.4137}, {"x": 0.3, "y": 72.0715}, {"x": 0.5, "y": 488.264}], "dim": 8, "nodes": 8, "packet_size": 1, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 4, "curve": [{"x": 0.1, "y": 19.747}, {"x": 0.3, "y": 350.398}, {"x": 0.5, "y": 662.359}], "dim": 8, "nodes": 8, "packet_size": 1, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 4, "curve": [{"x": 0.1, "y": 19.3109}, {"x": 0.3, "y": 19.9123}, {"x": 0.5, "y": 72.4665}], "dim": 8, "nodes": 8, "packet_size": 1, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 8, "curve": [{"x": 0.1, "y": 19.747}, {"x": 0.3, "y": 133.73}, {"x": 0.5, "y": 593.151}], "dim": 8, "nodes": 8, "packet_size": 1, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 8, "curve": [{"x": 0.1, "y": 19.3109}, {"x": 0.3, "y": 19.9878}, {"x": 0.5, "y": 25.3906}], "dim": 8, "nodes": 8, "packet_size": 1, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 16, "curve": [{"x": 0.1, "y": 19.747}, {"x": 0.3, "y": 34.2875}, {"x": 0.5, "y": 530.226}], "dim": 8, "nodes": 8, "packet_size": 1, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 16, "curve": [{"x": 0.1, "y": 19.3109}, {"x": 0.3, "y": 19.9878}, {"x": 0.5, "y": 24.7123}], "dim": 8, "nodes": 8, "packet_size": 1, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 2, "curve": [{"x": 0.1, "y": 468.817}, {"x": 0.3, "y": 937.117}, {"x": 0.5, "y": 1093.67}], "dim": 8, "nodes": 8, "packet_size": 2, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 2, "curve": [{"x": 0.1, "y": 22.8538}, {"x": 0.3, "y": 653.866}, {"x": 0.5, "y": 879.61}], "dim": 8, "nodes": 8, "packet_size": 2, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 4, "curve": [{"x": 0.1, "y": 21.6113}, {"x": 0.3, "y": 678.601}, {"x": 0.5, "y": 922.208}], "dim": 8, "nodes": 8, "packet_size": 2, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 4, "curve": [{"x": 0.1, "y": 20.2319}, {"x": 0.3, "y": 316.795}, {"x": 0.5, "y": 604.931}], "dim": 8, "nodes": 8, "packet_size": 2, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 8, "curve": [{"x": 0.1, "y": 20.9842}, {"x": 0.3, "y": 502.494}, {"x": 0.5, "y": 807.614}], "dim": 8, "nodes": 8, "packet_size": 2, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 8, "curve": [{"x": 0.1, "y": 20.2042}, {"x": 0.3, "y": 42.1078}, {"x": 0.5, "y": 535.838}], "dim": 8, "nodes": 8, "packet_size": 2, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 16, "curve": [{"x": 0.1, "y": 20.9842}, {"x": 0.3, "y": 454.851}, {"x": 0.5, "y": 779.068}], "dim": 8, "nodes": 8, "packet_size": 2, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 16, "curve": [{"x": 0.1, "y": 20.2042}, {"x": 0.3, "y": 36.6991}, {"x": 0.5, "y": 491.316}], "dim": 8, "nodes": 8, "packet_size": 2, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 4, "curve": [{"x": 0.1, "y": 492.759}, {"x": 0.3, "y": 406.58}, {"x": 0.5, "y": 433.11}], "dim": 8, "nodes": 8, "packet_size": 4, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 4, "curve": [{"x": 0.1, "y": 28.6868}, {"x": 0.3, "y": 693.44}, {"x": 0.5, "y": 956.33}], "dim": 8, "nodes": 8, "packet_size": 4, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 8, "curve": [{"x": 0.1, "y": 43.8171}, {"x": 0.3, "y": 814.539}, {"x": 0.5, "y": 994.72}], "dim": 8, "nodes": 8, "packet_size": 4, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 8, "curve": [{"x": 0.1, "y": 26.6053}, {"x": 0.3, "y": 660.115}, {"x": 0.5, "y": 847.354}], "dim": 8, "nodes": 8, "packet_size": 4, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 16, "curve": [{"x": 0.1, "y": 34.7461}, {"x": 0.3, "y": 775.043}, {"x": 0.5, "y": 380.431}], "dim": 8, "nodes": 8, "packet_size": 4, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 16, "curve": [{"x": 0.1, "y": 26.5487}, {"x": 0.3, "y": 599.048}, {"x": 0.5, "y": 853.444}], "dim": 8, "nodes": 8, "packet_size": 4, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 8, "curve": [{"x": 0.1, "y": 529.772}, {"x": 0.3, "y": 439.696}, {"x": 0.5, "y": 471.294}], "dim": 8, "nodes": 8, "packet_size": 8, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 8, "curve": [{"x": 0.1, "y": 454.888}, {"x": 0.3, "y": 395.876}, {"x": 0.5, "y": 441.603}], "dim": 8, "nodes": 8, "packet_size": 8, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 16, "curve": [{"x": 0.1, "y": 456.158}, {"x": 0.3, "y": 379.323}, {"x": 0.5, "y": 421.714}], "dim": 8, "nodes": 8, "packet_size": 8, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 16, "curve": [{"x": 0.1, "y": 334.696}, {"x": 0.3, "y": 385.685}, {"x": 0.5, "y": 422.442}], "dim": 8, "nodes": 8, "packet_size": 8, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 2, "curve": [{"x": 0.1, "y": 29.1062}, {"x": 0.3, "y": 789.426}, {"x": 0.5, "y": 983.232}], "dim": 10, "nodes": 10, "packet_size": 1, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 2, "curve": [{"x": 0.1, "y": 22.1665}, {"x": 0.3, "y": 404.037}, {"x": 0.5, "y": 594.935}], "dim": 10, "nodes": 10, "packet_size": 1, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 4, "curve": [{"x": 0.1, "y": 22.6437}, {"x": 0.3, "y": 512.256}, {"x": 0.5, "y": 745.683}], "dim": 10, "nodes": 10, "packet_size": 1, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 4, "curve": [{"x": 0.1, "y": 21.9862}, {"x": 0.3, "y": 23.5895}, {"x": 0.5, "y": 475.119}], "dim": 10, "nodes": 10, "packet_size": 1, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 8, "curve": [{"x": 0.1, "y": 22.6394}, {"x": 0.3, "y": 406.004}, {"x": 0.5, "y": 655.209}], "dim": 10, "nodes": 10, "packet_size": 1, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 8, "curve": [{"x": 0.1, "y": 21.9862}, {"x": 0.3, "y": 23.628}, {"x": 0.5, "y": 306.431}], "dim": 10, "nodes": 10, "packet_size": 1, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 16, "curve": [{"x": 0.1, "y": 22.6394}, {"x": 0.3, "y": 363.007}, {"x": 0.5, "y": 643.711}], "dim": 10, "nodes": 10, "packet_size": 1, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 16, "curve": [{"x": 0.1, "y": 21.9862}, {"x": 0.3, "y": 23.628}, {"x": 0.5, "y": 164.184}], "dim": 10, "nodes": 10, "packet_size": 1, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 2, "curve": [{"x": 0.1, "y": 520.961}, {"x": 0.3, "y": 1043.78}, {"x": 0.5, "y": 1143.91}], "dim": 10, "nodes": 10, "packet_size": 2, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 2, "curve": [{"x": 0.1, "y": 28.8617}, {"x": 0.3, "y": 683.117}, {"x": 0.5, "y": 945.617}], "dim": 10, "nodes": 10, "packet_size": 2, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 4, "curve": [{"x": 0.1, "y": 28.1504}, {"x": 0.3, "y": 806.41}, {"x": 0.5, "y": 1017.66}], "dim": 10, "nodes": 10, "packet_size": 2, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 4, "curve": [{"x": 0.1, "y": 24.8909}, {"x": 0.3, "y": 465.312}, {"x": 0.5, "y": 765.868}], "dim": 10, "nodes": 10, "packet_size": 2, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 8, "curve": [{"x": 0.1, "y": 26.4566}, {"x": 0.3, "y": 613.608}, {"x": 0.5, "y": 901.029}], "dim": 10, "nodes": 10, "packet_size": 2, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 8, "curve": [{"x": 0.1, "y": 24.8284}, {"x": 0.3, "y": 391.606}, {"x": 0.5, "y": 631.351}], "dim": 10, "nodes": 10, "packet_size": 2, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 16, "curve": [{"x": 0.1, "y": 26.4566}, {"x": 0.3, "y": 587.561}, {"x": 0.5, "y": 827.535}], "dim": 10, "nodes": 10, "packet_size": 2, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 16, "curve": [{"x": 0.1, "y": 24.8284}, {"x": 0.3, "y": 320.162}, {"x": 0.5, "y": 601.502}], "dim": 10, "nodes": 10, "packet_size": 2, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 4, "curve": [{"x": 0.1, "y": 391.924}, {"x": 0.3, "y": 361.526}, {"x": 0.5, "y": 420.503}], "dim": 10, "nodes": 10, "packet_size": 4, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 4, "curve": [{"x": 0.1, "y": 42.2387}, {"x": 0.3, "y": 742.946}, {"x": 0.5, "y": 1017.18}], "dim": 10, "nodes": 10, "packet_size": 4, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 8, "curve": [{"x": 0.1, "y": 284.514}, {"x": 0.3, "y": 856.699}, {"x": 0.5, "y": 393.01}], "dim": 10, "nodes": 10, "packet_size": 4, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 8, "curve": [{"x": 0.1, "y": 32.3742}, {"x": 0.3, "y": 701.731}, {"x": 0.5, "y": 353.547}], "dim": 10, "nodes": 10, "packet_size": 4, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 16, "curve": [{"x": 0.1, "y": 229.92}, {"x": 0.3, "y": 841.208}, {"x": 0.5, "y": 389.935}], "dim": 10, "nodes": 10, "packet_size": 4, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 16, "curve": [{"x": 0.1, "y": 32.371}, {"x": 0.3, "y": 673.754}, {"x": 0.5, "y": 336.027}], "dim": 10, "nodes": 10, "packet_size": 4, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 8, "curve": [{"x": 0.1, "y": 625.079}, {"x": 0.3, "y": 376.56}, {"x": 0.5, "y": 438.022}], "dim": 10, "nodes": 10, "packet_size": 8, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 8, "curve": [{"x": 0.1, "y": 449.838}, {"x": 0.3, "y": 370.747}, {"x": 0.5, "y": 422.937}], "dim": 10, "nodes": 10, "packet_size": 8, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 16, "curve": [{"x": 0.1, "y": 539.534}, {"x": 0.3, "y": 404.416}, {"x": 0.5, "y": 432.603}], "dim": 10, "nodes": 10, "packet_size": 8, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 16, "curve": [{"x": 0.1, "y": 336.69}, {"x": 0.3, "y": 357.757}, {"x": 0.5, "y": 418.608}], "dim": 10, "nodes": 10, "packet_size": 8, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 2, "curve": [{"x": 0.1, "y": 314.444}, {"x": 0.3, "y": 835.007}, {"x": 0.5, "y": 1072.19}], "dim": 16, "nodes": 16, "packet_size": 1, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 2, "curve": [{"x": 0.1, "y": 32.9449}, {"x": 0.3, "y": 484.233}, {"x": 0.5, "y": 733.709}], "dim": 16, "nodes": 16, "packet_size": 1, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 4, "curve": [{"x": 0.1, "y": 34.2517}, {"x": 0.3, "y": 582.055}, {"x": 0.5, "y": 850.934}], "dim": 16, "nodes": 16, "packet_size": 1, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 4, "curve": [{"x": 0.1, "y": 31.8698}, {"x": 0.3, "y": 197.075}, {"x": 0.5, "y": 405.756}], "dim": 16, "nodes": 16, "packet_size": 1, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 8, "curve": [{"x": 0.1, "y": 34.0225}, {"x": 0.3, "y": 550.188}, {"x": 0.5, "y": 763.128}], "dim": 16, "nodes": 16, "packet_size": 1, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 8, "curve": [{"x": 0.1, "y": 31.8698}, {"x": 0.3, "y": 298.671}, {"x": 0.5, "y": 366.384}], "dim": 16, "nodes": 16, "packet_size": 1, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 16, "curve": [{"x": 0.1, "y": 34.0225}, {"x": 0.3, "y": 455.809}, {"x": 0.5, "y": 762.069}], "dim": 16, "nodes": 16, "packet_size": 1, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 16, "curve": [{"x": 0.1, "y": 31.8698}, {"x": 0.3, "y": 50.7313}, {"x": 0.5, "y": 370.238}], "dim": 16, "nodes": 16, "packet_size": 1, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 2, "curve": [{"x": 0.1, "y": 805.034}, {"x": 0.3, "y": 387.475}, {"x": 0.5, "y": 415.717}], "dim": 16, "nodes": 16, "packet_size": 2, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 2, "curve": [{"x": 0.1, "y": 355.91}, {"x": 0.3, "y": 875.619}, {"x": 0.5, "y": 355.867}], "dim": 16, "nodes": 16, "packet_size": 2, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 4, "curve": [{"x": 0.1, "y": 289.627}, {"x": 0.3, "y": 935.495}, {"x": 0.5, "y": 398.716}], "dim": 16, "nodes": 16, "packet_size": 2, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 4, "curve": [{"x": 0.1, "y": 34.8124}, {"x": 0.3, "y": 519.022}, {"x": 0.5, "y": 862.559}], "dim": 16, "nodes": 16, "packet_size": 2, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 8, "curve": [{"x": 0.1, "y": 125.652}, {"x": 0.3, "y": 785.716}, {"x": 0.5, "y": 342.654}], "dim": 16, "nodes": 16, "packet_size": 2, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 8, "curve": [{"x": 0.1, "y": 34.4484}, {"x": 0.3, "y": 470.044}, {"x": 0.5, "y": 692.48}], "dim": 16, "nodes": 16, "packet_size": 2, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 16, "curve": [{"x": 0.1, "y": 48.5697}, {"x": 0.3, "y": 630.309}, {"x": 0.5, "y": 339.087}], "dim": 16, "nodes": 16, "packet_size": 2, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 16, "curve": [{"x": 0.1, "y": 34.4484}, {"x": 0.3, "y": 407.685}, {"x": 0.5, "y": 261.698}], "dim": 16, "nodes": 16, "packet_size": 2, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 4, "curve": [{"x": 0.1, "y": 638.986}, {"x": 0.3, "y": 404.799}, {"x": 0.5, "y": 418.088}], "dim": 16, "nodes": 16, "packet_size": 4, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 4, "curve": [{"x": 0.1, "y": 392.884}, {"x": 0.3, "y": 355.974}, {"x": 0.5, "y": 380.715}], "dim": 16, "nodes": 16, "packet_size": 4, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 8, "curve": [{"x": 0.1, "y": 419.927}, {"x": 0.3, "y": 359.499}, {"x": 0.5, "y": 416.513}], "dim": 16, "nodes": 16, "packet_size": 4, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 8, "curve": [{"x": 0.1, "y": 192.181}, {"x": 0.3, "y": 294.013}, {"x": 0.5, "y": 390.027}], "dim": 16, "nodes": 16, "packet_size": 4, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 16, "curve": [{"x": 0.1, "y": 269.853}, {"x": 0.3, "y": 353.115}, {"x": 0.5, "y": 400.525}], "dim": 16, "nodes": 16, "packet_size": 4, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 16, "curve": [{"x": 0.1, "y": 106.611}, {"x": 0.3, "y": 285.834}, {"x": 0.5, "y": 354.563}], "dim": 16, "nodes": 16, "packet_size": 4, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 8, "curve": [{"x": 0.1, "y": 242.727}, {"x": 0.3, "y": 416.714}, {"x": 0.5, "y": 411.902}], "dim": 16, "nodes": 16, "packet_size": 8, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 8, "curve": [{"x": 0.1, "y": 596.782}, {"x": 0.3, "y": 379.442}, {"x": 0.5, "y": 400.605}], "dim": 16, "nodes": 16, "packet_size": 8, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}, {"buffer_size": 16, "curve": [{"x": 0.1, "y": 234.409}, {"x": 0.3, "y": 373.179}, {"x": 0.5, "y": 416.574}], "dim": 16, "nodes": 16, "packet_size": 8, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"buffer_size": 16, "curve": [{"x": 0.1, "y": 212.306}, {"x": 0.3, "y": 360.924}, {"x": 0.5, "y": 387.127}], "dim": 16, "nodes": 16, "packet_size": 8, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 4}];
+        const allOptions = {"buffer_size": [2, 4, 8, 16], "packet_size": [1, 2, 4, 8], "routing": ["dim_order", "xy"], "topology": ["mesh", "ring", "torus"], "traffic": ["uniform"], "vcs": [1, 2, 4]};
+
+        let currentMode = 'A';
+        let myChart = null;
+        let animId = null;
+        let heatmapNodes = [];
+        let heatmapEdges = [];
+        let globalMaxLoad = 1;
+        let particles = [];
+        let historyCurves = [];
+
+        function setMode(mode) {
+            currentMode = mode;
+            ['A', 'B', 'C', 'D', 'E'].forEach(m => {
+                document.getElementById('mode' + m + 'Controls').style.display = (m === mode) ? 'block' : 'none';
+                document.getElementById('btnMode' + m).className = 'mode-btn' + ((m === mode) ? ' active' : '');
+            });
+
+            if(mode === 'C') {
+                document.getElementById('dseChart').style.display = 'none';
+                document.getElementById('heatmapCanvas').style.display = 'block';
+            } else {
+                document.getElementById('dseChart').style.display = 'block';
+                document.getElementById('heatmapCanvas').style.display = 'none';
+                if(animId) { cancelAnimationFrame(animId); animId = null; }
+            }
+
+            updateChart();
+        }
+
+        function populateSelect(id, optionsArr, includeAll) {
+            const select = document.getElementById(id);
+            select.innerHTML = '';
+            if(includeAll) {
+                const opt = document.createElement('option');
+                opt.value = 'all';
+                opt.text = '全部 (All)';
+                select.appendChild(opt);
+            }
+            optionsArr.forEach(val => {
+                const opt = document.createElement('option');
+                opt.value = val;
+                opt.text = val;
+                select.appendChild(opt);
+            });
+        }
+
+        function populateRadarConfigs() {
+            // Populate select lists for Radar chart
+            let configStrings = [];
+            allData.forEach(d => {
+                if (d.booksim_actual_sat_rate > 0) {
+                    let s = `${d.topology}_${d.dim}x${d.dim}_VC${d.vcs}_Buf${d.buffer_size}`;
+                    configStrings.push({text: s, ref: d});
+                }
+            });
+            // distinct
+            const unique = [];
+            const seen = new Set();
+            for(let item of configStrings) {
+                if(!seen.has(item.text)) {
+                    seen.add(item.text);
+                    unique.push(item);
+                }
+            }
+
+            ['1', '2', '3'].forEach(idSuffix => {
+                const sel = document.getElementById('radarConfig' + idSuffix);
+                unique.forEach((u, i) => {
+                    const opt = document.createElement('option');
+                    opt.value = i;
+                    opt.text = u.text;
+                    sel.appendChild(opt);
+                });
+            });
+            window.radarUniqueData = unique;
+        }
+
+        function clearHistory() {
+            historyCurves = [];
+            updateChart();
+        }
+
+        const colors = ['#e6194B', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4', '#42d4f4', '#f032e6', '#bfef45', '#fabed4'];
+
+        function updateChart() {
+            const ctx = document.getElementById('dseChart').getContext('2d');
+            if (myChart) {
+                myChart.destroy();
+            }
+
+            if (currentMode === 'A') {
+                const t = document.getElementById('topoSelect').value;
+                const r = document.getElementById('rSelect').value;
+                const tr = document.getElementById('tSelect').value;
+                const p = document.getElementById('pSelect').value;
+                const b = document.getElementById('bSelect').value;
+                const v = document.getElementById('vSelect').value;
+                const cmp = document.getElementById('compareSelect').value;
+
+                let datasets = [];
+
+                let filtered = allData.filter(d =>
+                    d.topology === t &&
+                    (r === 'all' || d.routing === r) &&
+                    (tr === 'all' || d.traffic === tr) &&
+                    (p === 'all' || d.packet_size.toString() === p) &&
+                    (b === 'all' || d.buffer_size.toString() === b) &&
+                    (v === 'all' || d.vcs.toString() === v)
+                );
+
+                filtered.forEach((d, i) => {
+                    let label = `${d.topology} (${d.nodes} nodes) [R:${d.routing}, T:${d.traffic}, P:${d.packet_size}, B:${d.buffer_size}, VC:${d.vcs}]`;
+                    datasets.push({
+                        label: label,
+                        data: d.curve,
+                        borderColor: colors[i % colors.length],
+                        backgroundColor: colors[i % colors.length],
+                        fill: false,
+                        tension: 0.1
+                    });
+                });
+
+                if (cmp !== 'none') {
+                    let cmpFiltered = allData.filter(d =>
+                        d.topology === cmp &&
+                        (r === 'all' || d.routing === r) &&
+                        (tr === 'all' || d.traffic === tr) &&
+                        (p === 'all' || d.packet_size.toString() === p) &&
+                        (b === 'all' || d.buffer_size.toString() === b) &&
+                        (v === 'all' || d.vcs.toString() === v)
+                    );
+                    cmpFiltered.forEach((d, i) => {
+                        let label = `(CMP) ${d.topology} (${d.nodes} nodes) [R:${d.routing}, T:${d.traffic}, P:${d.packet_size}, B:${d.buffer_size}, VC:${d.vcs}]`;
+                        datasets.push({
+                            label: label,
+                            data: d.curve,
+                            borderColor: colors[(i + filtered.length) % colors.length],
+                            borderDash: [5, 5],
+                            fill: false,
+                            tension: 0.1
+                        });
+                    });
+                }
+
+                if (document.getElementById('keepCurves').checked) {
+                    datasets.forEach(ds => {
+                        let exists = historyCurves.some(h => h.label === ds.label);
+                        if (!exists) historyCurves.push(ds);
+                    });
+                    datasets = historyCurves;
+                }
+
+                myChart = new Chart(ctx, {
+                    type: 'line',
+                    data: { datasets: datasets },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: { type: 'linear', title: { display: true, text: 'Injection Rate (flits/node/cycle)', font: {size: 14} } },
+                            y: { title: { display: true, text: 'Latency (cycles)', font: {size: 14} }, min: 0 }
+                        },
+                        plugins: {
+                            title: { display: true, text: 'NoC 效能趨勢 (Latency vs. Load)', font: {size: 16} }
+                        }
+                    }
+                });
+
+            } else if (currentMode === 'B') {
+                const pB = document.getElementById('pSelectB').value;
+                const bB = document.getElementById('bSelectB').value;
+                const vB = document.getElementById('vSelectB').value;
+                const xMet = document.getElementById('scatterX').value;
+                const yMet = document.getElementById('scatterY').value;
+
+                let datasets = [];
+                let topos = [...new Set(allData.map(item => item.topology))];
+
+                topos.forEach((topo, idx) => {
+                    let filtered = allData.filter(d =>
+                        d.topology === topo &&
+                        (pB === 'all' || d.packet_size.toString() === pB) &&
+                        (bB === 'all' || d.buffer_size.toString() === bB) &&
+                        (vB === 'all' || d.vcs.toString() === vB) &&
+                        d[yMet] > 0
+                    );
+
+                    let dataPoints = filtered.map(d => ({
+                        x: d[xMet],
+                        y: d[yMet],
+                        label: `${d.dim}x${d.dim}`
+                    }));
+
+                    datasets.push({
+                        label: topo.toUpperCase(),
+                        data: dataPoints,
+                        backgroundColor: colors[idx % colors.length],
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    });
+                });
+
+                myChart = new Chart(ctx, {
+                    type: 'scatter',
+                    data: { datasets: datasets },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: { title: { display: true, text: document.getElementById('scatterX').options[document.getElementById('scatterX').selectedIndex].text } },
+                            y: { title: { display: true, text: document.getElementById('scatterY').options[document.getElementById('scatterY').selectedIndex].text }, min: 0 }
+                        },
+                        plugins: {
+                            title: { display: true, text: '架構交叉比對 (Scatter Plot)', font: {size: 16} },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.dataset.label + ' ' + context.raw.label + ': (' + context.raw.x + ', ' + context.raw.y.toFixed(3) + ')';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+
+            } else if (currentMode === 'D') {
+                const wR = parseFloat(document.getElementById('weightRouter').value);
+                const wC = parseFloat(document.getElementById('weightChannel').value);
+                const wB = parseFloat(document.getElementById('weightBuffer').value);
+                const yMet = document.getElementById('paretoY').value;
+
+                let datasets = [];
+                let topos = [...new Set(allData.map(item => item.topology))];
+
+                topos.forEach((topo, idx) => {
+                    let filtered = allData.filter(d => d.topology === topo && d.booksim_actual_sat_rate > 0);
+
+                    let dataPoints = filtered.map(d => {
+                        let area = (d.nodes * wR) + (d.theory_channel_count * wC) + (d.buffer_size * d.vcs * d.nodes * 5 * wB);
+                        let yVal = yMet === 'booksim_zero_load_lat_inv' ? (1.0 / d.booksim_zero_load_lat) : d.booksim_actual_sat_rate;
+                        return {
+                            x: area,
+                            y: yVal,
+                            label: `${d.dim}x${d.dim}_VC${d.vcs}`
+                        };
+                    });
+
+                    datasets.push({
+                        label: topo.toUpperCase(),
+                        data: dataPoints,
+                        backgroundColor: colors[idx % colors.length],
+                        pointRadius: 5
+                    });
+                });
+
+                myChart = new Chart(ctx, {
+                    type: 'scatter',
+                    data: { datasets: datasets },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        scales: {
+                            x: { title: { display: true, text: '估算硬體成本 (Area Cost)' } },
+                            y: { title: { display: true, text: document.getElementById('paretoY').options[document.getElementById('paretoY').selectedIndex].text } }
+                        },
+                        plugins: {
+                            title: { display: true, text: '成本與效能權衡 (Pareto Plot)', font: {size: 16} },
+                            tooltip: { callbacks: { label: function(context) { return context.dataset.label + ' ' + context.raw.label + ': Area=' + context.raw.x.toFixed(1) + ', Perf=' + context.raw.y.toFixed(4); } } }
+                        }
+                    }
+                });
+            } else if (currentMode === 'E') {
+                if(!window.radarUniqueData) return;
+
+                const c1 = document.getElementById('radarConfig1').value;
+                const c2 = document.getElementById('radarConfig2').value;
+                const c3 = document.getElementById('radarConfig3').value;
+
+                let maxThr = 0, maxZlat = 0, minZlat = 9999, maxCost = 0;
+                window.radarUniqueData.forEach(item => {
+                    let d = item.ref;
+                    if(d.booksim_actual_sat_rate > maxThr) maxThr = d.booksim_actual_sat_rate;
+                    if(d.booksim_zero_load_lat > maxZlat) maxZlat = d.booksim_zero_load_lat;
+                    if(d.booksim_zero_load_lat < minZlat) minZlat = d.booksim_zero_load_lat;
+                    let cost = d.nodes + d.theory_channel_count*0.5 + (d.buffer_size*d.vcs*d.nodes*5)*0.2;
+                    if(cost > maxCost) maxCost = cost;
+                });
+
+                let datasets = [];
+                [c1, c2, c3].forEach((val, idx) => {
+                    if(val !== 'none' && window.radarUniqueData[val]) {
+                        let d = window.radarUniqueData[val].ref;
+
+                        let normThr = (d.booksim_actual_sat_rate / maxThr) * 100;
+                        let normLat = ((maxZlat - d.booksim_zero_load_lat) / (maxZlat - minZlat)) * 100;
+                        let cost = d.nodes + d.theory_channel_count*0.5 + (d.buffer_size*d.vcs*d.nodes*5)*0.2;
+                        let normCost = ((maxCost - cost) / maxCost) * 100; // Lower cost is better (100)
+
+                        let maxHops = Math.max(...window.radarUniqueData.map(u => u.ref.theory_avg_hops || 1));
+                        let normHops = ((maxHops - (d.theory_avg_hops||maxHops)) / maxHops) * 100;
+
+                        datasets.push({
+                            label: window.radarUniqueData[val].text,
+                            data: [normThr, normLat, normCost, normHops],
+                            fill: true,
+                            backgroundColor: hexToRgbA(colors[idx], 0.2),
+                            borderColor: colors[idx],
+                            pointBackgroundColor: colors[idx],
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: colors[idx]
+                        });
+                    }
+                });
+
+                myChart = new Chart(ctx, {
+                    type: 'radar',
+                    data: {
+                        labels: ['高吞吐量 (Throughput)', '低延遲 (Low Latency)', '低成本 (Low Cost)', '少跳數 (Low Hops)'],
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        elements: { line: { borderWidth: 3 } },
+                        scales: { r: { min: 0, max: 100, ticks: {stepSize: 20} } },
+                        plugins: {
+                            title: { display: true, text: 'NoC 極限壓力測試雷達圖 (Radar Chart)', font: {size: 16} }
+                        }
+                    }
+                });
+
+            } else if (currentMode === 'C') {
+                const topo = document.getElementById('topoSelectC').value;
+                const dim = parseInt(document.getElementById('dimSelectC').value);
+
+                let record = allData.find(d =>
+                    d.topology === topo &&
+                    d.dim === dim &&
+                    d.traffic === 'uniform' &&
+                    (d.vcs === 1 || d.vcs === 2)
+                );
+
+                if (record && record.theory_edge_loads) {
+                    drawHeatmap(topo, dim, record.theory_edge_loads);
+                } else {
+                    drawHeatmap(topo, dim, null);
+                }
+            }
+        }
+
+        function hexToRgbA(hex, alpha){
+            var c;
+            if(/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)){
+                c= hex.substring(1).split('');
+                if(c.length== 3){
+                    c= [c[0], c[0], c[1], c[1], c[2], c[2]];
+                }
+                c= '0x'+c.join('');
+                return 'rgba('+[(c>>16)&255, (c>>8)&255, c&255].join(',')+','+alpha+')';
+            }
+            return `rgba(0,0,0,${alpha})`;
+        }
+
+        // ============================
+        // MODE C: Heatmap & Animation
+        // ============================
+        function getColorForLoad(load, maxLoad) {
+            if (maxLoad === 0) return 'rgb(200, 200, 200)';
+            let ratio = load / maxLoad;
+            let r = Math.floor(255 * ratio);
+            let b = Math.floor(255 * (1 - ratio));
+            return `rgb(${r}, 0, ${b})`;
+        }
+
+        function drawHeatmap(topo, dim, edgeLoads) {
+            const canvas = document.getElementById('heatmapCanvas');
+            const ctx = canvas.getContext('2d');
+
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight || 500;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            heatmapNodes = [];
+            heatmapEdges = [];
+            particles = [];
+            if (animId) {
+                cancelAnimationFrame(animId);
+                animId = null;
+            }
+
+            if (!edgeLoads || Object.keys(edgeLoads).length === 0) {
+                ctx.fillStyle = 'black';
+                ctx.font = '20px Arial';
+                ctx.fillText("尚無該拓撲的通道負載資料 (No edge load data available)", 50, 50);
+                return;
+            }
+
+            let maxLoad = 0;
+            for (let key in edgeLoads) {
+                if (edgeLoads[key] > maxLoad) maxLoad = edgeLoads[key];
+            }
+            globalMaxLoad = maxLoad;
+
+            const padding = 50;
+            const drawWidth = canvas.width - padding * 2;
+            const drawHeight = canvas.height - padding * 2;
+
+            let nodes = [];
+            let width = dim;
+            let height = dim;
+
+            if (topo === 'ring') {
+                width = dim;
+                height = 1;
+                const radius = Math.min(drawWidth, drawHeight) / 2;
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                for (let i = 0; i < dim; i++) {
+                    const angle = (i / dim) * 2 * Math.PI - Math.PI / 2;
+                    nodes.push({
+                        id: i,
+                        x: centerX + radius * Math.cos(angle),
+                        y: centerY + radius * Math.sin(angle)
+                    });
+                }
+            } else { // mesh or torus
+                const stepX = drawWidth / (width > 1 ? width - 1 : 1);
+                const stepY = drawHeight / (height > 1 ? height - 1 : 1);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        nodes.push({
+                            id: y * width + x,
+                            x: padding + x * stepX,
+                            y: padding + y * stepY
+                        });
+                    }
+                }
+            }
+
+            heatmapNodes = nodes;
+
+            for (let key in edgeLoads) {
+                const parts = key.split('->');
+                if (parts.length === 2) {
+                    const u = parseInt(parts[0]);
+                    const v = parseInt(parts[1]);
+                    const load = edgeLoads[key];
+                    const nodeU = nodes.find(n => n.id === u);
+                    const nodeV = nodes.find(n => n.id === v);
+
+                    if (nodeU && nodeV) {
+                        let isWrapAround = false;
+                        if (topo === 'torus' && (Math.abs(nodeU.x - nodeV.x) > drawWidth * 0.8 || Math.abs(nodeU.y - nodeV.y) > drawHeight * 0.8)) {
+                            isWrapAround = true;
+                        }
+
+                        const dx = nodeV.x - nodeU.x;
+                        const dy = nodeV.y - nodeU.y;
+                        const length = Math.sqrt(dx * dx + dy * dy);
+
+                        let nx = 0, ny = 0;
+                        if (length > 0) {
+                            nx = -dy / length;
+                            ny = dx / length;
+                        }
+
+                        const offset = 12;
+                        const shiftX = nx * offset;
+                        const shiftY = ny * offset;
+
+                        heatmapEdges.push({
+                            u: u, v: v,
+                            x1: nodeU.x + shiftX, y1: nodeU.y + shiftY,
+                            x2: nodeV.x + shiftX, y2: nodeV.y + shiftY,
+                            load: load,
+                            color: getColorForLoad(load, maxLoad),
+                            isWrapAround: isWrapAround
+                        });
+                    }
+                }
+            }
+
+            for (let edge of heatmapEdges) {
+                if (edge.isWrapAround) {
+                    let midX1 = edge.x1;
+                    let midY1 = edge.y1;
+                    let midX2 = edge.x2;
+                    let midY2 = edge.y2;
+                    const extend = 80;
+
+                    if (Math.abs(edge.x1 - edge.x2) > drawWidth * 0.8) {
+                        midX1 = edge.x1 > edge.x2 ? edge.x1 + extend : edge.x1 - extend;
+                        midX2 = edge.x2 > edge.x1 ? edge.x2 + extend : edge.x2 - extend;
+                    }
+                    if (Math.abs(edge.y1 - edge.y2) > drawHeight * 0.8) {
+                        midY1 = edge.y1 > edge.y2 ? edge.y1 + extend : edge.y1 - extend;
+                        midY2 = edge.y2 > edge.y1 ? edge.y2 + extend : edge.y2 - extend;
+                    }
+                    edge.mid1 = {x: midX1, y: midY1};
+                    edge.mid2 = {x: midX2, y: midY2};
+                }
+            }
+
+            if (document.getElementById('toggleAnim').checked) {
+                if (!animId) animateHeatmap();
+            } else {
+                renderHeatmapBase(ctx);
+            }
+        }
+
+        function renderHeatmapBase(ctx) {
+            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+            // Draw edges
+            ctx.lineWidth = 4;
+            for (let edge of heatmapEdges) {
+                ctx.strokeStyle = edge.color;
+                ctx.beginPath();
+                if (edge.isWrapAround) {
+                    ctx.moveTo(edge.x1, edge.y1);
+                    ctx.lineTo(edge.mid1.x, edge.mid1.y);
+                    ctx.stroke();
+
+                    ctx.beginPath();
+                    ctx.moveTo(edge.x2, edge.y2);
+                    ctx.lineTo(edge.mid2.x, edge.mid2.y);
+                    ctx.stroke();
+                } else {
+                    ctx.moveTo(edge.x1, edge.y1);
+                    ctx.lineTo(edge.x2, edge.y2);
+                    ctx.stroke();
+                }
+
+                // Arrow
+                if(!edge.isWrapAround) {
+                    drawArrow(ctx, edge.x1, edge.y1, edge.x2, edge.y2, edge.color);
+                } else {
+                    drawArrow(ctx, edge.mid2.x, edge.mid2.y, edge.x2, edge.y2, edge.color);
+                }
+            }
+
+            // Draw nodes
+            for (let node of heatmapNodes) {
+                ctx.fillStyle = '#fff';
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, 15, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = '#333';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(node.id, node.x, node.y);
+            }
+        }
+
+        function drawArrow(ctx, fromx, fromy, tox, toy, color) {
+            var headlen = 10; // length of head in pixels
+            var dx = tox - fromx;
+            var dy = toy - fromy;
+            var angle = Math.atan2(dy, dx);
+
+            // move tox, toy back a bit so arrow head doesn't sit exactly on node
+            const backOff = 15;
+            const fx = tox - backOff * Math.cos(angle);
+            const fy = toy - backOff * Math.sin(angle);
+
+            ctx.beginPath();
+            ctx.moveTo(fx, fy);
+            ctx.lineTo(fx - headlen * Math.cos(angle - Math.PI / 6), fy - headlen * Math.sin(angle - Math.PI / 6));
+            ctx.lineTo(fx - headlen * Math.cos(angle + Math.PI / 6), fy - headlen * Math.sin(angle + Math.PI / 6));
+            ctx.closePath();
+            ctx.fillStyle = color;
+            ctx.fill();
+        }
+
+        function animateHeatmap() {
+            const canvas = document.getElementById('heatmapCanvas');
+            const ctx = canvas.getContext('2d');
+
+            renderHeatmapBase(ctx);
+
+            // Generate particles
+            if (Math.random() < 0.5) {
+                // Pick a random edge based on load probability
+                let totalLoad = heatmapEdges.reduce((sum, e) => sum + e.load, 0);
+                if (totalLoad > 0) {
+                    let rand = Math.random() * totalLoad;
+                    let selectedEdge = null;
+                    for (let edge of heatmapEdges) {
+                        rand -= edge.load;
+                        if (rand <= 0) {
+                            selectedEdge = edge;
+                            break;
+                        }
+                    }
+
+                    if (selectedEdge) {
+                        particles.push({
+                            edge: selectedEdge,
+                            progress: 0,
+                            speed: 0.01 + Math.random() * 0.02
+                        });
+                    }
+                }
+            }
+
+            // Draw particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.progress += p.speed;
+                if (p.progress >= 1) {
+                    particles.splice(i, 1);
+                    continue;
+                }
+
+                let px, py;
+                if (p.edge.isWrapAround) {
+                    if (p.progress < 0.5) {
+                        let t = p.progress * 2;
+                        px = p.edge.x1 + (p.edge.mid1.x - p.edge.x1) * t;
+                        py = p.edge.y1 + (p.edge.mid1.y - p.edge.y1) * t;
+                    } else {
+                        let t = (p.progress - 0.5) * 2;
+                        px = p.edge.mid2.x + (p.edge.x2 - p.edge.mid2.x) * t;
+                        py = p.edge.mid2.y + (p.edge.y2 - p.edge.mid2.y) * t;
+                    }
+                } else {
+                    px = p.edge.x1 + (p.edge.x2 - p.edge.x1) * p.progress;
+                    py = p.edge.y1 + (p.edge.y2 - p.edge.y1) * p.progress;
+                }
+
+                ctx.beginPath();
+                ctx.arc(px, py, 4, 0, 2 * Math.PI);
+                ctx.fillStyle = 'yellow';
+                ctx.fill();
+                ctx.lineWidth = 1;
+                ctx.strokeStyle = 'black';
+                ctx.stroke();
+            }
+
+            animId = requestAnimationFrame(animateHeatmap);
+        }
+
+        function pointLineDistance(px, py, x1, y1, x2, y2) {
+            const A = px - x1;
+            const B = py - y1;
+            const C = x2 - x1;
+            const D = y2 - y1;
+
+            const dot = A * C + B * D;
+            const len_sq = C * C + D * D;
+            let param = -1;
+            if (len_sq != 0)
+                param = dot / len_sq;
+
+            let xx, yy;
+
+            if (param < 0) {
+                xx = x1;
+                yy = y1;
+            }
+            else if (param > 1) {
+                xx = x2;
+                yy = y2;
+            }
+            else {
+                xx = x1 + param * C;
+                yy = y1 + param * D;
+            }
+
+            const dx = px - xx;
+            const dy = py - yy;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        document.getElementById('heatmapCanvas').addEventListener('mousemove', function(e) {
+            if (currentMode !== 'C') return;
+            const rect = this.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            let hoveredEdge = null;
+            for (let edge of heatmapEdges) {
+                let distance = 9999;
+                if (edge.isWrapAround) {
+                    const dist1 = pointLineDistance(mouseX, mouseY, edge.x1, edge.y1, edge.mid1.x, edge.mid1.y);
+                    const dist2 = pointLineDistance(mouseX, mouseY, edge.x2, edge.y2, edge.mid2.x, edge.mid2.y);
+                    distance = Math.min(dist1, dist2);
+                } else {
+                    distance = pointLineDistance(mouseX, mouseY, edge.x1, edge.y1, edge.x2, edge.y2);
+                }
+
+                if (distance < 5) { // 5px tolerance
+                    hoveredEdge = edge;
+                    break;
+                }
+            }
+
+            const tooltip = document.getElementById('heatmapTooltip');
+            if (hoveredEdge) {
+                tooltip.style.display = 'block';
+                tooltip.style.left = (e.clientX - rect.left + 15) + 'px';
+                tooltip.style.top = (e.clientY - rect.top + 15) + 'px';
+                tooltip.innerHTML = `連線 (Edge): ${hoveredEdge.u} &rarr; ${hoveredEdge.v}<br>負載 (Load): ${hoveredEdge.load}`;
+                this.style.cursor = 'pointer';
+            } else {
+                tooltip.style.display = 'none';
+                this.style.cursor = 'default';
+            }
+        });
+
+        // 初始化
+        window.onload = function() {
+            let dims = [...new Set(allData.map(item => item.dim))].sort((a,b) => a-b);
+
+            populateSelect('topoSelect', allOptions.topology, false);
+            populateSelect('rSelect', allOptions.routing, true);
+            populateSelect('tSelect', allOptions.traffic, true);
+            populateSelect('pSelect', allOptions.packet_size, true);
+            populateSelect('bSelect', allOptions.buffer_size, true);
+            populateSelect('vSelect', allOptions.vcs, true);
+
+            populateSelect('pSelectB', allOptions.packet_size, true);
+            populateSelect('bSelectB', allOptions.buffer_size, true);
+            populateSelect('vSelectB', allOptions.vcs, true);
+
+            populateSelect('topoSelectC', allOptions.topology, false);
+            populateSelect('dimSelectC', dims, false);
+
+            populateRadarConfigs();
+
+            if(allOptions.topology.includes('ring')) {
+                document.getElementById('topoSelect').value = 'ring';
+                document.getElementById('topoSelectC').value = 'ring';
+            }
+            document.getElementById('pSelectB').value = '1';
+            document.getElementById('bSelectB').value = '8';
+            updateChart();
+        };
+    </script>
+
+</body>
+</html>

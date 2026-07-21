@@ -22,3 +22,5 @@ dse_tools/*.html
 reports/huawei_c_model/*.json
 reports/huawei_c_model/*.html
 reports/huawei_c_model/*.csv
+offline_bundle/
+offline_bundle.zip

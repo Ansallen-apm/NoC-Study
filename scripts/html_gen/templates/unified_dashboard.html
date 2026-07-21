@@ -1,0 +1,283 @@
+{% set active_page = 'unified_dashboard' %}
+{% extends "base.html" %}
+
+{% block title %}NoC DSE 整合儀表板 (Unified Dashboard){% endblock %}
+
+{% block head_css %}
+    {{ super() }}
+    <style>
+        .tab-bar { overflow: hidden; background-color: #2c3e50; border-radius: 8px 8px 0 0; }
+        .tab-bar button { background-color: inherit; float: left; border: none; outline: none; cursor: pointer; padding: 14px 24px; transition: 0.3s; color: white; font-weight: bold; font-size: 16px; }
+        .tab-bar button:hover { background-color: #34495e; }
+        .tab-bar button.active { background-color: #3498db; }
+        .tab-content { display: none; padding: 20px; border: 1px solid #ccc; border-top: none; background: white; border-radius: 0 0 8px 8px; animation: fadeEffect 1s; }
+        .tab-content.active { display: block; }
+        @keyframes fadeEffect { from {opacity: 0;} to {opacity: 1;} }
+        .controls { background: #ecf0f1; padding: 15px; border-radius: 5px; margin-bottom: 15px; display: flex; gap: 20px; align-items: center; }
+        .controls select { padding: 5px 10px; font-size: 16px; border-radius: 4px; border: 1px solid #bdc3c7; }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <h1>NoC DSE 整合分析儀表板 (Unified Analytics Dashboard)</h1>
+
+    <div class="tab-bar">
+        <button class="tab-links active" onclick="openTab(event, 'TabMacro')">巨觀效能 (Macro DSE)</button>
+        <button class="tab-links" onclick="openTab(event, 'TabMicro')">微觀指標 (Micro Metrics)</button>
+        <button class="tab-links" onclick="openTab(event, 'TabVerify')">交叉驗證 (Verification)</button>
+        <button class="tab-links" onclick="openTab(event, 'TabCModel')">C 模型 (C-Model)</button>
+    </div>
+
+    <!-- TAB 1: Macro DSE -->
+    <div id="TabMacro" class="tab-content active">
+        <h2>巨觀架構探索 (Macro Architecture DSE)</h2>
+        <div class="controls">
+            <label>Topology: <select id="topoSelect" onchange="updateMacroChart()"></select></label>
+            <label>Traffic: <select id="trafficSelect" onchange="updateMacroChart()"></select></label>
+            <label>VCs: <select id="vcSelect" onchange="updateMacroChart()"></select></label>
+        </div>
+        <div class="chart-container" style="height: 500px;">
+            <canvas id="macroChart"></canvas>
+        </div>
+    </div>
+
+    <!-- TAB 2: Micro & Queueing Theory -->
+    <div id="TabMicro" class="tab-content">
+        <h2>微觀排隊與緩衝區理論 (Micro & Queueing Theory)</h2>
+        <div class="card">
+            <h3>非線性延遲曲線擬合 (M/D/1 預估)</h3>
+            <p><strong>擬合公式:</strong> L = Base + Scaling * [ Rate / (Max_Rate - Rate) ]</p>
+            <ul>
+                <li><strong>Base Latency:</strong> {{ "%.4f"|format(base_fit) }} cycles</li>
+                <li><strong>Max Rate (Saturation):</strong> {{ "%.4f"|format(max_rate_fit) }} flits/cycle</li>
+                <li><strong>Scaling Factor:</strong> {{ "%.4f"|format(scaling_fit) }}</li>
+            </ul>
+            <div class="chart-container" style="height: 400px;">
+                <canvas id="microChart"></canvas>
+            </div>
+        </div>
+        <div class="card">
+            <h3>緩衝區佔用與延遲變異數</h3>
+            <table>
+                <tr><th>Injection Rate</th><th>Avg Latency</th><th>Max Latency</th><th>Variance</th><th>Avg Buffer Writes/Port</th></tr>
+                {% for pt in micro_data %}
+                <tr>
+                    <td>{{ pt['rate'] }}</td>
+                    <td>{{ "%.2f"|format(pt['latency']) if pt['latency'] != inf and pt['latency'] != "inf" else "Saturation" }}</td>
+                    <td>{{ pt['max_latency'] }}</td>
+                    <td>{{ "%.2f"|format(pt['variance']) }}</td>
+                    <td>{{ "%.2f"|format(pt.get('avg_buffer_writes', 0.0)) }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+
+    <!-- TAB 3: Cross-Engine Verification -->
+    <div id="TabVerify" class="tab-content">
+        <h2>跨引擎交叉驗證 (Cross-Engine Verification)</h2>
+        <div class="card">
+            <table id="verifyTable" class="display" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>Topology</th>
+                        <th>Dim</th>
+                        <th>Theory Channels</th>
+                        <th>Actual Channels</th>
+                        <th>Theory Bisec BW</th>
+                        <th>Theory Max Load</th>
+                        <th>1 / Sat Rate</th>
+                        <th>Theory Max Rate</th>
+                        <th>Actual Sat Rate</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in v_results_sorted %}
+                    <tr>
+                        <td>{{ r.get('topology', '').capitalize() }}</td>
+                        <td>{{ r.get('dim', '') }}</td>
+                        <td>{{ r.get('theory_channel_count', 'N/A') }}</td>
+                        <td>N/A</td>
+                        <td>{{ r.get('theory_bisection_bw', 'N/A') }}</td>
+                        <td>{{ "%.4f"|format(r['theory_max_load']) if r.get('theory_max_load') else 'N/A' }}</td>
+                        <td>
+                            {% if r.get('booksim_actual_sat_rate') and r.get('booksim_actual_sat_rate') > 0 %}
+                                {{ "%.4f"|format(1.0 / r['booksim_actual_sat_rate']) }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
+                        <td>{{ "%.4f"|format(r['theory_max_rate']) if r.get('theory_max_rate') else 'N/A' }}</td>
+                        <td>{{ "%.4f"|format(r['booksim_actual_sat_rate']) if r.get('booksim_actual_sat_rate') else 'N/A' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- TAB 4: C-Model Evaluation -->
+    <div id="TabCModel" class="tab-content">
+        <h2>C++ 模型精準度分析 (C-Model Evaluation)</h2>
+        <div class="card">
+            <p>比較 Phase 2 開發的 C++ Functional Model 與 Cycle-Accurate BookSim 的差異。C Model 為了加速模擬，在 Routing 與 Arbitration 採用了簡化的理想週期模型，因此 Zero-load Latency 較低，但吞吐量縮放與飽和點應保持一致。</p>
+            <div class="chart-container" style="height: 500px;">
+                <canvas id="cmodelChart"></canvas>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_scripts %}
+    <script>
+        // --- Tab Switching Logic ---
+        function openTab(evt, tabName) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].classList.remove("active");
+            }
+            tablinks = document.getElementsByClassName("tab-links");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].classList.remove("active");
+            }
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+        }
+
+        // --- Data Variables ---
+        const macroData = {{ macro_data | tojson | safe }};
+        const fitRates = {{ fitRates | tojson | safe }};
+        const fitLats = {{ fitLats | tojson | safe }};
+        const microRates = {{ microRates | tojson | safe }};
+        const microLats = {{ microLats | tojson | safe }};
+
+        const cModelPoints = {{ cModelPoints | tojson | safe }};
+        const cBooksimPoints = {{ cBooksimPoints | tojson | safe }};
+
+        // --- Tab 1: Macro DSE Chart ---
+        let macroChartObj = null;
+        function initMacroControls() {
+            let topos = new Set();
+            let traffics = new Set();
+            let vcs = new Set();
+            macroData.forEach(d => {
+                topos.add(d.topology);
+                traffics.add(d.traffic);
+                vcs.add(d.vcs);
+            });
+
+            const pSel = (id, set, def) => {
+                const el = document.getElementById(id);
+                Array.from(set).sort().forEach(v => {
+                    let opt = document.createElement("option");
+                    opt.value = v; opt.text = v;
+                    if(v === def) opt.selected = true;
+                    el.appendChild(opt);
+                });
+            };
+            pSel('topoSelect', topos, 'mesh');
+            pSel('trafficSelect', traffics, 'uniform');
+            pSel('vcSelect', vcs, 2);
+        }
+
+        function updateMacroChart() {
+            const t = document.getElementById('topoSelect').value;
+            const tr = document.getElementById('trafficSelect').value;
+            const v = parseInt(document.getElementById('vcSelect').value);
+
+            const filtered = macroData.filter(d => d.topology === t && d.traffic === tr && d.vcs === v);
+
+            const datasets = filtered.map((d, i) => {
+                const colors = ['#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4', '#46f0f0', '#f032e6'];
+                const c = colors[i % colors.length];
+                return {
+                    label: `${d.topology}_${d.dim}x${d.dim} (Nodes:${d.nodes})`,
+                    data: d.curve,
+                    borderColor: c,
+                    backgroundColor: c,
+                    fill: false,
+                    tension: 0.1
+                };
+            });
+
+            if (macroChartObj) macroChartObj.destroy();
+            macroChartObj = new Chart(document.getElementById('macroChart'), {
+                type: 'line',
+                data: { datasets: datasets },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: {
+                        x: { type: 'linear', title: { display: true, text: 'Injection Rate' } },
+                        y: { title: { display: true, text: 'Latency (cycles)' } }
+                    }
+                }
+            });
+        }
+
+        // --- Tab 2: Micro Chart ---
+        new Chart(document.getElementById('microChart'), {
+            type: 'line',
+            data: {
+                datasets: [
+                    {
+                        label: 'BookSim Empirical',
+                        data: microRates.map((r, i) => ({x: r, y: microLats[i]})),
+                        borderColor: '#2980b9', backgroundColor: '#2980b9', showLine: false, pointRadius: 6
+                    },
+                    {
+                        label: 'Queueing Theory Fit',
+                        data: fitRates.map((r, i) => ({x: r, y: fitLats[i]})),
+                        borderColor: '#e74c3c', borderDash: [5, 5], fill: false, pointRadius: 0
+                    }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: {
+                    x: { type: 'linear', title: { display: true, text: 'Injection Rate' } },
+                    y: { title: { display: true, text: 'Latency' }, max: 2000 }
+                }
+            }
+        });
+
+        // --- Tab 3: DataTable ---
+        $(document).ready(function() {
+            $('#verifyTable').DataTable({
+                "pageLength": 15,
+                "order": [[ 0, "asc" ], [ 1, "asc" ]]
+            });
+        });
+
+        // --- Tab 4: C-Model Chart ---
+        new Chart(document.getElementById('cmodelChart'), {
+            type: 'line',
+            data: {
+                datasets: [
+                    {
+                        label: 'C++ Model Latency',
+                        data: cModelPoints,
+                        borderColor: '#8e44ad', backgroundColor: '#8e44ad', fill: false, tension: 0.1
+                    },
+                    {
+                        label: 'BookSim Baseline Latency',
+                        data: cBooksimPoints,
+                        borderColor: '#27ae60', borderDash: [5, 5], fill: false, tension: 0.1
+                    }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: {
+                    x: { type: 'linear', title: { display: true, text: 'Injection Rate' } },
+                    y: { title: { display: true, text: 'Latency (cycles)' } }
+                }
+            }
+        });
+
+        // Init Tab 1
+        initMacroControls();
+        updateMacroChart();
+
+    </script>
+{% endblock %}

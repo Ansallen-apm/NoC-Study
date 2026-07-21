@@ -1,0 +1,198 @@
+{% set active_page = 'c_model_eval' %}
+{% extends "base.html" %}
+
+{% block title %}Multi-Model Comparison Dashboard{% endblock %}
+
+{% block head_css %}
+    {{ super() }}
+    <style>
+        .sidebar { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .sidebar label { font-weight: bold; margin-right: 10px; }
+        .sidebar select { padding: 8px; border-radius: 4px; border: 1px solid #ccc; margin-right: 20px; }
+        .flex-container { display: flex; flex-direction: row; gap: 20px; flex-wrap: wrap; }
+        .err-good { color: green; font-weight: bold; }
+        .err-bad { color: red; font-weight: bold; }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <h1>Multi-Model Comparison Dashboard</h1>
+    <p style="text-align: center;">疊加對比 Python Theory vs. BookSim vs. C-Model</p>
+
+    <!-- Filters -->
+    <div class="sidebar">
+        <h3>Configuration Filters</h3>
+        <label>Topology:</label> <select id="selTopo" onchange="updateView()"></select>
+        <label>Dimension:</label> <select id="selDim" onchange="updateView()"></select>
+        <label>Traffic:</label> <select id="selTraffic" onchange="updateView()"></select>
+        <label>Routing:</label> <select id="selRouting" onchange="updateView()"></select>
+        <label>VCs:</label> <select id="selVCs" onchange="updateView()"></select>
+    </div>
+
+    <!-- Charts and Tables -->
+    <div class="card">
+        <h3>Latency Comparison (vs. Injection Rate)</h3>
+        <div class="chart-container">
+            <canvas id="latencyChart"></canvas>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Throughput Comparison (vs. Injection Rate)</h3>
+        <div class="chart-container">
+            <canvas id="throughputChart"></canvas>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Error Analysis (Relative to BookSim)</h3>
+        <table id="errorTable">
+            <thead>
+                <tr>
+                    <th>Model</th>
+                    <th>Zero-load Latency</th>
+                    <th>Error (%)</th>
+                    <th>Saturation Rate</th>
+                    <th>Error (%)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Populated by JS -->
+            </tbody>
+        </table>
+    </div>
+{% endblock %}
+
+{% block extra_scripts %}
+    <script>
+        const aggregatedData = {{ js_data | tojson | safe }};
+
+        let latencyChartObj = null;
+        let throughputChartObj = null;
+
+        function initFilters() {
+            const topos = new Set();
+            const dims = new Set();
+            const traffics = new Set();
+            const routings = new Set();
+            const vcs = new Set();
+
+            aggregatedData.forEach(d => {
+                topos.add(d.topology);
+                dims.add(d.dim);
+                traffics.add(d.traffic);
+                routings.add(d.routing);
+                vcs.add(d.vcs);
+            });
+
+            const populate = (id, set) => {
+                const el = document.getElementById(id);
+                el.innerHTML = '';
+                Array.from(set).sort().forEach(v => {
+                    let opt = document.createElement("option");
+                    opt.value = v; opt.text = v;
+                    el.appendChild(opt);
+                });
+            };
+
+            populate('selTopo', topos);
+            populate('selDim', dims);
+            populate('selTraffic', traffics);
+            populate('selRouting', routings);
+            populate('selVCs', vcs);
+        }
+
+        function updateView() {
+            const t = document.getElementById('selTopo').value;
+            const d = parseInt(document.getElementById('selDim').value);
+            const tr = document.getElementById('selTraffic').value;
+            const r = document.getElementById('selRouting').value;
+            const v = parseInt(document.getElementById('selVCs').value);
+
+            const record = aggregatedData.find(x => x.topology === t && x.dim === d && x.traffic === tr && x.routing === r && x.vcs === v);
+
+            if (!record) {
+                drawCharts([], [], []);
+                updateTable(null);
+                return;
+            }
+
+            drawCharts(record.models.booksim, record.models.c_model, record.models.python_md1);
+            updateTable(record.models);
+        }
+
+        function drawCharts(bs, cm, pm) {
+            const dsLat = [];
+            const dsThr = [];
+
+            if(bs && bs.length > 0) {
+                dsLat.push({ label: 'BookSim (Golden)', data: bs.map(pt=>({x:pt.x, y:pt.y})), borderColor: '#2c3e50', backgroundColor: '#2c3e50', fill: false, tension: 0.1 });
+                dsThr.push({ label: 'BookSim (Golden)', data: bs.map(pt=>({x:pt.x, y:pt.thr})), borderColor: '#2c3e50', backgroundColor: '#2c3e50', fill: false, tension: 0.1 });
+            }
+            if(cm && cm.length > 0) {
+                dsLat.push({ label: 'C-Model', data: cm.map(pt=>({x:pt.x, y:pt.y})), borderColor: '#e74c3c', borderDash: [5,5], fill: false, tension: 0.1 });
+                dsThr.push({ label: 'C-Model', data: cm.map(pt=>({x:pt.x, y:pt.thr})), borderColor: '#e74c3c', borderDash: [5,5], fill: false, tension: 0.1 });
+            }
+            if(pm && pm.length > 0) {
+                dsLat.push({ label: 'Python M/D/1 Theory', data: pm.map(pt=>({x:pt.x, y:pt.y})), borderColor: '#f1c40f', borderDash: [2,2], fill: false, tension: 0.1 });
+            }
+
+            if(latencyChartObj) latencyChartObj.destroy();
+            latencyChartObj = new Chart(document.getElementById('latencyChart'), {
+                type: 'line', data: { datasets: dsLat },
+                options: { responsive: true, maintainAspectRatio: false, scales: { x: { type: 'linear', title: { display: true, text: 'Injection Rate' } }, y: { title: { display: true, text: 'Latency (cycles)' } } } }
+            });
+
+            if(throughputChartObj) throughputChartObj.destroy();
+            throughputChartObj = new Chart(document.getElementById('throughputChart'), {
+                type: 'line', data: { datasets: dsThr },
+                options: { responsive: true, maintainAspectRatio: false, scales: { x: { type: 'linear', title: { display: true, text: 'Injection Rate' } }, y: { title: { display: true, text: 'Throughput (pkts/cycle)' } } } }
+            });
+        }
+
+        function getMetrics(curve) {
+            if (!curve || curve.length === 0) return { zl: null, sat: null };
+            const zl = curve[0].y;
+            const sat = Math.max(...curve.map(pt => pt.x));
+            return { zl, sat };
+        }
+
+        function formatErr(val) {
+            if (val === null || isNaN(val)) return "N/A";
+            const s = val > 0 ? "+" : "";
+            const cls = Math.abs(val) <= 15 ? "err-good" : "err-bad"; // 15% margin
+            return `<span class="${cls}">${s}${val.toFixed(2)}%</span>`;
+        }
+
+        function updateTable(models) {
+            const tbody = document.querySelector('#errorTable tbody');
+            tbody.innerHTML = '';
+            if(!models || (!models.booksim || models.booksim.length === 0)) return;
+
+            const bsM = getMetrics(models.booksim);
+            const cmM = getMetrics(models.c_model);
+            const pmM = getMetrics(models.python_md1);
+
+            const addRow = (name, m) => {
+                let zl_err = (m.zl && bsM.zl) ? ((m.zl - bsM.zl) / bsM.zl * 100) : null;
+                let sat_err = (m.sat && bsM.sat) ? ((m.sat - bsM.sat) / bsM.sat * 100) : null;
+
+                let row = `<tr>
+                    <td>${name}</td>
+                    <td>${m.zl ? m.zl.toFixed(2) : 'N/A'}</td>
+                    <td>${name === 'BookSim (Golden)' ? '-' : formatErr(zl_err)}</td>
+                    <td>${m.sat ? m.sat.toFixed(3) : 'N/A'}</td>
+                    <td>${name === 'BookSim (Golden)' ? '-' : formatErr(sat_err)}</td>
+                </tr>`;
+                tbody.innerHTML += row;
+            };
+
+            addRow('BookSim (Golden)', bsM);
+            if (models.c_model && models.c_model.length > 0) addRow('C-Model', cmM);
+            if (models.python_md1 && models.python_md1.length > 0) addRow('Python M/D/1 Theory', pmM);
+        }
+
+        initFilters();
+        updateView();
+    </script>
+{% endblock %}
