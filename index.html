@@ -1,0 +1,115 @@
+
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-width=1.0">
+    <title>NoC DSE Reports - Index</title>
+
+
+
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; color: #333; margin: 0; padding: 0; }
+        .navbar { background-color: #34495e; overflow: hidden; display: flex; flex-wrap: wrap; }
+        .navbar a { float: left; display: block; color: #f2f2f2; text-align: center; padding: 14px 16px; text-decoration: none; font-size: 14px; }
+        .navbar a:hover { background-color: #ddd; color: black; }
+        .navbar a.active { background-color: #3498db; color: white; }
+        .content-container { max-width: 1200px; margin: 20px auto; padding: 0 20px; }
+        h1 { color: #2c3e50; text-align: center; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        h2, h3 { color: #2c3e50; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background: #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: center; }
+        th { background-color: #34495e; color: white; }
+        .chart-container { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    </style>
+
+    <style>
+        .report-list { list-style-type: none; padding: 0; }
+        .report-list li { margin: 10px 0; background: #fff; padding: 15px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .report-list a { text-decoration: none; color: #2980b9; font-weight: bold; font-size: 1.1em; }
+        .report-list a:hover { color: #3498db; }
+        .report-desc { color: #666; margin-top: 5px; font-size: 0.9em; }
+    </style>
+
+
+
+
+
+</head>
+<body>
+
+    <div class="navbar">
+        <a href="./index.html" class="active">首頁 (Home)</a>
+        <a href="./reports/unified_dashboard/html/unified_dashboard.html" class="">整合儀表板 (Unified Dashboard)</a>
+        <a href="./reports/uniform_dse/html/interactive_dse_trends.html" class="">交叉驗證 DSE (Interactive DSE)</a>
+        <a href="./reports/uniform_dse/html/full_ring_dse_comparison.html" class="">Ring 拓撲報告 (Ring DSE)</a>
+        <a href="./reports/uniform_dse/html/advanced_micro_metrics_report.html" class="">微觀指標報告 (Micro Metrics)</a>
+        <a href="./reports/c_model_eval/html/multi_model_cmp.html" class="">多模型比較 (Multi-Model Cmp)</a>
+        <a href="./reports/custom_workload/html/custom_workload_report.html" class="">自訂工作負載 (Custom Workload)</a>
+        <a href="./reports/huawei_c_model/html/ca_visualizer.html" class="">華為 CA 視覺化 (CA Visualizer)</a>
+        <a href="./reports/cmn_dse/html/basic_CMN.html" class="">CMN DSE (CMN Dashboard)</a>
+    </div>
+
+    <div class="content-container">
+
+    <h1>NoC-Study 報告總覽 (Reports Index)</h1>
+
+    <div class="card">
+        <h2>可用報告列表 (Available Reports)</h2>
+        <ul class="report-list">
+
+
+                <li>
+                    <a href="./reports/cmn_dse/html/basic_CMN.html">CMN DSE (CMN Dashboard)</a>
+                    <div class="report-desc">針對 CMN 相關架構的探索報告。</div>
+                </li>
+
+                <li>
+                    <a href="./reports/uniform_dse/html/full_ring_dse_comparison.html">Ring 拓撲報告 (Ring DSE)</a>
+                    <div class="report-desc">針對 Ring 拓撲在不同條件下的理論與實際效能報告。</div>
+                </li>
+
+                <li>
+                    <a href="./reports/uniform_dse/html/interactive_dse_trends.html">交叉驗證 DSE (Interactive DSE)</a>
+                    <div class="report-desc">互動式架構探索與多項參數 (Topology, VCs, Buffers) 影響分析。</div>
+                </li>
+
+                <li>
+                    <a href="./reports/c_model_eval/html/multi_model_cmp.html">多模型比較 (Multi-Model Cmp)</a>
+                    <div class="report-desc">比較不同層級模擬模型 (C-model vs. BookSim 等) 的準確度與效能差異。</div>
+                </li>
+
+                <li>
+                    <a href="./reports/uniform_dse/html/advanced_micro_metrics_report.html">微觀指標報告 (Micro Metrics)</a>
+                    <div class="report-desc">Queueing Theory 與微觀緩衝區狀態的進階分析。</div>
+                </li>
+
+                <li>
+                    <a href="./reports/unified_dashboard/html/unified_dashboard.html">整合儀表板 (Unified Dashboard)</a>
+                    <div class="report-desc">提供綜合性的指標與效能總覽。</div>
+                </li>
+
+                <li>
+                    <a href="./reports/custom_workload/html/custom_workload_report.html">自訂工作負載 (Custom Workload)</a>
+                    <div class="report-desc">特定自訂 Traffic Pattern 下的網路效能報告。</div>
+                </li>
+
+                <li>
+                    <a href="./reports/huawei_c_model/html/ca_visualizer.html">華為 CA 視覺化 (CA Visualizer)</a>
+                    <div class="report-desc">Cycle-Accurate 視覺化工具，用於查看封包流動狀態。</div>
+                </li>
+
+
+        </ul>
+    </div>
+
+    </div>
+
+
+
+
+
+
+</body>
+</html>
