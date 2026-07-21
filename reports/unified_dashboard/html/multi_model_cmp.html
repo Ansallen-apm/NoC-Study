@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="utf-8">
+    <title>Multi-Model Comparison Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f8f9fa; color: #333; }
+        .header { background: #34495e; color: white; padding: 20px; text-align: center; }
+        .container { display: flex; max-width: 1400px; margin: 20px auto; gap: 20px; }
+
+        .sidebar { width: 280px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); height: fit-content; }
+        .sidebar label { font-weight: bold; display: block; margin-top: 15px; margin-bottom: 5px; }
+        .sidebar select { width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc; }
+
+        .main-content { flex: 1; display: flex; flex-direction: column; gap: 20px; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .chart-container { position: relative; height: 400px; width: 100%; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
+        th { background: #ecf0f1; }
+        .err-good { color: green; font-weight: bold; }
+        .err-bad { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Multi-Model Comparison Dashboard</h1>
+        <p>疊加對比 Python Theory vs. BookSim vs. C-Model</p>
+    </div>
+
+    <div class="container">
+        <!-- Sidebar Filters -->
+        <div class="sidebar">
+            <h3>Configuration Filters</h3>
+            <label>Topology:</label> <select id="selTopo" onchange="updateView()"></select>
+            <label>Dimension:</label> <select id="selDim" onchange="updateView()"></select>
+            <label>Traffic:</label> <select id="selTraffic" onchange="updateView()"></select>
+            <label>Routing:</label> <select id="selRouting" onchange="updateView()"></select>
+            <label>VCs:</label> <select id="selVCs" onchange="updateView()"></select>
+        </div>
+
+        <!-- Charts and Tables -->
+        <div class="main-content">
+            <div class="card">
+                <h3>Latency Comparison (vs. Injection Rate)</h3>
+                <div class="chart-container">
+                    <canvas id="latencyChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Throughput Comparison (vs. Injection Rate)</h3>
+                <div class="chart-container">
+                    <canvas id="throughputChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Error Analysis (Relative to BookSim)</h3>
+                <table id="errorTable">
+                    <thead>
+                        <tr>
+                            <th>Model</th>
+                            <th>Zero-load Latency</th>
+                            <th>Error (%)</th>
+                            <th>Saturation Rate</th>
+                            <th>Error (%)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const aggregatedData = [{"topology": "mesh", "dim": 2, "traffic": "uniform", "routing": "xy", "vcs": 1, "models": {"booksim": [{"x": 0.01, "y": 11.9574, "thr": 0.04}, {"x": 0.05, "y": 11.9192, "thr": 0.2}, {"x": 0.1, "y": 12.5949, "thr": 0.4}, {"x": 0.15, "y": 13.202, "thr": 0.6}, {"x": 0.2, "y": 14.1646, "thr": 0.8}, {"x": 0.25, "y": 17.8589, "thr": 1.0}, {"x": 0.3, "y": 32.2339, "thr": 1.2}, {"x": 0.35, "y": 225.184, "thr": 1.4}], "c_model": [], "python_md1": []}}, {"topology": "mesh", "dim": 3, "traffic": "uniform", "routing": "xy", "vcs": 1, "models": {"booksim": [{"x": 0.01, "y": 17.2941, "thr": 0.09}, {"x": 0.05, "y": 16.1121, "thr": 0.45}, {"x": 0.1, "y": 16.9466, "thr": 0.9}, {"x": 0.15, "y": 17.2404, "thr": 1.3499999999999999}, {"x": 0.2, "y": 19.059, "thr": 1.8}, {"x": 0.25, "y": 21.9908, "thr": 2.25}, {"x": 0.3, "y": 48.2298, "thr": 2.6999999999999997}, {"x": 0.35, "y": 267.982, "thr": 3.15}], "c_model": [], "python_md1": []}}, {"topology": "mesh", "dim": 4, "traffic": "uniform", "routing": "xy", "vcs": 1, "models": {"booksim": [{"x": 0.01, "y": 19.1613, "thr": 0.16}, {"x": 0.05, "y": 19.8195, "thr": 0.8}, {"x": 0.1, "y": 20.608, "thr": 1.6}, {"x": 0.15, "y": 22.1939, "thr": 2.4}, {"x": 0.2, "y": 25.0048, "thr": 3.2}, {"x": 0.25, "y": 33.9927, "thr": 4.0}, {"x": 0.3, "y": 252.588, "thr": 4.8}], "c_model": [{"x": 0.05, "y": 7.65022, "thr": 0.80999}, {"x": 0.1, "y": 12.0366, "thr": 1.59518}, {"x": 0.15, "y": 158.301, "thr": 2.19634}, {"x": 0.2, "y": 952.822, "thr": 2.22129}, {"x": 0.25, "y": 1765.15, "thr": 2.20795}], "python_md1": []}}, {"topology": "mesh", "dim": 5, "traffic": "uniform", "routing": "xy", "vcs": 1, "models": {"booksim": [{"x": 0.01, "y": 23.2521, "thr": 0.25}, {"x": 0.05, "y": 23.9751, "thr": 1.25}, {"x": 0.1, "y": 25.0072, "thr": 2.5}, {"x": 0.15, "y": 27.4199, "thr": 3.75}, {"x": 0.2, "y": 33.7834, "thr": 5.0}, {"x": 0.25, "y": 249.63, "thr": 6.25}], "c_model": [], "python_md1": []}}, {"topology": "torus", "dim": 2, "traffic": "uniform", "routing": "dim_order", "vcs": 2, "models": {"booksim": [{"x": 0.01, "y": 12.766, "thr": 0.04}, {"x": 0.05, "y": 13.4293, "thr": 0.2}, {"x": 0.1, "y": 12.9038, "thr": 0.4}, {"x": 0.15, "y": 13.4156, "thr": 0.6}, {"x": 0.2, "y": 13.3543, "thr": 0.8}, {"x": 0.25, "y": 13.7543, "thr": 1.0}, {"x": 0.3, "y": 13.7529, "thr": 1.2}, {"x": 0.35, "y": 13.8797, "thr": 1.4}, {"x": 0.4, "y": 13.9774, "thr": 1.6}, {"x": 0.45, "y": 14.521, "thr": 1.8}, {"x": 0.5, "y": 15.3997, "thr": 2.0}, {"x": 0.6, "y": 29.0946, "thr": 2.4}, {"x": 0.7, "y": 285.735, "thr": 2.8}], "c_model": [], "python_md1": []}}, {"topology": "mesh", "dim": 6, "traffic": "uniform", "routing": "xy", "vcs": 1, "models": {"booksim": [{"x": 0.01, "y": 26.6006, "thr": 0.36}, {"x": 0.05, "y": 27.4262, "thr": 1.8}, {"x": 0.1, "y": 29.1403, "thr": 3.6}, {"x": 0.15, "y": 33.1667, "thr": 5.3999999999999995}, {"x": 0.2, "y": 149.635, "thr": 7.2}], "c_model": [], "python_md1": []}}, {"topology": "torus", "dim": 3, "traffic": "uniform", "routing": "dim_order", "vcs": 2, "models": {"booksim": [{"x": 0.01, "y": 15.8382, "thr": 0.09}, {"x": 0.05, "y": 14.9731, "thr": 0.45}, {"x": 0.1, "y": 15.3551, "thr": 0.9}, {"x": 0.15, "y": 15.1245, "thr": 1.3499999999999999}, {"x": 0.2, "y": 15.6884, "thr": 1.8}, {"x": 0.25, "y": 15.7703, "thr": 2.25}, {"x": 0.3, "y": 15.8581, "thr": 2.6999999999999997}, {"x": 0.35, "y": 16.3177, "thr": 3.15}, {"x": 0.4, "y": 16.8521, "thr": 3.6}, {"x": 0.45, "y": 17.6918, "thr": 4.05}, {"x": 0.5, "y": 18.5768, "thr": 4.5}, {"x": 0.6, "y": 39.2129, "thr": 5.3999999999999995}, {"x": 0.7, "y": 315.037, "thr": 6.3}], "c_model": [], "python_md1": []}}, {"topology": "ring", "dim": 4, "traffic": "uniform", "routing": "dim_order", "vcs": 2, "models": {"booksim": [{"x": 0.01, "y": 12.4894, "thr": 0.04}, {"x": 0.05, "y": 12.798, "thr": 0.2}, {"x": 0.1, "y": 13.2203, "thr": 0.4}, {"x": 0.15, "y": 13.356, "thr": 0.6}, {"x": 0.2, "y": 13.5653, "thr": 0.8}, {"x": 0.25, "y": 13.6, "thr": 1.0}, {"x": 0.3, "y": 14.2655, "thr": 1.2}, {"x": 0.35, "y": 14.4262, "thr": 1.4}, {"x": 0.4, "y": 15.2878, "thr": 1.6}, {"x": 0.45, "y": 16.2499, "thr": 1.8}, {"x": 0.5, "y": 18.0369, "thr": 2.0}, {"x": 0.6, "y": 145.211, "thr": 2.4}], "c_model": [], "python_md1": []}}, {"topology": "ring", "dim": 5, "traffic": "uniform", "routing": "dim_order", "vcs": 2, "models": {"booksim": [{"x": 0.01, "y": 14.1667, "thr": 0.05}, {"x": 0.05, "y": 14.2933, "thr": 0.25}, {"x": 0.1, "y": 14.414, "thr": 0.5}, {"x": 0.15, "y": 14.3716, "thr": 0.75}, {"x": 0.2, "y": 14.6425, "thr": 1.0}, {"x": 0.25, "y": 15.5429, "thr": 1.25}, {"x": 0.3, "y": 15.9557, "thr": 1.5}, {"x": 0.35, "y": 16.1933, "thr": 1.75}, {"x": 0.4, "y": 18.3996, "thr": 2.0}, {"x": 0.45, "y": 20.2682, "thr": 2.25}, {"x": 0.5, "y": 92.8125, "thr": 2.5}], "c_model": [], "python_md1": []}}, {"topology": "torus", "dim": 4, "traffic": "uniform", "routing": "dim_order", "vcs": 2, "models": {"booksim": [{"x": 0.01, "y": 18.7097, "thr": 0.16}, {"x": 0.05, "y": 19.5303, "thr": 0.8}, {"x": 0.1, "y": 19.3719, "thr": 1.6}, {"x": 0.15, "y": 19.4487, "thr": 2.4}, {"x": 0.2, "y": 20.0513, "thr": 3.2}, {"x": 0.25, "y": 20.3661, "thr": 4.0}, {"x": 0.3, "y": 21.1047, "thr": 4.8}, {"x": 0.35, "y": 21.6854, "thr": 5.6}, {"x": 0.4, "y": 23.5238, "thr": 6.4}, {"x": 0.45, "y": 25.351, "thr": 7.2}, {"x": 0.5, "y": 36.4431, "thr": 8.0}, {"x": 0.6, "y": 283.888, "thr": 9.6}], "c_model": [], "python_md1": []}}, {"topology": "ring", "dim": 6, "traffic": "uniform", "routing": "dim_order", "vcs": 2, "models": {"booksim": [{"x": 0.01, "y": 15.5, "thr": 0.06}, {"x": 0.05, "y": 15.6949, "thr": 0.30000000000000004}, {"x": 0.1, "y": 15.8719, "thr": 0.6000000000000001}, {"x": 0.15, "y": 16.5795, "thr": 0.8999999999999999}, {"x": 0.2, "y": 17.0548, "thr": 1.2000000000000002}, {"x": 0.25, "y": 17.8369, "thr": 1.5}, {"x": 0.3, "y": 18.6373, "thr": 1.7999999999999998}, {"x": 0.35, "y": 20.7526, "thr": 2.0999999999999996}, {"x": 0.4, "y": 99.9259, "thr": 2.4000000000000004}], "c_model": [], "python_md1": []}}, {"topology": "ring", "dim": 7, "traffic": "uniform", "routing": "dim_order", "vcs": 2, "models": {"booksim": [{"x": 0.01, "y": 16.5077, "thr": 0.07}, {"x": 0.05, "y": 16.928, "thr": 0.35000000000000003}, {"x": 0.1, "y": 17.5299, "thr": 0.7000000000000001}, {"x": 0.15, "y": 18.3486, "thr": 1.05}, {"x": 0.2, "y": 19.2025, "thr": 1.4000000000000001}, {"x": 0.25, "y": 19.865, "thr": 1.75}, {"x": 0.3, "y": 23.587, "thr": 2.1}, {"x": 0.35, "y": 253.417, "thr": 2.4499999999999997}], "c_model": [], "python_md1": []}}, {"topology": "torus", "dim": 5, "traffic": "uniform", "routing": "dim_order", "vcs": 2, "models": {"booksim": [{"x": 0.01, "y": 21.7149, "thr": 0.25}, {"x": 0.05, "y": 21.8538, "thr": 1.25}, {"x": 0.1, "y": 22.1427, "thr": 2.5}, {"x": 0.15, "y": 22.3191, "thr": 3.75}, {"x": 0.2, "y": 22.9023, "thr": 5.0}, {"x": 0.25, "y": 23.7628, "thr": 6.25}, {"x": 0.3, "y": 24.8401, "thr": 7.5}, {"x": 0.35, "y": 26.8341, "thr": 8.75}, {"x": 0.4, "y": 30.3635, "thr": 10.0}, {"x": 0.45, "y": 138.748, "thr": 11.25}], "c_model": [], "python_md1": []}}, {"topology": "ring", "dim": 8, "traffic": "uniform", "routing": "dim_order", "vcs": 2, "models": {"booksim": [{"x": 0.01, "y": 19.7903, "thr": 0.08}, {"x": 0.05, "y": 19.3159, "thr": 0.4}, {"x": 0.1, "y": 19.747, "thr": 0.8}, {"x": 0.15, "y": 20.3691, "thr": 1.2}, {"x": 0.2, "y": 20.9994, "thr": 1.6}, {"x": 0.25, "y": 23.1729, "thr": 2.0}, {"x": 0.3, "y": 133.73, "thr": 2.4}], "c_model": [], "python_md1": []}}, {"topology": "ring", "dim": 12, "traffic": "uniform", "routing": "dim_order", "vcs": 2, "models": {"booksim": [{"x": 0.01, "y": 25.5726, "thr": 0.12}, {"x": 0.05, "y": 25.0218, "thr": 0.6000000000000001}, {"x": 0.1, "y": 26.6285, "thr": 1.2000000000000002}, {"x": 0.15, "y": 27.6961, "thr": 1.7999999999999998}, {"x": 0.2, "y": 223.194, "thr": 2.4000000000000004}], "c_model": [], "python_md1": []}}, {"topology": "ring", "dim": 16, "traffic": "uniform", "routing": "dim_order", "vcs": 2, "models": {"booksim": [{"x": 0.01, "y": 32.3613, "thr": 0.16}, {"x": 0.05, "y": 32.2398, "thr": 0.8}, {"x": 0.1, "y": 34.0225, "thr": 1.6}, {"x": 0.15, "y": 64.4269, "thr": 2.4}, {"x": 0.2, "y": 219.311, "thr": 3.2}], "c_model": [], "python_md1": []}}, {"topology": "ring", "dim": 24, "traffic": "uniform", "routing": "dim_order", "vcs": 2, "models": {"booksim": [{"x": 0.01, "y": 43.4573, "thr": 0.24}, {"x": 0.05, "y": 44.2786, "thr": 1.2000000000000002}, {"x": 0.1, "y": 78.6394, "thr": 2.4000000000000004}, {"x": 0.15, "y": 279.762, "thr": 3.5999999999999996}], "c_model": [], "python_md1": []}}, {"topology": "torus", "dim": 6, "traffic": "uniform", "routing": "dim_order", "vcs": 2, "models": {"booksim": [{"x": 0.01, "y": 25.5823, "thr": 0.36}, {"x": 0.05, "y": 25.4599, "thr": 1.8}, {"x": 0.1, "y": 25.6197, "thr": 3.6}, {"x": 0.15, "y": 26.4397, "thr": 5.3999999999999995}, {"x": 0.2, "y": 27.1041, "thr": 7.2}, {"x": 0.25, "y": 29.102, "thr": 9.0}, {"x": 0.3, "y": 32.3896, "thr": 10.799999999999999}, {"x": 0.35, "y": 55.8284, "thr": 12.6}, {"x": 0.4, "y": 306.901, "thr": 14.4}], "c_model": [], "python_md1": []}}, {"topology": "mesh", "dim": 4, "traffic": "uniform", "routing": "xy", "vcs": 2, "models": {"booksim": [], "c_model": [], "python_md1": [{"x": 0.01, "y": 70.50452055325617}, {"x": 0.02, "y": 103.11538732439139}, {"x": 0.03, "y": 136.39864310111727}, {"x": 0.04, "y": 170.3753000398586}, {"x": 0.05, "y": 205.06725501941577}, {"x": 0.060000000000000005, "y": 240.49733670066595}, {"x": 0.07, "y": 276.6893556223734}, {"x": 0.08, "y": 313.66815756411825}, {"x": 0.09, "y": 351.45968042766015}, {"x": 0.09999999999999999, "y": 390.0910149103921}, {"x": 0.10999999999999999, "y": 429.59046926914095}, {"x": 0.11999999999999998, "y": 469.98763849967986}, {"x": 0.12999999999999998, "y": 511.313478287243}, {"x": 0.13999999999999999, "y": 553.6003841163779}, {"x": 0.15, "y": 596.8822759650224}, {"x": 0.16, "y": 641.1946890481587}, {"x": 0.17, "y": 686.5748711212508}, {"x": 0.18000000000000002, "y": 733.061886903443}, {"x": 0.19000000000000003, "y": 780.6967302358134}, {"x": 0.20000000000000004, "y": 829.5224446514937}, {"x": 0.21000000000000005, "y": 879.5842531030146}, {"x": 0.22000000000000006, "y": 930.9296976686774}, {"x": 0.23000000000000007, "y": 983.6087901451374}, {"x": 0.24000000000000007, "y": 1037.6741745288734}, {"x": 0.25000000000000006, "y": 1093.1813024961762}, {"x": 0.26000000000000006, "y": 1150.188623111245}, {"x": 0.2700000000000001, "y": 1208.7577881267273}, {"x": 0.2800000000000001, "y": 1268.9538743926407}, {"x": 0.2900000000000001, "y": 1330.8456250604115}, {"x": 0.3000000000000001, "y": 1394.5057114615483}, {"x": 0.3100000000000001, "y": 1460.011017758371}, {"x": 0.3200000000000001, "y": 1527.442950710984}, {"x": 0.3300000000000001, "y": 1596.8877771845714}, {"x": 0.34000000000000014, "y": 1668.4369923391778}, {"x": 0.35000000000000014, "y": 1742.1877218062348}, {"x": 0.36000000000000015, "y": 1818.243161569139}, {"x": 0.37000000000000016, "y": 1896.7130597372159}, {"x": 0.38000000000000017, "y": 1977.7142449429743}, {"x": 0.3900000000000002, "y": 2061.3712067128577}, {"x": 0.4000000000000002, "y": 2147.8167338750723}, {"x": 0.4100000000000002, "y": 2237.192617890245}, {"x": 0.4200000000000002, "y": 2329.6504289404256}, {"x": 0.4300000000000002, "y": 2425.352373711667}, {"x": 0.4400000000000002, "y": 2524.472245081884}, {"x": 0.45000000000000023, "y": 2627.196475411021}, {"x": 0.46000000000000024, "y": 2733.725306863461}, {"x": 0.47000000000000025, "y": 2844.27409421977}, {"x": 0.48000000000000026, "y": 2959.074758012863}, {"x": 0.49000000000000027, "y": 3078.377408621375}, {"x": 0.5000000000000002, "y": 3202.4521652542294}, {"x": 0.5100000000000002, "y": 3331.5911976680222}, {"x": 0.5200000000000002, "y": 3466.1110230990603}, {"x": 0.5300000000000002, "y": 3606.3550964207852}, {"x": 0.5400000000000003, "y": 3752.6967381478075}, {"x": 0.5500000000000003, "y": 3905.542452840481}, {"x": 0.5600000000000003, "y": 4065.335700019191}, {"x": 0.5700000000000003, "y": 4232.561191252731}, {"x": 0.5800000000000003, "y": 4407.749801116447}, {"x": 0.5900000000000003, "y": 4591.48419682718}, {"x": 0.6000000000000003, "y": 4784.40531232346}, {"x": 0.6100000000000003, "y": 4987.219818358019}, {"x": 0.6200000000000003, "y": 5200.7087720786185}, {"x": 0.6300000000000003, "y": 5425.7376692435855}, {"x": 0.6400000000000003, "y": 5663.268171806621}, {"x": 0.6500000000000004, "y": 5914.3718459447}, {"x": 0.6600000000000004, "y": 6180.2463244438595}, {"x": 0.6700000000000004, "y": 6462.234407700561}, {"x": 0.6800000000000004, "y": 6761.846746160828}, {"x": 0.6900000000000004, "y": 7080.788912908877}, {"x": 0.7000000000000004, "y": 7420.9938907734895}, {"x": 0.7100000000000004, "y": 7784.661280904657}, {"x": 0.7200000000000004, "y": 8174.304913188085}, {"x": 0.7300000000000004, "y": 8592.811036751806}, {"x": 0.7400000000000004, "y": 9043.509939051246}, {"x": 0.7500000000000004, "y": 9530.264753534693}, {"x": 0.7600000000000005, "y": 10057.582469225159}, {"x": 0.7700000000000005, "y": 10630.753899323567}, {"x": 0.7800000000000005, "y": 11256.031823067371}, {"x": 0.7900000000000005, "y": 11940.860025263073}, {"x": 0.8000000000000005, "y": 12694.171047678472}, {"x": 0.8100000000000005, "y": 13526.777967190386}, {"x": 0.8200000000000005, "y": 14451.896766648259}, {"x": 0.8300000000000005, "y": 15485.853071924945}, {"x": 0.8400000000000005, "y": 16649.05391536152}, {"x": 0.8500000000000005, "y": 17967.348204590024}, {"x": 0.8600000000000005, "y": 19473.970249423102}, {"x": 0.8700000000000006, "y": 21212.380301154244}, {"x": 0.8800000000000006, "y": 23240.525361508142}, {"x": 0.8900000000000006, "y": 25637.42406920037}, {"x": 0.9000000000000006, "y": 28513.702518432827}, {"x": 0.9100000000000006, "y": 32029.153956386268}, {"x": 0.9200000000000006, "y": 36423.468253832165}, {"x": 0.9300000000000006, "y": 42073.300921983595}, {"x": 0.9400000000000006, "y": 49606.41114619723}, {"x": 0.9500000000000006, "y": 60152.76546011883}, {"x": 0.9600000000000006, "y": 75972.29693105049}, {"x": 0.9700000000000006, "y": 102338.18271606791}, {"x": 0.9800000000000006, "y": 155069.95428659525}]}}];
+
+        let latencyChartObj = null;
+        let throughputChartObj = null;
+
+        function initFilters() {
+            const topos = new Set();
+            const dims = new Set();
+            const traffics = new Set();
+            const routings = new Set();
+            const vcs = new Set();
+
+            aggregatedData.forEach(d => {
+                topos.add(d.topology);
+                dims.add(d.dim);
+                traffics.add(d.traffic);
+                routings.add(d.routing);
+                vcs.add(d.vcs);
+            });
+
+            const populate = (id, set) => {
+                const el = document.getElementById(id);
+                el.innerHTML = '';
+                Array.from(set).sort().forEach(v => {
+                    let opt = document.createElement("option");
+                    opt.value = v; opt.text = v;
+                    el.appendChild(opt);
+                });
+            };
+
+            populate('selTopo', topos);
+            populate('selDim', dims);
+            populate('selTraffic', traffics);
+            populate('selRouting', routings);
+            populate('selVCs', vcs);
+        }
+
+        function updateView() {
+            const t = document.getElementById('selTopo').value;
+            const d = parseInt(document.getElementById('selDim').value);
+            const tr = document.getElementById('selTraffic').value;
+            const r = document.getElementById('selRouting').value;
+            const v = parseInt(document.getElementById('selVCs').value);
+
+            const record = aggregatedData.find(x => x.topology === t && x.dim === d && x.traffic === tr && x.routing === r && x.vcs === v);
+
+            if (!record) {
+                drawCharts([], [], []);
+                updateTable(null);
+                return;
+            }
+
+            drawCharts(record.models.booksim, record.models.c_model, record.models.python_md1);
+            updateTable(record.models);
+        }
+
+        function drawCharts(bs, cm, pm) {
+            const dsLat = [];
+            const dsThr = [];
+
+            if(bs && bs.length > 0) {
+                dsLat.push({ label: 'BookSim (Golden)', data: bs.map(pt=>({x:pt.x, y:pt.y})), borderColor: '#2c3e50', backgroundColor: '#2c3e50', fill: false, tension: 0.1 });
+                dsThr.push({ label: 'BookSim (Golden)', data: bs.map(pt=>({x:pt.x, y:pt.thr})), borderColor: '#2c3e50', backgroundColor: '#2c3e50', fill: false, tension: 0.1 });
+            }
+            if(cm && cm.length > 0) {
+                dsLat.push({ label: 'C-Model', data: cm.map(pt=>({x:pt.x, y:pt.y})), borderColor: '#e74c3c', borderDash: [5,5], fill: false, tension: 0.1 });
+                dsThr.push({ label: 'C-Model', data: cm.map(pt=>({x:pt.x, y:pt.thr})), borderColor: '#e74c3c', borderDash: [5,5], fill: false, tension: 0.1 });
+            }
+            if(pm && pm.length > 0) {
+                dsLat.push({ label: 'Python M/D/1 Theory', data: pm.map(pt=>({x:pt.x, y:pt.y})), borderColor: '#f1c40f', borderDash: [2,2], fill: false, tension: 0.1 });
+                // M/D/1 usually doesn't output precise throughput unless we map it linearly
+            }
+
+            if(latencyChartObj) latencyChartObj.destroy();
+            latencyChartObj = new Chart(document.getElementById('latencyChart'), {
+                type: 'line', data: { datasets: dsLat },
+                options: { responsive: true, maintainAspectRatio: false, scales: { x: { type: 'linear', title: { display: true, text: 'Injection Rate' } }, y: { title: { display: true, text: 'Latency (cycles)' } } } }
+            });
+
+            if(throughputChartObj) throughputChartObj.destroy();
+            throughputChartObj = new Chart(document.getElementById('throughputChart'), {
+                type: 'line', data: { datasets: dsThr },
+                options: { responsive: true, maintainAspectRatio: false, scales: { x: { type: 'linear', title: { display: true, text: 'Injection Rate' } }, y: { title: { display: true, text: 'Throughput (pkts/cycle)' } } } }
+            });
+        }
+
+        function getMetrics(curve) {
+            if (!curve || curve.length === 0) return { zl: null, sat: null };
+            // Zero-load is the first point (lowest rate)
+            const zl = curve[0].y;
+            // Saturation rate is the max rate before inf
+            const sat = Math.max(...curve.map(pt => pt.x));
+            return { zl, sat };
+        }
+
+        function formatErr(val) {
+            if (val === null || isNaN(val)) return "N/A";
+            const s = val > 0 ? "+" : "";
+            const cls = Math.abs(val) <= 15 ? "err-good" : "err-bad"; // 15% margin
+            return `<span class="${cls}">${s}${val.toFixed(2)}%</span>`;
+        }
+
+        function updateTable(models) {
+            const tbody = document.querySelector('#errorTable tbody');
+            tbody.innerHTML = '';
+            if(!models || (!models.booksim || models.booksim.length === 0)) return;
+
+            const bsM = getMetrics(models.booksim);
+            const cmM = getMetrics(models.c_model);
+            const pmM = getMetrics(models.python_md1);
+
+            const addRow = (name, m) => {
+                let zl_err = (m.zl && bsM.zl) ? ((m.zl - bsM.zl) / bsM.zl * 100) : null;
+                let sat_err = (m.sat && bsM.sat) ? ((m.sat - bsM.sat) / bsM.sat * 100) : null;
+
+                let row = `<tr>
+                    <td>${name}</td>
+                    <td>${m.zl ? m.zl.toFixed(2) : 'N/A'}</td>
+                    <td>${name === 'BookSim (Golden)' ? '-' : formatErr(zl_err)}</td>
+                    <td>${m.sat ? m.sat.toFixed(3) : 'N/A'}</td>
+                    <td>${name === 'BookSim (Golden)' ? '-' : formatErr(sat_err)}</td>
+                </tr>`;
+                tbody.innerHTML += row;
+            };
+
+            addRow('BookSim (Golden)', bsM);
+            if (models.c_model && models.c_model.length > 0) addRow('C-Model', cmM);
+            if (models.python_md1 && models.python_md1.length > 0) addRow('Python M/D/1 Theory', pmM);
+        }
+
+        initFilters();
+        updateView();
+    </script>
+</body>
+</html>
