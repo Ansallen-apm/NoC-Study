@@ -25,6 +25,7 @@ sample_period = 5000;
 sim_type = latency;
 measure_stats = 1;
 print_csv_results = 1;
+stats_out = -;
 """
     if topo == 'ring':
         cfg_str = cfg_str.replace("topology = ring;", "topology = torus;\nn = 1;")
@@ -68,7 +69,8 @@ print_csv_results = 1;
         m_hist = re.search(r'plat_hist\(\d+,:\)\s*=\s*\[(.*?)\]', out)
         if m_hist:
             hist_str = m_hist.group(1).strip()
-            counts = [int(x) for x in hist_str.split() if x.isdigit()]
+            # The output array can contain spaces and numbers, so we just split by space and filter digits
+            counts = [int(x) for x in hist_str.split() if x.strip().isdigit()]
 
             total_pkts = sum(counts)
             if total_pkts > 0:
