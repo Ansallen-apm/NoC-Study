@@ -1,6 +1,7 @@
 #include "simulator.hpp"
 #include <iostream>
 #include <fstream>
+#include <filesystem>
 
 void run_server_experiment(const std::string& config_file) {
     std::cout << "Running Server-CPU Experiment..." << std::endl;
@@ -146,7 +147,8 @@ void run_ca_verify(const std::string& config_file) {
     Simulator sim;
     if (!sim.init(config_file)) return;
 
-    sim.trace.init("../../reports/huawei_c_model/ca_trace.json");
+    std::filesystem::create_directories("../../reports/huawei_c_model/data");
+    sim.trace.init("../../reports/huawei_c_model/data/ca_trace.json");
     sim.trace.dump_topology(&sim);
 
     auto* src_station = sim.stations[8];
