@@ -64,6 +64,55 @@
             <th>最大理論注入率 (Max Inj Rate)</th>
         </tr>
 
+        <tr>
+            <td>4</td>
+            <td>1.3333</td>
+            <td>128 bps</td>
+            <td>2.0 flits/node/cycle</td>
+        </tr>
+
+        <tr>
+            <td>6</td>
+            <td>1.8</td>
+            <td>128 bps</td>
+            <td>1.3333 flits/node/cycle</td>
+        </tr>
+
+        <tr>
+            <td>7</td>
+            <td>2.0</td>
+            <td>128 bps</td>
+            <td>1.1667 flits/node/cycle</td>
+        </tr>
+
+        <tr>
+            <td>8</td>
+            <td>2.2857</td>
+            <td>128 bps</td>
+            <td>1.0 flits/node/cycle</td>
+        </tr>
+
+        <tr>
+            <td>10</td>
+            <td>2.7778</td>
+            <td>128 bps</td>
+            <td>0.8 flits/node/cycle</td>
+        </tr>
+
+        <tr>
+            <td>12</td>
+            <td>3.2727</td>
+            <td>128 bps</td>
+            <td>0.6667 flits/node/cycle</td>
+        </tr>
+
+        <tr>
+            <td>16</td>
+            <td>4.2667</td>
+            <td>128 bps</td>
+            <td>0.5 flits/node/cycle</td>
+        </tr>
+
     </table>
 
     <h3>2. BookSim 模擬結果 (BookSim Simulation Results)</h3>
@@ -350,7 +399,12 @@
 
     </table>
 
-    <h3>3. 交叉驗證結論 (Cross-Verification Conclusion)</h3>
+    <h3>3. 理論與實測對比圖表 (Comparison Chart)</h3>
+    <div class="chart-container">
+        <canvas id="comparisonChart"></canvas>
+    </div>
+
+    <h3>4. 交叉驗證結論 (Cross-Verification Conclusion)</h3>
     <ul>
         <li><strong>理論 vs. 實際：</strong> 理論模型成功計算出 Ring 拓撲隨節點增加而遞減的「最大理論注入率」。這與 BookSim 在高節點數時容易遇到瓶頸的現象一致。</li>
         <li><strong>死結驗證 (Deadlock Verification)：</strong> 在 <code>dim_order</code> (最短路徑) 路由下，BookSim 完美印證了理論：<strong>當 VC=1 時，封包循環等待造成死結</strong>；當 VC=2 時，BookSim 的 dateline 機制成功打破循環，網路能正常運作。</li>
@@ -360,9 +414,61 @@
     </div>
 
 
+    <script src="../../../static/js/chart.js"></script>
 
 
 
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var ctx = document.getElementById('comparisonChart').getContext('2d');
+        var comparisonChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ["4", "6", "8", "10", "16"],
+                datasets: [
+                    {
+                        label: '理論最大注入率 (Theoretical Max)',
+                        data: [2.0, 1.3333, 1.0, 0.8, 0.5],
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.1
+                    },
+                    {
+                        label: 'BookSim 最大成功注入率 (VC=2, Pkt=2)',
+                        data: [0.5, 0.5, 0.5, 0.5, 0.5],
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: '節點數 (Nodes)'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: '注入率 (flits/node/cycle)'
+                        },
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    });
+</script>
 
 </body>
 </html>

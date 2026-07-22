@@ -40,10 +40,45 @@ def generate_html(theory_data, booksim_data, output_filepath):
                             'lat_text': lat_text
                         })
 
+    # 計算圖表資料: 理論 vs BookSim 最大成功注入率 (VC=2, Packet Size=2)
+    chart_labels = []
+    theory_chart_data = []
+    booksim_chart_data = []
+
+    for node_size in target_nodes:
+        chart_labels.append(str(node_size))
+
+        # 理論最大注入率
+        t_record = next((t for t in sorted_theory if t['nodes'] == node_size), None)
+        if t_record:
+            theory_chart_data.append(t_record['theoretical_max_injection_rate'])
+        else:
+            theory_chart_data.append(0)
+
+        # BookSim 實際最大成功注入率 (VC=2, Packet Size=2)
+        key = f"Ring_{node_size}"
+        max_succ_rate = 0.0
+        if key in booksim_data:
+            # 取出符合條件的所有紀錄並依注入率排序
+            records = [r for r in booksim_data[key] if r['num_vcs'] == 2 and r['packet_size'] == 2 and r['buffer_size'] == 8]
+            records = sorted(records, key=lambda x: x['injection_rate'])
+
+            for r in records:
+                if not r['is_deadlock'] and r['latency'] != float('inf'):
+                    max_succ_rate = r['injection_rate']
+                else:
+                    # 遇到失敗就停止，前面的最高成功率即為飽和點
+                    break
+        booksim_chart_data.append(max_succ_rate)
+
     html_content = render_template('html_report.html', base_path="../../../",
                                    sorted_theory=sorted_theory,
                                    target_rate=target_rate,
-                                   booksim_rows=booksim_rows)
+                                   booksim_rows=booksim_rows,
+                                   chart_labels=json.dumps(chart_labels),
+                                   theory_chart_data=json.dumps(theory_chart_data),
+                                   booksim_chart_data=json.dumps(booksim_chart_data),
+                                   chart_js=True)
 
     save_html(html_content, output_filepath)
 
