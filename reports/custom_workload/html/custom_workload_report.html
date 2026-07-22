@@ -139,11 +139,24 @@
 
                 const canvas = document.getElementById(`canvas-${topo}`);
                 const ctx = canvas.getContext('2d');
-                renderTopology(ctx, topo, data.theory_edge_loads, data.theory_max_load);
+
+                const edgesData = data[sourceKey] || {};
+                // 因為 JSON 未提供各資料源專屬的 max_load，為確保熱力圖顏色深淺能正確反映各資料源內部的相對擁塞程度，在此動態計算 max_load。
+                let computedMaxLoad = 0;
+                for (const load of Object.values(edgesData)) {
+                    if (load > computedMaxLoad) {
+                        computedMaxLoad = load;
+                    }
+                }
+                if (computedMaxLoad === 0) {
+                    computedMaxLoad = data.theory_max_load || 1; // Fallback
+                }
+
+                renderTopology(ctx, topo, edgesData, computedMaxLoad);
             }
         }
 
-        function renderTopology(ctx, type, edgesData, maxLoad, isBooksim) {
+        function renderTopology(ctx, type, edgesData, maxLoad) {
             const width = 350;
             const height = 350;
             const padding = 40;
@@ -171,17 +184,11 @@
             for (const [edgeStr, load] of Object.entries(edgesData)) {
                 if (load <= 0) continue;
 
-                let u, v;
-                if (isBooksim) {
-                    u = parseInt(edgeStr.split('_')[0].substring(1));
-                    v = u;
-                } else {
-                    const parts = edgeStr.split('->').map(Number);
-                    u = parts[0];
-                    v = parts[1];
-                }
+                const parts = edgeStr.split('->').map(Number);
+                const u = parts[0];
+                const v = parts[1];
 
-                if (coords[u] && coords[v] && !isBooksim) {
+                if (coords[u] && coords[v]) {
                     const p1 = coords[u];
                     const p2 = coords[v];
 
