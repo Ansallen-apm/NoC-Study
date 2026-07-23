@@ -54,24 +54,16 @@
     <div class="content-container">
 
     <h1>片上網路架構探索 (CMN DSE) 分析報告</h1>
-    <p class="note">產生時間: 2026-07-22 01:56:48</p>
+    <p class="note">產生時間: 2026-07-21 05:41:45</p>
 
     <div class="config-panel">
         <h3>⚙️ 模擬參數設定</h3>
-        <p style="color: #d35400; font-weight: bold;">此為 basic / 最小範圍版本，僅涵蓋 2 組時脈頻率 × 2 組 VC × 3 種拓撲。</p>
         <p><strong>拓撲結構 (Topology):</strong> Ring (16 Node) / Mesh (4x4) / Torus (4x4)</p>
         <p><strong>虛擬通道數量 (VC):</strong> 1 (單一實體通道) 與 2 (防死鎖設定)</p>
         <p><strong>緩衝區大小 (Buffer Size):</strong> 4 flits</p>
         <p><strong>封包大小 (Packet Size):</strong> 1 flit (64 Bytes)</p>
         <p><strong>流量模式 (Traffic Pattern):</strong> Uniform Random (滿載 Injection Rate = 1.0)</p>
         <p><strong>特別注意:</strong> 表格中的「吞吐量」已標準化為「單節點平均吞吐量 (GB/s/Node)」。理論「對分頻寬」為全網切半頻寬上限。</p>
-    </div>
-
-    <div class="card">
-        <h3>Throughput vs Clock Frequency (VC=2, BookSim)</h3>
-        <div class="chart-container" style="height: 400px;">
-            <canvas id="throughputChart"></canvas>
-        </div>
     </div>
 
 
@@ -455,74 +447,9 @@
     </div>
 
 
-    <script src="../../../static/js/chart.js"></script>
 
 
 
-
-
-<script>
-    const chartData = [{"booksim": {"bw_GBps_per_node": 0.0, "deadlock": true, "latency": Infinity, "throughput_flits_per_cycle_per_node": 0.0}, "c_model": {"bw_GBps_per_node": 1.17424, "deadlock": false, "latency": 8.27419, "throughput_packets_per_cycle": 0.117424}, "frequency_GHz": 2.5, "python": {"avg_hops": 4.26666666666667, "bisection_bw_GBps": 640.0}, "topology": "ring", "vcs": 1}, {"booksim": {"bw_GBps_per_node": 41.285759999999996, "deadlock": false, "latency": 502.85, "throughput_flits_per_cycle_per_node": 0.258036}, "c_model": {"bw_GBps_per_node": 94.17299999999999, "deadlock": false, "latency": 296.921, "throughput_packets_per_cycle": 9.4173}, "frequency_GHz": 2.5, "python": {"avg_hops": 2.6666666666666665, "bisection_bw_GBps": 1280.0}, "topology": "mesh", "vcs": 1}, {"booksim": {"bw_GBps_per_node": 0.0, "deadlock": true, "latency": Infinity, "throughput_flits_per_cycle_per_node": 0.0}, "c_model": {"bw_GBps_per_node": 91.1162, "deadlock": false, "latency": 312.765, "throughput_packets_per_cycle": 9.11162}, "frequency_GHz": 2.5, "python": {"avg_hops": 2.13333333333333, "bisection_bw_GBps": 2560.0}, "topology": "torus", "vcs": 1}, {"booksim": {"bw_GBps_per_node": 0.0, "deadlock": true, "latency": Infinity, "throughput_flits_per_cycle_per_node": 0.0}, "c_model": {"bw_GBps_per_node": 0.837738, "deadlock": false, "latency": 9.2973, "throughput_packets_per_cycle": 0.139623}, "frequency_GHz": 1.5, "python": {"avg_hops": 4.26666666666667, "bisection_bw_GBps": 384.0}, "topology": "ring", "vcs": 1}, {"booksim": {"bw_GBps_per_node": 24.771456, "deadlock": false, "latency": 502.85, "throughput_flits_per_cycle_per_node": 0.258036}, "c_model": {"bw_GBps_per_node": 55.78152, "deadlock": false, "latency": 299.059, "throughput_packets_per_cycle": 9.29692}, "frequency_GHz": 1.5, "python": {"avg_hops": 2.6666666666666665, "bisection_bw_GBps": 768.0}, "topology": "mesh", "vcs": 1}, {"booksim": {"bw_GBps_per_node": 0.0, "deadlock": true, "latency": Infinity, "throughput_flits_per_cycle_per_node": 0.0}, "c_model": {"bw_GBps_per_node": 56.173199999999994, "deadlock": false, "latency": 299.924, "throughput_packets_per_cycle": 9.3622}, "frequency_GHz": 1.5, "python": {"avg_hops": 2.13333333333333, "bisection_bw_GBps": 1536.0}, "topology": "torus", "vcs": 1}, {"booksim": {"bw_GBps_per_node": 10.25, "deadlock": false, "latency": 446.63, "throughput_flits_per_cycle_per_node": 0.0640625}, "c_model": {"bw_GBps_per_node": 3.27899, "deadlock": false, "latency": 12.3923, "throughput_packets_per_cycle": 0.327899}, "frequency_GHz": 2.5, "python": {"avg_hops": 4.26666666666667, "bisection_bw_GBps": 640.0}, "topology": "ring", "vcs": 2}, {"booksim": {"bw_GBps_per_node": 85.12864, "deadlock": false, "latency": 313.274, "throughput_flits_per_cycle_per_node": 0.532054}, "c_model": {"bw_GBps_per_node": 118.343, "deadlock": false, "latency": 133.772, "throughput_packets_per_cycle": 11.8343}, "frequency_GHz": 2.5, "python": {"avg_hops": 2.6666666666666665, "bisection_bw_GBps": 1280.0}, "topology": "mesh", "vcs": 2}, {"booksim": {"bw_GBps_per_node": 71.9, "deadlock": false, "latency": 368.222, "throughput_flits_per_cycle_per_node": 0.449375}, "c_model": {"bw_GBps_per_node": 118.168, "deadlock": false, "latency": 135.745, "throughput_packets_per_cycle": 11.8168}, "frequency_GHz": 2.5, "python": {"avg_hops": 2.13333333333333, "bisection_bw_GBps": 2560.0}, "topology": "torus", "vcs": 2}, {"booksim": {"bw_GBps_per_node": 6.1499999999999995, "deadlock": false, "latency": 446.63, "throughput_flits_per_cycle_per_node": 0.0640625}, "c_model": {"bw_GBps_per_node": 2.557728, "deadlock": false, "latency": 20.1792, "throughput_packets_per_cycle": 0.426288}, "frequency_GHz": 1.5, "python": {"avg_hops": 4.26666666666667, "bisection_bw_GBps": 384.0}, "topology": "ring", "vcs": 2}, {"booksim": {"bw_GBps_per_node": 51.077184, "deadlock": false, "latency": 313.274, "throughput_flits_per_cycle_per_node": 0.532054}, "c_model": {"bw_GBps_per_node": 71.535, "deadlock": false, "latency": 136.816, "throughput_packets_per_cycle": 11.9225}, "frequency_GHz": 1.5, "python": {"avg_hops": 2.6666666666666665, "bisection_bw_GBps": 768.0}, "topology": "mesh", "vcs": 2}, {"booksim": {"bw_GBps_per_node": 43.14, "deadlock": false, "latency": 368.222, "throughput_flits_per_cycle_per_node": 0.449375}, "c_model": {"bw_GBps_per_node": 67.749, "deadlock": false, "latency": 145.068, "throughput_packets_per_cycle": 11.2915}, "frequency_GHz": 1.5, "python": {"avg_hops": 2.13333333333333, "bisection_bw_GBps": 1536.0}, "topology": "torus", "vcs": 2}];
-
-    // Filter data for VC=2 to avoid deadlocks
-    const vc2Data = chartData.filter(d => d.vcs === 2);
-
-    // Extract unique topologies and frequencies
-    const topologies = [...new Set(vc2Data.map(d => d.topology))].sort();
-    const frequencies = [...new Set(vc2Data.map(d => d.frequency_GHz))].sort((a, b) => a - b);
-
-    const datasets = topologies.map((topo, i) => {
-        const colors = ['#3498db', '#e74c3c', '#2ecc71', '#9b59b6'];
-        const dataPoints = frequencies.map(freq => {
-            const item = vc2Data.find(d => d.topology === topo && d.frequency_GHz === freq);
-            return item && !item.booksim.deadlock ? item.booksim.bw_GBps_per_node : 0;
-        });
-
-        return {
-            label: topo.charAt(0).toUpperCase() + topo.slice(1),
-            data: dataPoints,
-            backgroundColor: colors[i % colors.length],
-            borderColor: colors[i % colors.length],
-            borderWidth: 1
-        };
-    });
-
-    const ctx = document.getElementById('throughputChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: frequencies.map(f => f + ' GHz'),
-            datasets: datasets
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Throughput (GB/s/Node)'
-                    }
-                },
-                x: {
-                    title: {
-                        display: true,
-                        text: 'Clock Frequency'
-                    }
-                }
-            },
-            plugins: {
-                legend: {
-                    position: 'top',
-                },
-                title: {
-                    display: false
-                }
-            }
-        }
-    });
-</script>
 
 </body>
 </html>
