@@ -56,7 +56,7 @@ def main():
 
     results = analyze_ring_theory(widths)
 
-    with open(os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports", "uniform_dse", "data", "report_theory_ring.json"), 'w', encoding='utf-8') as f:
+    with open(os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "reports", "report_theory_ring.json"), 'w', encoding='utf-8') as f:
         json.dump(results, f, ensure_ascii=False, indent=4)
 
     print("理論分析完成，已匯出至 reports/report_theory_ring.json")

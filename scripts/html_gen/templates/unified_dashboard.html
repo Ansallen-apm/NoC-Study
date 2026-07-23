@@ -97,7 +97,7 @@
                         <td>{{ r.get('topology', '').capitalize() }}</td>
                         <td>{{ r.get('dim', '') }}</td>
                         <td>{{ r.get('theory_channel_count', 'N/A') }}</td>
-                        <td title="目前無故障注入，實際連線數等同理論推估連線數">{{ r.get('theory_channel_count', 'N/A') }}</td>
+                        <td>N/A</td>
                         <td>{{ r.get('theory_bisection_bw', 'N/A') }}</td>
                         <td>{{ "%.4f"|format(r['theory_max_load']) if r.get('theory_max_load') else 'N/A' }}</td>
                         <td>
@@ -172,24 +172,13 @@
                 Array.from(set).sort().forEach(v => {
                     let opt = document.createElement("option");
                     opt.value = v; opt.text = v;
-                    if(v == def) opt.selected = true;
+                    if(v === def) opt.selected = true;
                     el.appendChild(opt);
                 });
             };
-
-            let defaultTopo = 'mesh';
-            let defaultTraffic = 'uniform';
-            let defaultVcs = 2;
-
-            if (macroData && macroData.length > 0) {
-                defaultTopo = macroData[0].topology;
-                defaultTraffic = macroData[0].traffic;
-                defaultVcs = macroData[0].vcs;
-            }
-
-            pSel('topoSelect', topos, defaultTopo);
-            pSel('trafficSelect', traffics, defaultTraffic);
-            pSel('vcSelect', vcs, defaultVcs);
+            pSel('topoSelect', topos, 'mesh');
+            pSel('trafficSelect', traffics, 'uniform');
+            pSel('vcSelect', vcs, 2);
         }
 
         function updateMacroChart() {

@@ -291,13 +291,27 @@
             updateChart();
         }
 
-        const colors = ['#e6194B', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4', '#42d4f4', '#f032e6', '#bfef45', '#fabed4'];
+        const colors = [
+            '#e6194B', '#3cb44b', '#ffe119', '#4363d8', '#f58231',
+            '#911eb4', '#42d4f4', '#f032e6', '#bfef45', '#fabed4',
+            '#469990', '#dcbeff', '#9A6324', '#fffac8', '#800000',
+            '#aaffc3', '#808000', '#ffd8b1', '#000075', '#a9a9a9',
+            '#000000', '#333333', '#555555', '#777777', '#999999',
+            '#bbbbbb', '#dddddd', '#111111', '#222222', '#444444'
+        ];
 
         function updateChart() {
             const ctx = document.getElementById('dseChart').getContext('2d');
+            const dseChartCanvas = document.getElementById('dseChart');
+            const messageOverlay = document.getElementById('chartMessageOverlay');
+
             if (myChart) {
                 myChart.destroy();
             }
+
+            // Reset visibility
+            dseChartCanvas.style.display = 'flex';
+            messageOverlay.style.display = 'none';
 
             if (currentMode === 'A') {
                 const t = document.getElementById('topoSelect').value;
@@ -311,13 +325,25 @@
                 let datasets = [];
 
                 let filtered = allData.filter(d =>
-                    d.topology === t &&
+                    (t === 'all' || d.topology === t) &&
                     (r === 'all' || d.routing === r) &&
                     (tr === 'all' || d.traffic === tr) &&
                     (p === 'all' || d.packet_size.toString() === p) &&
                     (b === 'all' || d.buffer_size.toString() === b) &&
                     (v === 'all' || d.vcs.toString() === v)
                 );
+
+                if (filtered.length > 15) {
+                    dseChartCanvas.style.display = 'none';
+                    messageOverlay.style.display = 'flex';
+                    messageOverlay.innerHTML = `
+                        <div style="font-size: 24px; font-weight: bold; margin-bottom: 10px;">請縮小篩選範圍</div>
+                        <div>目前選取的組合包含 <b>${filtered.length}</b> 條曲線，超過建議的顯示上限 (15 條)。<br>
+                        過多的曲線會導致圖表難以閱讀並影響效能。<br><br>
+                        請在上方過濾器中選擇特定的 <b>拓撲 (Topology)</b> 或 <b>其他參數</b> 以減少資料量。</div>
+                    `;
+                    return;
+                }
 
                 filtered.forEach((d, i) => {
                     let label = `${d.topology} (${d.nodes} nodes) [R:${d.routing}, T:${d.traffic}, P:${d.packet_size}, B:${d.buffer_size}, VC:${d.vcs}]`;

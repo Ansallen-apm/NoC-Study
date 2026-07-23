@@ -58,67 +58,10 @@
         {% endfor %}
     </table>
 
-    <h3>3. 理論與實測對比圖表 (Comparison Chart)</h3>
-    <div class="chart-container">
-        <canvas id="comparisonChart"></canvas>
-    </div>
-
-    <h3>4. 交叉驗證結論 (Cross-Verification Conclusion)</h3>
+    <h3>3. 交叉驗證結論 (Cross-Verification Conclusion)</h3>
     <ul>
         <li><strong>理論 vs. 實際：</strong> 理論模型成功計算出 Ring 拓撲隨節點增加而遞減的「最大理論注入率」。這與 BookSim 在高節點數時容易遇到瓶頸的現象一致。</li>
         <li><strong>死結驗證 (Deadlock Verification)：</strong> 在 <code>dim_order</code> (最短路徑) 路由下，BookSim 完美印證了理論：<strong>當 VC=1 時，封包循環等待造成死結</strong>；當 VC=2 時，BookSim 的 dateline 機制成功打破循環，網路能正常運作。</li>
         <li><strong>封包與延遲：</strong> 在相同的注入率與 Buffer 大小下，封包大小 (Packet Size) 越長，Head-of-Line Blocking 越嚴重，導致平均延遲上升。</li>
     </ul>
-{% endblock %}
-
-{% block extra_scripts %}
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        var ctx = document.getElementById('comparisonChart').getContext('2d');
-        var comparisonChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: {{ chart_labels | safe }},
-                datasets: [
-                    {
-                        label: '理論最大注入率 (Theoretical Max)',
-                        data: {{ theory_chart_data | safe }},
-                        borderColor: 'rgba(54, 162, 235, 1)',
-                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                        borderWidth: 2,
-                        fill: false,
-                        tension: 0.1
-                    },
-                    {
-                        label: 'BookSim 最大成功注入率 (VC=2, Pkt=2)',
-                        data: {{ booksim_chart_data | safe }},
-                        borderColor: 'rgba(255, 99, 132, 1)',
-                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                        borderWidth: 2,
-                        fill: false,
-                        tension: 0.1
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    x: {
-                        title: {
-                            display: true,
-                            text: '節點數 (Nodes)'
-                        }
-                    },
-                    y: {
-                        title: {
-                            display: true,
-                            text: '注入率 (flits/node/cycle)'
-                        },
-                        beginAtZero: true
-                    }
-                }
-            }
-        });
-    });
-</script>
 {% endblock %}
