@@ -25,6 +25,7 @@ sample_period = 5000;
 sim_type = latency;
 measure_stats = 1;
 print_csv_results = 1;
+stats_out = -;
 """
     if topo == 'ring':
         cfg_str = cfg_str.replace("topology = ring;", "topology = torus;\nn = 1;")
@@ -53,15 +54,22 @@ print_csv_results = 1;
             return float('inf'), 0.0, 0
 
         # 處理 BookSim 預設的 output 格式
+        in_packet_latency = False
         for line in out.split('\n'):
             # Latency parsing (包含最大與最小值解析)
             # Booksim 輸出範例:
             # Packet latency average = 24.1907 (1 samples)
-            # 但在多 run 的時候會有:
-            # 	maximum = 0.052 (1 samples)
+            # 	minimum = 7 (1 samples)
+            # 	maximum = 40 (1 samples)
             m_lat = re.search(r'Packet latency average = ([\d\.]+)', line)
             if m_lat:
                 lat = float(m_lat.group(1))
+                in_packet_latency = True
+            elif in_packet_latency and "maximum =" in line:
+                m_max = re.search(r'maximum = ([\d\.]+)', line)
+                if m_max:
+                    max_lat = float(m_max.group(1))
+                    in_packet_latency = False
 
         # 我們擷取最後的延遲分佈歷史紀錄 (plat_hist) 來精確計算 Variance
         # 尋找 plat_hist(1,:) = [ ... ]
@@ -79,12 +87,6 @@ print_csv_results = 1;
                 # 計算 variance = E[X^2] - E[X]^2
                 weighted_sq_sum = sum((i ** 2) * count for i, count in enumerate(counts))
                 var = (weighted_sq_sum / total_pkts) - (avg_calc ** 2)
-
-                # 找到最後一個不為 0 的 index 作為 max_latency
-                for i in range(len(counts)-1, -1, -1):
-                    if counts[i] > 0:
-                        max_lat = i
-                        break
 
         # 解析 Buffer Occupancy
         # BookSim 的 bufferMonitor 輸出: [ 0 ] Type=0:(R#4432,W#4432)
@@ -122,7 +124,7 @@ def main():
     b_size = master_config.get('architecture', {}).get('buffer_size', 8)
     p_size = master_config.get('architecture', {}).get('packet_size', 1)
 
-    rates = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.4]
+    rates = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4]
     results = []
 
     for r in rates:
