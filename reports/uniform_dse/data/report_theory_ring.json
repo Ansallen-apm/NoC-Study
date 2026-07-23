@@ -1,0 +1,51 @@
+{
+    "Ring_4": {
+        "nodes": 4,
+        "average_hops": 1.3333,
+        "bisection_bandwidth_bps": 128,
+        "theoretical_max_injection_rate": 2.0,
+        "max_channel_load_per_packet": 0.5
+    },
+    "Ring_6": {
+        "nodes": 6,
+        "average_hops": 1.8,
+        "bisection_bandwidth_bps": 128,
+        "theoretical_max_injection_rate": 1.3333,
+        "max_channel_load_per_packet": 0.75
+    },
+    "Ring_7": {
+        "nodes": 7,
+        "average_hops": 2.0,
+        "bisection_bandwidth_bps": 128,
+        "theoretical_max_injection_rate": 1.1667,
+        "max_channel_load_per_packet": 0.8571
+    },
+    "Ring_8": {
+        "nodes": 8,
+        "average_hops": 2.2857,
+        "bisection_bandwidth_bps": 128,
+        "theoretical_max_injection_rate": 1.0,
+        "max_channel_load_per_packet": 1.0
+    },
+    "Ring_10": {
+        "nodes": 10,
+        "average_hops": 2.7778,
+        "bisection_bandwidth_bps": 128,
+        "theoretical_max_injection_rate": 0.8,
+        "max_channel_load_per_packet": 1.25
+    },
+    "Ring_12": {
+        "nodes": 12,
+        "average_hops": 3.2727,
+        "bisection_bandwidth_bps": 128,
+        "theoretical_max_injection_rate": 0.6667,
+        "max_channel_load_per_packet": 1.5
+    },
+    "Ring_16": {
+        "nodes": 16,
+        "average_hops": 4.2667,
+        "bisection_bandwidth_bps": 128,
+        "theoretical_max_injection_rate": 0.5,
+        "max_channel_load_per_packet": 2.0
+    }
+}
