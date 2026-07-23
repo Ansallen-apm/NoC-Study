@@ -70,6 +70,15 @@
         <div id="info-panel">
             <h3>Node Info</h3>
             <div id="node-details">Hover over a node to see buffer status.</div>
+            <hr style="margin: 15px 0; border: none; border-top: 1px solid #ddd;">
+            <h4>Legend</h4>
+            <div style="font-size: 12px; line-height: 1.5;">
+                <div><span style="display:inline-block; width:12px; height:12px; background:#f39c12; border-radius:50%; margin-right:5px; vertical-align:middle;"></span> Bridge Node</div>
+                <div><span style="display:inline-block; width:12px; height:12px; background:#bdc3c7; margin-right:5px; vertical-align:middle;"></span> General Node</div>
+                <div><span style="display:inline-block; width:20px; height:3px; background:#ccc; margin-right:5px; vertical-align:middle;"></span> Idle Link</div>
+                <div><span style="display:inline-block; width:20px; height:3px; background:#e74c3c; margin-right:5px; vertical-align:middle;"></span> Occupied Link (Flit)</div>
+                <div><span style="display:inline-block; width:10px; height:10px; background:#c0392b; border-radius:50%; margin-right:5px; vertical-align:middle;"></span> Buffered Flits</div>
+            </div>
         </div>
     </div>
 
@@ -98,8 +107,8 @@
             let maxX = 0, maxY = 0;
 
             traceData.topology.nodes.forEach(n => {
-                let x = Math.random() * 800;
-                let y = Math.random() * 800;
+                let x = 0;
+                let y = 0;
 
                 let parts = n.id.split('_');
                 if (parts.length >= 2 && parts[0].startsWith('R')) {
