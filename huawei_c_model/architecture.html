@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>huawei_c_model 架構與微架構文件</title>
+    <style>
+        :root {
+            /* Component Colors */
+            --color-ring: #e2e8f0;       /* Light gray-blue */
+            --color-ring-border: #94a3b8;
+            --color-station: #dbeafe;    /* Light blue */
+            --color-station-border: #60a5fa;
+            --color-rbrg-l1: #d1fae5;    /* Light green */
+            --color-rbrg-l1-border: #34d399;
+            --color-rbrg-l2: #fef08a;    /* Light yellow */
+            --color-rbrg-l2-border: #fbbf24;
+            --color-swapsink: #fed7aa;   /* Light orange */
+            --color-swapsink-border: #fb923c;
+
+            /* Text and UI */
+            --color-bg: #ffffff;
+            --color-sidebar-bg: #f8fafc;
+            --color-text: #1e293b;
+            --color-text-light: #475569;
+            --color-link: #2563eb;
+            --color-warning-bg: #fef2f2; /* Light red */
+            --color-warning-border: #ef4444;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--color-text);
+            margin: 0;
+            display: flex;
+            background-color: var(--color-bg);
+        }
+
+        /* Sidebar Navigation */
+        #sidebar {
+            width: 280px;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            background-color: var(--color-sidebar-bg);
+            border-right: 1px solid #e2e8f0;
+            overflow-y: auto;
+            padding: 20px 10px;
+            box-sizing: border-box;
+        }
+
+        #sidebar h2 {
+            font-size: 1.1rem;
+            color: var(--color-text-light);
+            margin-bottom: 15px;
+            padding-left: 10px;
+        }
+
+        #sidebar ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        #sidebar li {
+            margin-bottom: 8px;
+        }
+
+        #sidebar a {
+            display: block;
+            padding: 8px 10px;
+            color: var(--color-text);
+            text-decoration: none;
+            border-radius: 6px;
+            transition: background-color 0.2s;
+            font-size: 0.95rem;
+        }
+
+        #sidebar a:hover {
+            background-color: #e2e8f0;
+            color: var(--color-link);
+        }
+
+        /* Main Content */
+        #content {
+            margin-left: 280px;
+            padding: 40px 60px;
+            max-width: 1000px;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 10px;
+        }
+
+        h2 {
+            font-size: 1.6rem;
+            margin-top: 50px;
+            margin-bottom: 20px;
+            color: #334155;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 8px;
+        }
+
+        p {
+            margin-bottom: 1.2rem;
+        }
+
+        code {
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            background-color: #f1f5f9;
+            padding: 0.2em 0.4em;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: #0f172a;
+        }
+
+        pre {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 0.9em;
+        }
+
+        /* Warning Box */
+        .warning-box {
+            background-color: var(--color-warning-bg);
+            border-left: 5px solid var(--color-warning-border);
+            padding: 20px;
+            margin: 30px 0;
+            border-radius: 4px;
+        }
+
+        .warning-box h3 {
+            margin-top: 0;
+            color: #b91c1c;
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+
+        .warning-box ul {
+            margin-bottom: 0;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th, td {
+            border: 1px solid #e2e8f0;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f8fafc;
+            font-weight: 600;
+        }
+
+        /* Diagrams */
+        .diagram-container {
+            margin: 30px 0;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background-color: #fafafa;
+        }
+
+        .legend {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+            padding: 10px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            border: 1px solid;
+        }
+
+        .svg-diagram {
+            width: 100%;
+            max-width: 800px;
+            display: block;
+            margin: 0 auto;
+        }
+
+        /* Diagram text styles */
+        .d-text { font-family: monospace; font-size: 12px; }
+        .d-text-large { font-family: monospace; font-size: 14px; font-weight: bold; }
+        .d-text-title { font-family: sans-serif; font-size: 16px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar Navigation -->
+    <nav id="sidebar">
+        <h2>目錄</h2>
+        <ul>
+            <li><a href="#section-1">1. 高層架構</a></li>
+            <li><a href="#section-2">2. 微架構 / 週期模型</a></li>
+            <li><a href="#section-3">3. Ring Slot 機制</a></li>
+            <li><a href="#section-4">4. Deflection Routing + I-tag / E-tag</a></li>
+            <li><a href="#section-5">5. RBRG_L1（Die 內橋接）</a></li>
+            <li><a href="#section-6">6. RBRG_L2（Die 對 Die 橋接）</a></li>
+            <li><a href="#section-7">7. SWAP 死結恢復</a></li>
+            <li><a href="#section-8">8. Simulator 調度</a></li>
+            <li><a href="#section-9">9. 統計與追蹤</a></li>
+            <li><a href="#section-10">10. 測試</a></li>
+            <li><a href="#section-11">11. 文件/計畫與目前實作之間的落差</a></li>
+        </ul>
+    </nav>
+
+    <!-- Main Content -->
+    <main id="content">
+        <h1>huawei_c_model 架構與微架構文件</h1>
+
+        <p>本文件說明 <code>huawei_c_model</code> 的軟體與微架構設計。這是一個 C++ cycle-accurate、bufferless、deflection-routed 的多環（multi-ring）NoC 模擬器，主要用於模擬類似 Huawei CMN 的 chiplet 互連網路架構。</p>
+
+        <!-- Legend -->
+        <div class="legend">
+            <div class="legend-item"><div class="legend-color" style="background: var(--color-ring); border-color: var(--color-ring-border);"></div><span>Ring (環)</span></div>
+            <div class="legend-item"><div class="legend-color" style="background: var(--color-station); border-color: var(--color-station-border);"></div><span>CrossStation (站點)</span></div>
+            <div class="legend-item"><div class="legend-color" style="background: var(--color-rbrg-l1); border-color: var(--color-rbrg-l1-border);"></div><span>RBRG_L1 (Die內橋接)</span></div>
+            <div class="legend-item"><div class="legend-color" style="background: var(--color-rbrg-l2); border-color: var(--color-rbrg-l2-border);"></div><span>RBRG_L2 (Die對Die橋接)</span></div>
+            <div class="legend-item"><div class="legend-color" style="background: var(--color-swapsink); border-color: var(--color-swapsink-border);"></div><span>SwapSink (SWAP恢復)</span></div>
+        </div>
+
+        <h2 id="section-1">1. 高層架構</h2>
+        <p>模擬器的架構由下往上呈現層次結構：最底層為 <code>Ring</code>，每個 <code>Ring</code> 包含多個 <code>CrossStation</code>，不同的環之間透過橋接器相連。<code>RBRG_L1</code> 用於 die 內的 ring 橋接，而 <code>RBRG_L2</code> 則用於 die 對 die (D2D) 的橋接，並且 <code>RBRG_L2</code> 同時實作了 <code>SwapSink</code> 介面以支援死結恢復。</p>
+
+        <p>拓樸結構由 YAML 設定檔定義，實際包含幾種不同的組態：</p>
+        <ul>
+            <li><strong>server_cpu</strong> (<code>configs/server_cpu.yaml</code>)：包含兩個環（CCD0 和 IOD0）。只有 CCD0 的 <code>type: full</code>（雙向環），而 IOD0 為 <code>type: half</code>（單向順時針 CW 環）。這兩個環透過一個 <code>RBRG_L2</code> 橋接相連。</li>
+            <li><strong>ai_processor</strong> (<code>configs/ai_processor.yaml</code>, <code>configs/ca_verify_3x3.yaml</code>)：建立垂直與水平交錯的網格狀環路。所有的環均為 <code>type: half</code>（單向 CW）。在網格的每個交會點，透過多個 <code>RBRG_L1</code> 進行連線，不包含 <code>RBRG_L2</code>。</li>
+        </ul>
+
+        <div class="diagram-container">
+            <svg class="svg-diagram" viewBox="0 0 800 350" xmlns="http://www.w3.org/2000/svg">
+                <!-- Stack diagram -->
+                <text x="150" y="30" class="d-text-title" text-anchor="middle">層級架構 (Layer Stack)</text>
+
+                <rect x="50" y="240" width="200" height="60" fill="var(--color-ring)" stroke="var(--color-ring-border)" stroke-width="2" rx="4"/>
+                <text x="150" y="275" class="d-text-large" text-anchor="middle">Ring</text>
+
+                <rect x="50" y="150" width="200" height="60" fill="var(--color-station)" stroke="var(--color-station-border)" stroke-width="2" rx="4"/>
+                <text x="150" y="185" class="d-text-large" text-anchor="middle">CrossStation</text>
+
+                <rect x="50" y="60" width="200" height="60" fill="var(--color-rbrg-l1)" stroke="var(--color-rbrg-l1-border)" stroke-width="2" rx="4"/>
+                <text x="150" y="95" class="d-text-large" text-anchor="middle">RBRG_L1 / RBRG_L2</text>
+
+                <path d="M 150 150 L 150 120" stroke="#94a3b8" stroke-width="2" stroke-dasharray="4,4" fill="none"/>
+                <path d="M 150 240 L 150 210" stroke="#94a3b8" stroke-width="2" stroke-dasharray="4,4" fill="none"/>
+
+                <!-- Topology differences -->
+                <text x="550" y="30" class="d-text-title" text-anchor="middle">拓樸差異</text>
+
+                <!-- server_cpu -->
+                <text x="450" y="70" class="d-text" text-anchor="middle">server_cpu.yaml</text>
+                <ellipse cx="450" cy="120" rx="30" ry="30" fill="var(--color-ring)" stroke="var(--color-ring-border)" stroke-width="2"/>
+                <text x="450" y="125" class="d-text">Full</text>
+                <ellipse cx="450" cy="220" rx="30" ry="30" fill="var(--color-ring)" stroke="var(--color-ring-border)" stroke-width="2"/>
+                <text x="450" y="225" class="d-text">Half</text>
+                <rect x="420" y="155" width="60" height="30" fill="var(--color-rbrg-l2)" stroke="var(--color-rbrg-l2-border)" stroke-width="2"/>
+                <text x="450" y="175" class="d-text" text-anchor="middle">L2</text>
+                <path d="M 450 150 L 450 155" stroke="#333" stroke-width="2"/>
+                <path d="M 450 185 L 450 190" stroke="#333" stroke-width="2"/>
+
+                <!-- ai_processor -->
+                <text x="650" y="70" class="d-text" text-anchor="middle">ai_processor.yaml</text>
+                <ellipse cx="600" cy="120" rx="20" ry="40" fill="var(--color-ring)" stroke="var(--color-ring-border)" stroke-width="2"/>
+                <ellipse cx="700" cy="120" rx="20" ry="40" fill="var(--color-ring)" stroke="var(--color-ring-border)" stroke-width="2"/>
+                <ellipse cx="650" cy="120" rx="70" ry="15" fill="var(--color-ring)" stroke="var(--color-ring-border)" stroke-width="2" fill-opacity="0.5"/>
+                <text x="650" y="90" class="d-text" text-anchor="middle">全部 Half (單向)</text>
+
+                <!-- L1 bridges -->
+                <rect x="590" y="110" width="20" height="20" fill="var(--color-rbrg-l1)" stroke="var(--color-rbrg-l1-border)" stroke-width="2"/>
+                <rect x="690" y="110" width="20" height="20" fill="var(--color-rbrg-l1)" stroke="var(--color-rbrg-l1-border)" stroke-width="2"/>
+                <text x="650" y="160" class="d-text" text-anchor="middle">L1 交會</text>
+            </svg>
+        </div>
+
+        <h2 id="section-2">2. 微架構 / 週期模型</h2>
+        <p>所有模擬元件繼承自基礎類別 <code>Component</code>（<code>include/component.hpp</code>），並實作 <code>tick()</code> 與 <code>tock()</code> 兩階段的週期模型。這種設計的目的是為了避免同一週期內的 read-after-write 危害（Race conditions）。在 <code>tick()</code> 階段中，元件僅讀取 <code>curr_*</code>（當前狀態）並運算決策後寫入 <code>next_*</code>；在 <code>tock()</code> 階段才統一將 <code>next_*</code> 提交為 <code>curr_*</code>。</p>
+
+        <p>元件的執行順序由其被插入 <code>Simulator::components</code> 的順序嚴格決定。在 <code>Simulator::build_from_config()</code> 的建構過程中，所有的 <code>CrossStation</code> 都會先於橋接器被加入。這確保了每個 <code>CrossStation::tick()</code> 一定會在同一週期內的任何 bridge 的 <code>tick()</code> 之前執行完畢。因此，<code>RBRG_L1</code> 和 <code>RBRG_L2</code> 在 <code>tick()</code> 階段可以直接讀取 <code>Ring</code> 上的 <code>next_cw_slots</code> 作為「這個週期已經被站點決定好的輸出」。</p>
+
+        <p>值得注意的是，<code>Ring::tick()</code> 本身是空的。修改 Ring slot 內容的實際工作是在 <code>CrossStation::tick()</code> 寫入，而 <code>Ring::tock()</code> 才執行真正的 slot 旋轉移動邏輯。</p>
+
+        <div class="diagram-container">
+            <svg class="svg-diagram" viewBox="0 0 800 200" xmlns="http://www.w3.org/2000/svg">
+                <rect x="50" y="20" width="700" height="160" fill="none" stroke="#e2e8f0" stroke-width="2" rx="4"/>
+                <line x1="400" y1="20" x2="400" y2="180" stroke="#e2e8f0" stroke-width="2" stroke-dasharray="4,4"/>
+
+                <text x="225" y="45" class="d-text-title" text-anchor="middle">Phase 1: tick()</text>
+                <text x="575" y="45" class="d-text-title" text-anchor="middle">Phase 2: tock()</text>
+
+                <rect x="80" y="70" width="300" height="30" fill="var(--color-station)" stroke="var(--color-station-border)" stroke-width="1" rx="4"/>
+                <text x="230" y="90" class="d-text" text-anchor="middle">1. CrossStation::tick() (讀 curr, 寫 next_slots)</text>
+
+                <rect x="80" y="110" width="300" height="30" fill="var(--color-rbrg-l1)" stroke="var(--color-rbrg-l1-border)" stroke-width="1" rx="4"/>
+                <text x="230" y="130" class="d-text" text-anchor="middle">2. Bridge::tick() (偷取 next_slots)</text>
+
+                <rect x="430" y="70" width="300" height="30" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1" rx="4"/>
+                <text x="580" y="90" class="d-text" text-anchor="middle">All Components::tock() (提交 next -> curr)</text>
+
+                <rect x="430" y="110" width="300" height="30" fill="var(--color-ring)" stroke="var(--color-ring-border)" stroke-width="1" rx="4"/>
+                <text x="580" y="130" class="d-text" text-anchor="middle">Ring::tock() (實體 Slot 移動旋轉)</text>
+
+                <path d="M 380 85 L 420 85" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+            </svg>
+        </div>
+
+        <h2 id="section-3">3. Ring Slot 機制</h2>
+        <p><code>Ring</code> 使用雙緩衝陣列 <code>curr_cw_slots</code> 與 <code>next_cw_slots</code> 來管理環上的狀態（如果是雙向環，還會有一組 ccw 版本），每個元素是一個 <code>RingSlot</code>（<code>include/ring_slot.hpp</code>）。在每週期的 <code>Ring::tock()</code> 中，系統會執行旋轉邏輯，將所有 slot 往同方向前進一格。</p>
+
+        <p>在方向選擇上，雖然 <code>CrossStation::choose_direction()</code> 實作了根據 CW/CCW 最短距離選擇方向的邏輯，但<strong>實際上在流量產生路徑中從未被呼叫</strong>。<code>HotspotGenerator</code> 產生的所有流量都被硬編碼為順時針（CW）方向。因此，最短路徑方向選擇在架構程式碼中存在，但目前的實驗皆未使用，只有單元測試會覆蓋這段邏輯。</p>
+
+        <div class="diagram-container">
+            <svg class="svg-diagram" viewBox="0 0 800 200" xmlns="http://www.w3.org/2000/svg">
+                <!-- Ring rotation -->
+                <circle cx="400" cy="100" r="70" fill="none" stroke="var(--color-ring-border)" stroke-width="4"/>
+                <path d="M 470 100 A 70 70 0 0 1 400 170" fill="none" stroke="#ef4444" stroke-width="4" marker-end="url(#arrowhead)"/>
+
+                <rect x="380" y="20" width="40" height="20" fill="var(--color-station)" stroke="var(--color-station-border)" stroke-width="1"/>
+                <rect x="460" y="90" width="40" height="20" fill="var(--color-station)" stroke="var(--color-station-border)" stroke-width="1"/>
+                <rect x="380" y="160" width="40" height="20" fill="var(--color-station)" stroke="var(--color-station-border)" stroke-width="1"/>
+                <rect x="300" y="90" width="40" height="20" fill="var(--color-station)" stroke="var(--color-station-border)" stroke-width="1"/>
+
+                <text x="400" y="15" class="d-text" text-anchor="middle">Slot i</text>
+                <text x="515" y="105" class="d-text" text-anchor="middle">Slot i+1</text>
+
+                <text x="400" y="105" class="d-text-large" text-anchor="middle">Ring::tock()</text>
+                <text x="400" y="125" class="d-text" text-anchor="middle">CW 移動一格</text>
+            </svg>
+        </div>
+
+        <h2 id="section-4">4. Deflection Routing + I-tag / E-tag</h2>
+        <p>在 <code>CrossStation::process_direction()</code> 中，當 flit 抵達目的地站點時，會嘗試進行本地 ejection。它會檢查 <code>dst_node</code> 是否相符，並嘗試放入 <code>EjectQueue</code>。如果 ejection 失敗（佇列滿載），則發生 deflection（<code>deflect_count++</code>）。</p>
+
+        <p><strong>E-tag (Ejection Reservation):</strong> 當發生 deflection 時，如果 <code>EjectQueue</code> 允許預留，該站點會在 outgoing slot 上蓋上 E-tag（設定 <code>e_tag = true</code>、<code>e_tag_owner_station</code>、<code>e_tag_flit_id</code>）。當這個 flit 繞環一圈回來時，如果 E-tag 還在，它將保證能被 eject。如果是別的 flit 帶著 E-tag 抵達，預留會靜默失效。同理，<strong>I-tag (Injection Reservation)</strong> 提供注入預留機制以防止飢餓。</p>
+
+        <p><strong>EjectQueue 容量與預留語意 (<code>include/node_interface.hpp</code>):</strong> <code>can_reserve()</code> 函數只檢查當前預留數量是否小於 <code>max_reservations</code>，與實體容量無關；這代表即使實體佇列全滿也能核准 E-tag 預留。相反地，一般無預留的 <code>has_space()</code> 檢查會同時將實體數量與預留數量合併計算。當 flit 真正呼叫 <code>push()</code> 進入佇列時，只有在當下真的有實體空間時，才會把 flit 放進去並消耗掉對應的預留；如果物理上滿載，它不會吃掉這個預留，而是讓 flit 繼續 deflect 留待下次。</p>
+
+        <div class="diagram-container">
+            <svg class="svg-diagram" viewBox="0 0 800 150" xmlns="http://www.w3.org/2000/svg">
+                <rect x="50" y="30" width="200" height="90" fill="var(--color-station)" stroke="var(--color-station-border)" stroke-width="2" rx="4"/>
+                <text x="150" y="55" class="d-text-title" text-anchor="middle">1. Ejection 失敗</text>
+                <text x="150" y="75" class="d-text" text-anchor="middle">EjectQueue 滿載</text>
+                <text x="150" y="100" class="d-text" text-anchor="middle">核准預留 can_reserve()</text>
+
+                <path d="M 260 75 L 310 75" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+                <rect x="330" y="30" width="160" height="90" fill="var(--color-ring)" stroke="var(--color-ring-border)" stroke-width="2" rx="4"/>
+                <text x="410" y="55" class="d-text-title" text-anchor="middle">2. Deflection</text>
+                <text x="410" y="75" class="d-text" text-anchor="middle">Flit 繼續繞環</text>
+                <text x="410" y="100" class="d-text" text-anchor="middle" fill="#b91c1c">加上 E-tag</text>
+
+                <path d="M 500 75 L 550 75" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+                <rect x="570" y="30" width="180" height="90" fill="var(--color-station)" stroke="var(--color-station-border)" stroke-width="2" rx="4"/>
+                <text x="660" y="55" class="d-text-title" text-anchor="middle">3. 繞回與成功</text>
+                <text x="660" y="75" class="d-text" text-anchor="middle">比對 E-tag ID 成功</text>
+                <text x="660" y="100" class="d-text" text-anchor="middle">實體有空間則 push()</text>
+            </svg>
+        </div>
+
+        <h2 id="section-5">5. RBRG_L1（Die 內橋接）</h2>
+        <p>在 AI-processor 的網格拓樸中，垂直與水平環交會處透過 <code>RBRG_L1</code> 橋接（建構時依據環大小與交會邏輯計算配置）。其內部結構包含一個長度為 <code>latency_cycles</code> 的 pipeline (<code>pipeline_regs_curr/next</code>) 以及 <code>ingress_queue</code> 與 <code>egress_queue</code>。</p>
+
+        <p>在 <code>tick()</code> 的執行順序中，RBRG_L1 會從本地環的 <code>next_*_slots</code> <strong>偷取（Steal）</strong> 封包進入 ingress queue，前提是 queue 未滿（受限於 <code>queue_depth</code>）且路由檢查（<code>should_forward_to_ring</code>）允許。封包接著進入 pipeline 延遲，最後進入 egress queue 準備注入對面的環。注入時優先嘗試 CW，若被佔用且為雙向環才 fallback 到 CCW。此處<strong>沒有實作 egress 端的最短路徑方向選擇</strong>（原始碼內有註解說明這是簡化）。</p>
+
+        <div class="diagram-container">
+            <svg class="svg-diagram" viewBox="0 0 800 150" xmlns="http://www.w3.org/2000/svg">
+                <rect x="50" y="20" width="100" height="40" fill="var(--color-ring)" stroke="var(--color-ring-border)" stroke-width="1"/>
+                <text x="100" y="45" class="d-text" text-anchor="middle">Local Ring</text>
+
+                <path d="M 100 60 L 100 80" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+                <text x="140" y="75" class="d-text" fill="#b91c1c">偷取 Slot</text>
+
+                <rect x="50" y="90" width="700" height="50" fill="var(--color-rbrg-l1)" stroke="var(--color-rbrg-l1-border)" stroke-width="2" rx="4"/>
+
+                <rect x="60" y="100" width="120" height="30" fill="white" stroke="#ccc"/>
+                <text x="120" y="120" class="d-text" text-anchor="middle">Ingress Q</text>
+
+                <path d="M 185 115 L 210 115" stroke="#333" stroke-width="1" marker-end="url(#arrowhead)"/>
+
+                <rect x="220" y="100" width="360" height="30" fill="white" stroke="#ccc"/>
+                <text x="400" y="120" class="d-text" text-anchor="middle">Pipeline Stages (latency_cycles)</text>
+
+                <path d="M 585 115 L 610 115" stroke="#333" stroke-width="1" marker-end="url(#arrowhead)"/>
+
+                <rect x="620" y="100" width="120" height="30" fill="white" stroke="#ccc"/>
+                <text x="680" y="120" class="d-text" text-anchor="middle">Egress Q</text>
+
+                <path d="M 680 90 L 680 70" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+                <rect x="630" y="30" width="100" height="40" fill="var(--color-ring)" stroke="var(--color-ring-border)" stroke-width="1"/>
+                <text x="680" y="55" class="d-text" text-anchor="middle">Remote Ring</text>
+            </svg>
+        </div>
+
+        <h2 id="section-6">6. RBRG_L2（Die 對 Die 橋接）</h2>
+        <p><code>RBRG_L2</code> 僅在 server_cpu 風格的設定中建立，實體化自 YAML 內的 <code>bridges:</code> 條目。值得注意的是，其 <code>queue_depth</code> 與 <code>initial_credits</code> 在 <code>build_from_config()</code> 的呼叫端被<strong>寫死為 4 和 16</strong>，無法透過 YAML 設定（僅 <code>d2d_latency_cycles</code> 可設定）。</p>
+
+        <p>它與 L1 的關鍵差異在於<strong>反壓（Backpressure）機制與 SWAP 實作</strong>。RBRG_L1 佇列滿了只會讓上游發生 deflection，而 L2 實作了 Credit-based 反壓模型。它包含兩組平行的 pipeline：一組 <code>d2d_pipeline</code> 傳輸 flit，另一組方向相反的 <code>credit_pipeline</code> 模擬對等的 credit 回傳延遲。注入 pipeline 前會檢查 <code>current_credits</code>。此外，L2 實作了 <code>SwapSink</code> 介面，其 <code>reserved_tx_buffer</code> 用來接收因死結恢復而被驅逐的受害封包，且在注入空的 pipeline slot 時，此 buffer 的優先級高於一般的 <code>local_rx_queue</code>。</p>
+
+        <div class="diagram-container">
+            <svg class="svg-diagram" viewBox="0 0 800 180" xmlns="http://www.w3.org/2000/svg">
+                <rect x="50" y="20" width="700" height="140" fill="var(--color-rbrg-l2)" stroke="var(--color-rbrg-l2-border)" stroke-width="2" rx="4"/>
+
+                <rect x="70" y="40" width="100" height="40" fill="white" stroke="#ccc"/>
+                <text x="120" y="55" class="d-text" text-anchor="middle">Local RX</text>
+                <text x="120" y="70" class="d-text" text-anchor="middle">(Queue)</text>
+
+                <rect x="70" y="90" width="100" height="30" fill="var(--color-swapsink)" stroke="var(--color-swapsink-border)" stroke-width="2"/>
+                <text x="120" y="110" class="d-text" text-anchor="middle">SWAP Buffer</text>
+
+                <path d="M 175 60 L 220 60" stroke="#333" stroke-width="1" marker-end="url(#arrowhead)"/>
+                <path d="M 175 105 L 200 105 L 200 60" stroke="#fb923c" stroke-width="2" stroke-dasharray="2,2"/>
+                <text x="190" y="90" class="d-text" fill="#c2410c">優先</text>
+
+                <rect x="230" y="40" width="340" height="30" fill="white" stroke="#ccc"/>
+                <text x="400" y="60" class="d-text" text-anchor="middle">Flit Pipeline (d2d_latency)</text>
+                <path d="M 575 55 L 610 55" stroke="#333" stroke-width="1" marker-end="url(#arrowhead)"/>
+
+                <rect x="620" y="40" width="100" height="40" fill="white" stroke="#ccc"/>
+                <text x="670" y="55" class="d-text" text-anchor="middle">Remote RX</text>
+                <text x="670" y="70" class="d-text" text-anchor="middle">(Queue)</text>
+
+                <!-- Credit pipeline -->
+                <rect x="230" y="110" width="340" height="30" fill="#f1f5f9" stroke="#94a3b8" stroke-dasharray="4,4"/>
+                <text x="400" y="130" class="d-text" text-anchor="middle">Credit Pipeline (d2d_latency)</text>
+                <path d="M 230 125 L 180 125" stroke="#2563eb" stroke-width="2" marker-end="url(#arrowhead)"/>
+                <text x="130" y="140" class="d-text" fill="#2563eb">Credits++</text>
+                <path d="M 620 125 L 575 125" stroke="#2563eb" stroke-width="2"/>
+            </svg>
+        </div>
+
+        <h2 id="section-7">7. SWAP 死結恢復</h2>
+        <p>死結恢復機制（DRM）在 <code>CrossStation</code> 內實作為一個簡化過的二態布林開關（<code>drm_active</code>），而非複雜的多狀態機。當 <code>consecutive_inject_fail_cycles</code> 超過 <code>deadlock_threshold_cycles</code> 時開啟。因為是簡化版，只要有任何一次本地注入成功，<code>drm_active</code> 就會立刻被關閉，沒有複雜的退避延滯機制。</p>
+
+        <p>觸發 SWAP 的條件包含：<code>drm_active</code> 為真、本地有一個滿載的 eject queue、一個等待注入的封包，以及<strong>必須接有一個 <code>SwapSink</code></strong>。在同一個 <code>tick()</code> 內會發生原子性的三方交換：</p>
+        <ol>
+            <li>將 eject queue 裡最舊的封包驅逐至 <code>SwapSink</code>（RBRG_L2）。</li>
+            <li>將佔據 ring slot、正在繞環中的封包強制 eject 進入剛空出來的位置。</li>
+            <li>將本地等待中的封包直接注入至 ring slot 上。</li>
+        </ol>
+
+        <div class="warning-box">
+            <h3>SWAP 的拓樸限制</h3>
+            <p>目前只有 <code>RBRG_L2</code> 實作了 <code>SwapSink</code> 介面。這意味著在完全沒有 <code>RBRG_L2</code> 的 <strong>AI-processor</strong> 網格拓樸中，即使 <code>drm_active</code> 被觸發，由於 <code>swap_sink == nullptr</code>，SWAP 的恢復邏輯完全不會執行，變為無效的靜默操作。</p>
+        </div>
+
+        <div class="diagram-container">
+            <svg class="svg-diagram" viewBox="0 0 800 150" xmlns="http://www.w3.org/2000/svg">
+                <rect x="50" y="50" width="100" height="40" fill="var(--color-swapsink)" stroke="var(--color-swapsink-border)" stroke-width="2"/>
+                <text x="100" y="75" class="d-text" text-anchor="middle">SwapSink</text>
+
+                <rect x="250" y="50" width="100" height="40" fill="var(--color-station)" stroke="var(--color-station-border)" stroke-width="2"/>
+                <text x="300" y="75" class="d-text" text-anchor="middle">Eject Q (滿)</text>
+
+                <rect x="450" y="50" width="100" height="40" fill="var(--color-ring)" stroke="var(--color-ring-border)" stroke-width="2"/>
+                <text x="500" y="75" class="d-text" text-anchor="middle">Ring Slot</text>
+
+                <rect x="650" y="50" width="100" height="40" fill="var(--color-station)" stroke="var(--color-station-border)" stroke-width="2"/>
+                <text x="700" y="75" class="d-text" text-anchor="middle">Inject Q</text>
+
+                <path d="M 245 70 L 155 70" stroke="#ef4444" stroke-width="2" marker-end="url(#arrowhead)"/>
+                <text x="200" y="60" class="d-text" text-anchor="middle" fill="#ef4444">1. 驅逐</text>
+
+                <path d="M 445 70 L 355 70" stroke="#10b981" stroke-width="2" marker-end="url(#arrowhead)"/>
+                <text x="400" y="60" class="d-text" text-anchor="middle" fill="#10b981">2. Eject</text>
+
+                <path d="M 645 70 L 555 70" stroke="#3b82f6" stroke-width="2" marker-end="url(#arrowhead)"/>
+                <text x="600" y="60" class="d-text" text-anchor="middle" fill="#3b82f6">3. 注入</text>
+            </svg>
+        </div>
+
+        <h2 id="section-8">8. Simulator 調度</h2>
+        <p>系統啟動時，會經過 <code>Config::parse()</code> 將 YAML 對應至各個 C++ 結構（<code>RingConfig</code>、<code>RBRGL1Config</code> 等）。這是一個 fail-fast 流程，若缺少必要欄位會拋出異常。隨後 <code>build_from_config()</code> 會產生物件圖並註冊到 components 清單中（<code>init_topology()</code> 等是僅限單元測試使用的舊代碼）。</p>
+
+        <p>雖然 <code>Simulator::run()</code> 存在，但在正式實驗的路徑（<code>main.cpp</code>）中並沒有被呼叫。實際運作的是兩個手動寫出的迴圈：</p>
+        <ul>
+            <li><strong><code>run_server_experiment()</code></strong>：掃描注入率，<code>HotspotGenerator</code> 目標為 <code>DDRC</code>。迴圈內會呼叫 <code>tick/tock</code> 並手動排空 eject queue，輸出至 <code>server_latency.csv</code>。</li>
+            <li><strong><code>run_ai_experiment()</code></strong>：名為「read/write ratio」掃描，但流量產生器裡實際上沒有 <code>FlitType</code> 的區分邏輯，本質上依舊是注入率掃描，輸出至 <code>ai_bandwidth.csv</code>。</li>
+            <li><strong><code>run_ca_verify()</code></strong>：在 3x3 組態上手動注入封包，跳過流量產生器，用以匯出 Cycle-Accurate 視覺化的 JSON trace。</li>
+        </ul>
+
+        <div class="diagram-container">
+            <svg class="svg-diagram" viewBox="0 0 800 280" xmlns="http://www.w3.org/2000/svg">
+                <!-- YAML -> Config::parse() -->
+                <rect x="50" y="30" width="100" height="40" fill="#f8fafc" stroke="#94a3b8" stroke-width="2" rx="4"/>
+                <text x="100" y="55" class="d-text" text-anchor="middle">YAML</text>
+
+                <path d="M 150 50 L 220 50" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+                <rect x="230" y="30" width="140" height="40" fill="#f1f5f9" stroke="#64748b" stroke-width="2" rx="4"/>
+                <text x="300" y="55" class="d-text" text-anchor="middle">Config::parse()</text>
+
+                <!-- build_from_config() -> Objects -->
+                <path d="M 370 50 L 440 50" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+                <rect x="450" y="30" width="160" height="40" fill="#f1f5f9" stroke="#64748b" stroke-width="2" rx="4"/>
+                <text x="530" y="55" class="d-text" text-anchor="middle">build_from_config()</text>
+
+                <path d="M 530 70 L 530 110" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+                <rect x="430" y="120" width="200" height="60" fill="var(--color-station)" stroke="var(--color-station-border)" stroke-width="2" rx="4"/>
+                <text x="530" y="145" class="d-text" text-anchor="middle">物件圖 (Object Graph)</text>
+                <text x="530" y="165" class="d-text" text-anchor="middle">rings/stations/bridges</text>
+
+                <!-- Experiment Loop -->
+                <path d="M 430 150 L 290 150" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+                <rect x="50" y="120" width="230" height="80" fill="#dbeafe" stroke="#3b82f6" stroke-width="2" rx="4"/>
+                <text x="165" y="145" class="d-text-title" text-anchor="middle">main.cpp 實驗迴圈</text>
+                <text x="165" y="165" class="d-text" text-anchor="middle">1. tick/tock</text>
+                <text x="165" y="185" class="d-text" text-anchor="middle">2. 手動排空 eject queue</text>
+
+                <!-- Output -->
+                <path d="M 165 200 L 165 230" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+                <rect x="100" y="240" width="130" height="30" fill="#f8fafc" stroke="#94a3b8" stroke-width="2" rx="4"/>
+                <text x="165" y="260" class="d-text" text-anchor="middle">CSV / JSON 輸出</text>
+            </svg>
+        </div>
+
+        <h2 id="section-9">9. 統計與追蹤</h2>
+        <p><code>StatCollector</code>（在 <code>stats.cpp</code> 內）目前只是一個空殼，<code>tick()</code> 為空操作，<code>tock()</code> 僅累加週期數。報告的各項指標實際上都是在 <code>main.cpp</code> 的實驗迴圈裡手動累加算出的。</p>
+
+        <p><strong>Latency 的計算陷阱：</strong> <code>Flit</code> 結構內的 <code>create_cycle</code> 與 <code>inject_cycle</code> 宣告了但從未被賦值。目前的實作中，<code>eject_cycle</code> 被挪用來儲存 <code>hop_count</code>。因此，<code>main.cpp</code> 計算輸出的 "average_latency" 實際上是<strong>平均跳數（Hop count）</strong>。因為 deflection 發生在目的地時不會增加 hop_count，這個數值會略微低估封包在網路中經歷的真實週期數。</p>
+
+        <p>至於視覺化的 Trace JSON，<code>TraceDumper</code> 負責錄製各週期的 buffer 狀態。但需要注意：它只支援追蹤 <code>RBRG_L1</code>；對於 <code>RBRG_L2</code> 與 Die 對 Die 拓樸完全沒有提供視覺化的支援。</p>
+
+        <h2 id="section-10">10. 測試</h2>
+        <p>以下為 <code>huawei_c_model/tests/</code> 中的測試檔案與其驗證目標：</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>檔案</th>
+                    <th>測試案例 (Test Case)</th>
+                    <th>驗證內容</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>test_chaos_stress.cpp</code></td>
+                    <td><code>FlitConservationAndLiveness</code></td>
+                    <td>壓力測試下，注入=彈出+在途+佇列中的 flit 數量嚴格守恆。</td>
+                </tr>
+                <tr>
+                    <td><code>test_config.cpp</code></td>
+                    <td><code>ParseServerCPU</code>, <code>ParseAIProcessor</code>, <code>Missing...Throws</code></td>
+                    <td>確保 YAML 解析正確，且缺少必填拓樸/節點欄位時會正確拋出異常。</td>
+                </tr>
+                <tr>
+                    <td><code>test_e_tag.cpp</code></td>
+                    <td><code>ETagEjectionDeflection</code></td>
+                    <td>EjectQueue 容量設為 1 觸發 deflection 後，E-tag 確實生效並保留至下一圈成功 eject。</td>
+                </tr>
+                <tr>
+                    <td><code>test_eject_queue_fuzz.cpp</code></td>
+                    <td><code>FuzzCapacityInvariant</code></td>
+                    <td>無論 reservation 或 push 如何隨機交錯，佇列實體大小都不會超過容量上限 (capacity)。</td>
+                </tr>
+                <tr>
+                    <td><code>test_full_ring.cpp</code></td>
+                    <td><code>FullRingShortestPath</code></td>
+                    <td>在雙向環 (type=full) 中，封包能透過最短路徑 (CCW方向) 抵達目的地。</td>
+                </tr>
+                <tr>
+                    <td><code>test_i_tag.cpp</code></td>
+                    <td><code>ITagInjectionReservation</code></td>
+                    <td>阻塞環路時，等待中的注入封包能取得 I-tag，並在數個週期後成功注入 (防止飢餓)。</td>
+                </tr>
+                <tr>
+                    <td><code>test_rbrg_l1.cpp</code></td>
+                    <td><code>RBRGL1RingChange</code></td>
+                    <td>L1 bridge 可以成功將 flit 從一個環透過 pipeline 傳遞並注入至另一個環。</td>
+                </tr>
+                <tr>
+                    <td><code>test_rbrg_l1_backpressure.cpp</code></td>
+                    <td><code>RBRGL1Backpressure</code></td>
+                    <td>當 egress_queue 滿載時，L1 的 pipeline 會停滯保留狀態，不會讓資料覆寫丟失。</td>
+                </tr>
+                <tr>
+                    <td><code>test_rbrg_l2.cpp</code></td>
+                    <td><code>RBRGL2DieToDieTransfer</code></td>
+                    <td>L2 bridge 可以經過指定的 latency cycles，成功將 flit 從 local 傳送到 remote RX queue。</td>
+                </tr>
+                <tr>
+                    <td><code>test_rbrg_l2_credit.cpp</code></td>
+                    <td><code>RBRGL2CreditControl</code></td>
+                    <td>L2 的 Credit 模型有效，當沒 credit 時會停止傳送，並在對端彈出後正確收到 credit 更新。</td>
+                </tr>
+                <tr>
+                    <td><code>test_simulator.cpp</code></td>
+                    <td><code>BasicCycleLoop</code></td>
+                    <td>模擬器的基本 tick/tock 迴圈與 <code>stats.total_cycles</code> 能正確累加。</td>
+                </tr>
+                <tr>
+                    <td><code>test_single_ring.cpp</code></td>
+                    <td><code>SingleHalfRingLatency</code></td>
+                    <td>在單一單向環中，flit 每週期移動一格，並成功進入目的地的 eject_q。</td>
+                </tr>
+                <tr>
+                    <td><code>test_swap_deadlock.cpp</code></td>
+                    <td><code>DRMDetectionAndSwap</code></td>
+                    <td>當連續注入失敗超過閾值，DRM 啟動，並觸發三方 SWAP (受害封包進入 SwapSink)。</td>
+                </tr>
+                <tr>
+                    <td><code>test_validation.cpp</code></td>
+                    <td><code>RoundRobinFairness</code>, <code>FlitConservation</code></td>
+                    <td>站點的多個 input ports 在注入時具有公平性；基礎環路運作的 Flit 守恆性。</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2 id="section-11">11. 文件/計畫與目前實作之間的落差</h2>
+        <div class="warning-box">
+            <h3>⚠️ 實作落差 (Implementation Gaps)</h3>
+            <p>下列為原始 <code>Huawei_CA_model_plan.md</code> 設計文件與當前程式碼庫的實際差異。接手與維護者請務必以此為準，避免錯誤假設：</p>
+            <ul>
+                <li><strong><code>StatCollector</code> 是空殼：</strong>計畫中的延遲百分位、bridge 佔用率皆無實作；出貨實驗指標全在 <code>main.cpp</code> 中臨時湊算。</li>
+                <li><strong>時間戳欄位為假：</strong><code>Flit::create_cycle</code>/<code>inject_cycle</code> 皆為死欄位未賦值；<code>eject_cycle</code> 實質上存的是 <code>hop_count</code>，計算出的不是真實的 cycle 延遲。</li>
+                <li><strong>方向選擇形同虛設：</strong>CW/CCW 最短路徑選擇邏輯雖存在，但 <code>HotspotGenerator</code> 硬編碼為 CW，實際實驗中未被觸發。</li>
+                <li><strong>DRM 並非狀態機：</strong>DRM 實作為一簡單布林開關，無退避延滯機制，只要注入成功一次即退出。</li>
+                <li><strong>SWAP 在 AI 拓樸無效：</strong>由於 SWAP 需要 <code>SwapSink</code>（目前只有 RBRG_L2 實作），在 AI-processor 中即使觸發 DRM 也是靜默無效的操作。</li>
+                <li><strong>RBRG_L2 參數寫死：</strong>其 <code>queue_depth</code> 與 <code>credit_depth</code> 在程式碼中寫死，無法透過 YAML 配置。</li>
+                <li><strong>Trace 視覺化限制：</strong>完全不支援 <code>RBRG_L2</code> 或是 Die 對 Die 的拓樸，僅捕捉 L1 Bridge。</li>
+                <li><strong>AI 實驗的「讀寫比」假象：</strong>雖然實驗名稱宣稱測試讀寫比（read/write ratio），但流量產生器無區分 flit type 邏輯，純粹只是重新命名後的注入率掃描。</li>
+                <li><strong>執行入口殘留：</strong><code>Simulator::run()</code> 與 <code>init_topology()</code> 等函數目前皆為測試用殘留代碼，正式實驗手寫了自己的迴圈。</li>
+                <li><strong>物理參數缺失：</strong>設計計畫中的頻率、站點間距等物理建模參數，在 Config 中完全沒有對應的實作欄位。</li>
+            </ul>
+        </div>
+
+    </main>
+
+    <!-- SVG Arrowhead Definition -->
+    <svg style="width:0;height:0;position:absolute;" aria-hidden="true" focusable="false">
+      <defs>
+        <marker id="arrowhead" markerWidth="10" markerHeight="7"
+        refX="9" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#333" />
+        </marker>
+      </defs>
+    </svg>
+
+</body>
+</html>
