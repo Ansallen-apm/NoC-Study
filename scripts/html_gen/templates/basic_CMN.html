@@ -20,12 +20,20 @@
 
     <div class="config-panel">
         <h3>⚙️ 模擬參數設定</h3>
+        <p style="color: #d35400; font-weight: bold;">此為 basic / 最小範圍版本，僅涵蓋 2 組時脈頻率 × 2 組 VC × 3 種拓撲。</p>
         <p><strong>拓撲結構 (Topology):</strong> Ring (16 Node) / Mesh (4x4) / Torus (4x4)</p>
         <p><strong>虛擬通道數量 (VC):</strong> 1 (單一實體通道) 與 2 (防死鎖設定)</p>
         <p><strong>緩衝區大小 (Buffer Size):</strong> 4 flits</p>
         <p><strong>封包大小 (Packet Size):</strong> 1 flit (64 Bytes)</p>
         <p><strong>流量模式 (Traffic Pattern):</strong> Uniform Random (滿載 Injection Rate = 1.0)</p>
         <p><strong>特別注意:</strong> 表格中的「吞吐量」已標準化為「單節點平均吞吐量 (GB/s/Node)」。理論「對分頻寬」為全網切半頻寬上限。</p>
+    </div>
+
+    <div class="card">
+        <h3>Throughput vs Clock Frequency (VC=2, BookSim)</h3>
+        <div class="chart-container" style="height: 400px;">
+            <canvas id="throughputChart"></canvas>
+        </div>
     </div>
 
     {% for freq in [2.5, 1.5] %}
@@ -80,4 +88,69 @@
             <li><strong>吞吐量單位:</strong> C Model 與 BookSim 的吞吐量已轉換為「單節點平均吞吐量 (GB/s/Node)」，使其能直觀反映每個發送端在滿載下可獲得的實際頻寬份額。</li>
         </ul>
     </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const chartData = {{ data | tojson | safe }};
+
+    // Filter data for VC=2 to avoid deadlocks
+    const vc2Data = chartData.filter(d => d.vcs === 2);
+
+    // Extract unique topologies and frequencies
+    const topologies = [...new Set(vc2Data.map(d => d.topology))].sort();
+    const frequencies = [...new Set(vc2Data.map(d => d.frequency_GHz))].sort((a, b) => a - b);
+
+    const datasets = topologies.map((topo, i) => {
+        const colors = ['#3498db', '#e74c3c', '#2ecc71', '#9b59b6'];
+        const dataPoints = frequencies.map(freq => {
+            const item = vc2Data.find(d => d.topology === topo && d.frequency_GHz === freq);
+            return item && !item.booksim.deadlock ? item.booksim.bw_GBps_per_node : 0;
+        });
+
+        return {
+            label: topo.charAt(0).toUpperCase() + topo.slice(1),
+            data: dataPoints,
+            backgroundColor: colors[i % colors.length],
+            borderColor: colors[i % colors.length],
+            borderWidth: 1
+        };
+    });
+
+    const ctx = document.getElementById('throughputChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: frequencies.map(f => f + ' GHz'),
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Throughput (GB/s/Node)'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Clock Frequency'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: false
+                }
+            }
+        }
+    });
+</script>
 {% endblock %}

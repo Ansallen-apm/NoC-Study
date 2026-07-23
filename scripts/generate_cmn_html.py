@@ -18,7 +18,7 @@ html_content = render_template('basic_CMN.html',
                                base_path="../../../",
                                timestamp=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                                data=data,
-                               chart_js=False,
+                               chart_js=True,
                                datatables=False)
 
 save_html(html_content, HTML_FILE)
