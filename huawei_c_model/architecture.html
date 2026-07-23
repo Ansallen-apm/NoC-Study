@@ -312,26 +312,53 @@
         <p>值得注意的是，<code>Ring::tick()</code> 本身是空的。修改 Ring slot 內容的實際工作是在 <code>CrossStation::tick()</code> 寫入，而 <code>Ring::tock()</code> 才執行真正的 slot 旋轉移動邏輯。</p>
 
         <div class="diagram-container">
-            <svg class="svg-diagram" viewBox="0 0 800 200" xmlns="http://www.w3.org/2000/svg">
-                <rect x="50" y="20" width="700" height="160" fill="none" stroke="#e2e8f0" stroke-width="2" rx="4"/>
-                <line x1="400" y1="20" x2="400" y2="180" stroke="#e2e8f0" stroke-width="2" stroke-dasharray="4,4"/>
+            <svg class="svg-diagram" viewBox="0 0 800 220" xmlns="http://www.w3.org/2000/svg">
+                <!-- tick() Phase -->
+                <rect x="50" y="20" width="450" height="180" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2" rx="4"/>
+                <text x="275" y="45" class="d-text-title" text-anchor="middle">Phase 1: tick() (同週期內順序執行)</text>
 
-                <text x="225" y="45" class="d-text-title" text-anchor="middle">Phase 1: tick()</text>
-                <text x="575" y="45" class="d-text-title" text-anchor="middle">Phase 2: tock()</text>
+                <!-- Double buffering concept in tick -->
+                <rect x="80" y="60" width="80" height="40" fill="var(--color-ring)" stroke="var(--color-ring-border)" stroke-width="2" fill-opacity="0.5"/>
+                <text x="120" y="75" class="d-text" text-anchor="middle">curr_slot</text>
+                <text x="120" y="90" class="d-text" text-anchor="middle">(舊狀態)</text>
 
-                <rect x="80" y="70" width="300" height="30" fill="var(--color-station)" stroke="var(--color-station-border)" stroke-width="1" rx="4"/>
-                <text x="230" y="90" class="d-text" text-anchor="middle">1. CrossStation::tick() (讀 curr, 寫 next_slots)</text>
+                <rect x="380" y="60" width="80" height="40" fill="#bfdbfe" stroke="#3b82f6" stroke-width="2"/>
+                <text x="420" y="75" class="d-text" text-anchor="middle">next_slot</text>
+                <text x="420" y="90" class="d-text" text-anchor="middle">(新狀態)</text>
 
-                <rect x="80" y="110" width="300" height="30" fill="var(--color-rbrg-l1)" stroke="var(--color-rbrg-l1-border)" stroke-width="1" rx="4"/>
-                <text x="230" y="130" class="d-text" text-anchor="middle">2. Bridge::tick() (偷取 next_slots)</text>
+                <!-- CrossStation -->
+                <rect x="200" y="60" width="140" height="40" fill="var(--color-station)" stroke="var(--color-station-border)" stroke-width="2" rx="4"/>
+                <text x="270" y="85" class="d-text" text-anchor="middle">1. CrossStation</text>
 
-                <rect x="430" y="70" width="300" height="30" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1" rx="4"/>
-                <text x="580" y="90" class="d-text" text-anchor="middle">All Components::tock() (提交 next -> curr)</text>
+                <path d="M 160 80 L 200 80" stroke="#64748b" stroke-width="2" stroke-dasharray="2,2" marker-end="url(#arrowhead)"/>
+                <text x="180" y="75" class="d-text" text-anchor="middle">讀</text>
 
-                <rect x="430" y="110" width="300" height="30" fill="var(--color-ring)" stroke="var(--color-ring-border)" stroke-width="1" rx="4"/>
-                <text x="580" y="130" class="d-text" text-anchor="middle">Ring::tock() (實體 Slot 移動旋轉)</text>
+                <path d="M 340 80 L 380 80" stroke="#3b82f6" stroke-width="2" marker-end="url(#arrowhead)"/>
+                <text x="360" y="75" class="d-text" text-anchor="middle">寫</text>
 
-                <path d="M 380 85 L 420 85" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+                <!-- Bridge Stealing -->
+                <rect x="200" y="130" width="140" height="40" fill="var(--color-rbrg-l1)" stroke="var(--color-rbrg-l1-border)" stroke-width="2" rx="4"/>
+                <text x="270" y="155" class="d-text" text-anchor="middle">2. Bridge</text>
+
+                <path d="M 380 100 L 340 130" stroke="#10b981" stroke-width="2" stroke-dasharray="4,4" marker-end="url(#arrowhead)"/>
+                <text x="365" y="125" class="d-text" text-anchor="middle" fill="#10b981">偷取</text>
+
+                <!-- tock() Phase -->
+                <rect x="520" y="20" width="230" height="180" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2" rx="4"/>
+                <text x="635" y="45" class="d-text-title" text-anchor="middle">Phase 2: tock()</text>
+
+                <rect x="550" y="80" width="60" height="40" fill="#bfdbfe" stroke="#3b82f6" stroke-width="2"/>
+                <text x="580" y="105" class="d-text" text-anchor="middle">next</text>
+
+                <path d="M 610 100 L 660 100" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+                <text x="635" y="90" class="d-text" text-anchor="middle">提交</text>
+
+                <rect x="660" y="80" width="60" height="40" fill="var(--color-ring)" stroke="var(--color-ring-border)" stroke-width="2"/>
+                <text x="690" y="95" class="d-text" text-anchor="middle">curr</text>
+                <text x="690" y="110" class="d-text" text-anchor="middle">(下一週期)</text>
+
+                <!-- Separator arrow -->
+                <path d="M 500 100 L 520 100" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrowhead)"/>
             </svg>
         </div>
 
@@ -476,27 +503,67 @@
         </div>
 
         <div class="diagram-container">
-            <svg class="svg-diagram" viewBox="0 0 800 150" xmlns="http://www.w3.org/2000/svg">
-                <rect x="50" y="50" width="100" height="40" fill="var(--color-swapsink)" stroke="var(--color-swapsink-border)" stroke-width="2"/>
-                <text x="100" y="75" class="d-text" text-anchor="middle">SwapSink</text>
+            <svg class="svg-diagram" viewBox="0 0 800 350" xmlns="http://www.w3.org/2000/svg">
+                <!-- Panel 1: Before -->
+                <rect x="20" y="20" width="220" height="300" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2" rx="4"/>
+                <text x="130" y="45" class="d-text-title" text-anchor="middle">1. SWAP 前 (Before)</text>
 
-                <rect x="250" y="50" width="100" height="40" fill="var(--color-station)" stroke="var(--color-station-border)" stroke-width="2"/>
-                <text x="300" y="75" class="d-text" text-anchor="middle">Eject Q (滿)</text>
+                <rect x="60" y="70" width="140" height="40" fill="white" stroke="var(--color-swapsink-border)" stroke-width="2" stroke-dasharray="4,4"/>
+                <text x="130" y="95" class="d-text" text-anchor="middle">SwapSink (空)</text>
 
-                <rect x="450" y="50" width="100" height="40" fill="var(--color-ring)" stroke="var(--color-ring-border)" stroke-width="2"/>
-                <text x="500" y="75" class="d-text" text-anchor="middle">Ring Slot</text>
+                <rect x="60" y="140" width="140" height="40" fill="var(--color-station)" stroke="var(--color-station-border)" stroke-width="2"/>
+                <text x="130" y="165" class="d-text" text-anchor="middle">Eject Q (滿: Flit A)</text>
 
-                <rect x="650" y="50" width="100" height="40" fill="var(--color-station)" stroke="var(--color-station-border)" stroke-width="2"/>
-                <text x="700" y="75" class="d-text" text-anchor="middle">Inject Q</text>
+                <rect x="60" y="210" width="140" height="40" fill="var(--color-ring)" stroke="var(--color-ring-border)" stroke-width="2"/>
+                <text x="130" y="235" class="d-text" text-anchor="middle">Ring Slot (Flit B)</text>
 
-                <path d="M 245 70 L 155 70" stroke="#ef4444" stroke-width="2" marker-end="url(#arrowhead)"/>
-                <text x="200" y="60" class="d-text" text-anchor="middle" fill="#ef4444">1. 驅逐</text>
+                <rect x="60" y="280" width="140" height="40" fill="var(--color-station)" stroke="var(--color-station-border)" stroke-width="2"/>
+                <text x="130" y="305" class="d-text" text-anchor="middle">Inject Q (等: Flit C)</text>
 
-                <path d="M 445 70 L 355 70" stroke="#10b981" stroke-width="2" marker-end="url(#arrowhead)"/>
-                <text x="400" y="60" class="d-text" text-anchor="middle" fill="#10b981">2. Eject</text>
+                <path d="M 250 170 L 270 170" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrowhead)"/>
 
-                <path d="M 645 70 L 555 70" stroke="#3b82f6" stroke-width="2" marker-end="url(#arrowhead)"/>
-                <text x="600" y="60" class="d-text" text-anchor="middle" fill="#3b82f6">3. 注入</text>
+                <!-- Panel 2: During -->
+                <rect x="290" y="20" width="220" height="300" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2" rx="4"/>
+                <text x="400" y="45" class="d-text-title" text-anchor="middle">2. SWAP 期間 (During)</text>
+
+                <rect x="330" y="70" width="140" height="40" fill="var(--color-swapsink)" stroke="var(--color-swapsink-border)" stroke-width="2"/>
+                <text x="400" y="95" class="d-text" text-anchor="middle">SwapSink</text>
+
+                <rect x="330" y="140" width="140" height="40" fill="var(--color-station)" stroke="var(--color-station-border)" stroke-width="2"/>
+                <text x="400" y="165" class="d-text" text-anchor="middle">Eject Q</text>
+
+                <rect x="330" y="210" width="140" height="40" fill="var(--color-ring)" stroke="var(--color-ring-border)" stroke-width="2"/>
+                <text x="400" y="235" class="d-text" text-anchor="middle">Ring Slot</text>
+
+                <rect x="330" y="280" width="140" height="40" fill="var(--color-station)" stroke="var(--color-station-border)" stroke-width="2"/>
+                <text x="400" y="305" class="d-text" text-anchor="middle">Inject Q</text>
+
+                <path d="M 400 135 L 400 115" stroke="#ef4444" stroke-width="2" marker-end="url(#arrowhead)"/>
+                <text x="450" y="130" class="d-text" fill="#ef4444">1. 驅逐 (A)</text>
+
+                <path d="M 400 205 L 400 185" stroke="#10b981" stroke-width="2" marker-end="url(#arrowhead)"/>
+                <text x="450" y="200" class="d-text" fill="#10b981">2. Eject (B)</text>
+
+                <path d="M 400 275 L 400 255" stroke="#3b82f6" stroke-width="2" marker-end="url(#arrowhead)"/>
+                <text x="450" y="270" class="d-text" fill="#3b82f6">3. 注入 (C)</text>
+
+                <path d="M 520 170 L 540 170" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+                <!-- Panel 3: After -->
+                <rect x="560" y="20" width="220" height="300" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2" rx="4"/>
+                <text x="670" y="45" class="d-text-title" text-anchor="middle">3. SWAP 後 (After)</text>
+
+                <rect x="600" y="70" width="140" height="40" fill="var(--color-swapsink)" stroke="var(--color-swapsink-border)" stroke-width="2"/>
+                <text x="670" y="95" class="d-text" text-anchor="middle">SwapSink (Flit A)</text>
+
+                <rect x="600" y="140" width="140" height="40" fill="var(--color-station)" stroke="var(--color-station-border)" stroke-width="2"/>
+                <text x="670" y="165" class="d-text" text-anchor="middle">Eject Q (含 Flit B)</text>
+
+                <rect x="600" y="210" width="140" height="40" fill="var(--color-ring)" stroke="var(--color-ring-border)" stroke-width="2"/>
+                <text x="670" y="235" class="d-text" text-anchor="middle">Ring Slot (Flit C)</text>
+
+                <rect x="600" y="280" width="140" height="40" fill="white" stroke="var(--color-station-border)" stroke-width="2" stroke-dasharray="4,4"/>
+                <text x="670" y="305" class="d-text" text-anchor="middle">Inject Q (空)</text>
             </svg>
         </div>
 
@@ -555,6 +622,31 @@
         <p><strong>Latency 的計算陷阱：</strong> <code>Flit</code> 結構內的 <code>create_cycle</code> 與 <code>inject_cycle</code> 宣告了但從未被賦值。目前的實作中，<code>eject_cycle</code> 被挪用來儲存 <code>hop_count</code>。因此，<code>main.cpp</code> 計算輸出的 "average_latency" 實際上是<strong>平均跳數（Hop count）</strong>。因為 deflection 發生在目的地時不會增加 hop_count，這個數值會略微低估封包在網路中經歷的真實週期數。</p>
 
         <p>至於視覺化的 Trace JSON，<code>TraceDumper</code> 負責錄製各週期的 buffer 狀態。但需要注意：它只支援追蹤 <code>RBRG_L1</code>；對於 <code>RBRG_L2</code> 與 Die 對 Die 拓樸完全沒有提供視覺化的支援。</p>
+
+        <p><strong>Trace JSON 範例片段：</strong></p>
+        <pre><code>{
+  "topology": {
+    "nodes": [
+      {"id": "R0_S0", "type": "station", "x": 0, "y": 0},
+      {"id": "B_R0_R1", "type": "rbrg_l1", "x": 1, "y": 0}
+    ],
+    "links": [...]
+  },
+  "cycles": [
+    {
+      "cycle": 1,
+      "buffers": [
+        {
+          "node_id": "R0_S0",
+          "buffer_name": "inject_q",
+          "capacity": 4,
+          "current_size": 1,
+          "flit_ids": [101]
+        }
+      ]
+    }
+  ]
+}</code></pre>
 
         <h2 id="section-10">10. 測試</h2>
         <p>以下為 <code>huawei_c_model/tests/</code> 中的測試檔案與其驗證目標：</p>
