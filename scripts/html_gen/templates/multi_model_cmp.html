@@ -27,6 +27,13 @@
         <label>Traffic:</label> <select id="selTraffic" onchange="updateView()"></select>
         <label>Routing:</label> <select id="selRouting" onchange="updateView()"></select>
         <label>VCs:</label> <select id="selVCs" onchange="updateView()"></select>
+
+        <div style="margin-top: 15px;">
+            <h4>Available Configurations with Complete Data (Click to switch):</h4>
+            <div id="completeDataLinks" style="display: flex; flex-wrap: wrap; gap: 10px;">
+                <!-- Populated by JS -->
+            </div>
+        </div>
     </div>
 
     <!-- Charts and Tables -->
@@ -42,6 +49,9 @@
         <div class="chart-container">
             <canvas id="throughputChart"></canvas>
         </div>
+        <p style="font-size: 0.9em; color: #666; margin-top: 10px;">
+            *註：Python M/D/1 理論模型主要用於延遲 (Latency) 分析，假設在飽和前吞吐量等於注入率，因此不顯示於此圖表中。
+        </p>
     </div>
 
     <div class="card">
@@ -70,6 +80,15 @@
         let latencyChartObj = null;
         let throughputChartObj = null;
 
+        function setFilters(t, d, tr, r, v) {
+            document.getElementById('selTopo').value = t;
+            document.getElementById('selDim').value = d;
+            document.getElementById('selTraffic').value = tr;
+            document.getElementById('selRouting').value = r;
+            document.getElementById('selVCs').value = v;
+            updateView();
+        }
+
         function initFilters() {
             const topos = new Set();
             const dims = new Set();
@@ -85,21 +104,68 @@
                 vcs.add(d.vcs);
             });
 
-            const populate = (id, set) => {
+            // For numbers, sort numerically; for strings, sort alphabetically.
+            const populate = (id, set, isNumeric) => {
                 const el = document.getElementById(id);
                 el.innerHTML = '';
-                Array.from(set).sort().forEach(v => {
+                let arr = Array.from(set);
+                if (isNumeric) {
+                    arr.sort((a, b) => parseFloat(a) - parseFloat(b));
+                } else {
+                    arr.sort();
+                }
+                arr.forEach(v => {
                     let opt = document.createElement("option");
                     opt.value = v; opt.text = v;
                     el.appendChild(opt);
                 });
             };
 
-            populate('selTopo', topos);
-            populate('selDim', dims);
-            populate('selTraffic', traffics);
-            populate('selRouting', routings);
-            populate('selVCs', vcs);
+            populate('selTopo', topos, false);
+            populate('selDim', dims, true);
+            populate('selTraffic', traffics, false);
+            populate('selRouting', routings, false);
+            populate('selVCs', vcs, true);
+
+            // Set default selections to the first record in aggregatedData, if it exists
+            if (aggregatedData && aggregatedData.length > 0) {
+                const defaultRecord = aggregatedData[0];
+                document.getElementById('selTopo').value = defaultRecord.topology;
+                document.getElementById('selDim').value = defaultRecord.dim;
+                document.getElementById('selTraffic').value = defaultRecord.traffic;
+                document.getElementById('selRouting').value = defaultRecord.routing;
+                document.getElementById('selVCs').value = defaultRecord.vcs;
+            }
+
+            // Populate links for configurations with complete data (all 3 models)
+            const linksContainer = document.getElementById('completeDataLinks');
+            linksContainer.innerHTML = '';
+            let completeCount = 0;
+
+            aggregatedData.forEach(d => {
+                const hasBS = d.models && d.models.booksim && d.models.booksim.length > 0;
+                const hasCM = d.models && d.models.c_model && d.models.c_model.length > 0;
+                const hasPM = d.models && d.models.python_md1 && d.models.python_md1.length > 0;
+
+                if (hasBS && hasCM && hasPM) {
+                    completeCount++;
+                    const btn = document.createElement('button');
+                    btn.innerText = `${d.topology}, Dim:${d.dim}, Traffic:${d.traffic}, Routing:${d.routing}, VCs:${d.vcs}`;
+                    btn.style.padding = "5px 10px";
+                    btn.style.cursor = "pointer";
+                    btn.style.border = "1px solid #007bff";
+                    btn.style.backgroundColor = "#e7f1ff";
+                    btn.style.color = "#007bff";
+                    btn.style.borderRadius = "4px";
+
+                    btn.onclick = () => setFilters(d.topology, d.dim, d.traffic, d.routing, d.vcs);
+                    linksContainer.appendChild(btn);
+                }
+            });
+
+            if (completeCount === 0) {
+                linksContainer.innerHTML = '<span style="color: #666; font-style: italic;">No configurations with complete three-way data found.</span>';
+            }
         }
 
         function updateView() {
