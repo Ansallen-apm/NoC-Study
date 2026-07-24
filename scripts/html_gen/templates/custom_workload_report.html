@@ -28,6 +28,47 @@
         <p><strong>資料寬度 (Data Width):</strong> 64 Bytes / cycle</p>
         <p><strong>單一通道極限頻寬 (Link Max BW):</strong> 96 GB/sec</p>
         <p><strong>流量特徵:</strong> 依據使用者給定之非均勻 16x16 機率矩陣與獨立注入率 (BW Utilization)。部分節點要求 100% (96GB/s) 發送頻寬。</p>
+
+        <details style="margin-top: 15px; border: 1px solid #ddd; padding: 10px; border-radius: 4px; background: #f9f9f9;">
+            <summary style="cursor: pointer; font-weight: bold; color: #2980b9;">顯示輸入流量矩陣與注入率 (Show Traffic Matrix & Injection Rates)</summary>
+
+            {% if injection_rates %}
+            <div style="margin-top: 15px;">
+                <strong>獨立注入率向量 (Injection Rates):</strong>
+                <div style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px;">
+                    {% for rate in injection_rates %}
+                    <span style="padding: 2px 6px; border: 1px solid #ccc; border-radius: 3px; background: #fff; font-size: 12px;">Node {{ loop.index0 }}: {{ rate }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if matrix %}
+            <div style="margin-top: 15px; overflow-x: auto;">
+                <strong>非均勻機率矩陣 (Traffic Probability Matrix 16x16):</strong>
+                <table style="width: auto; margin-top: 5px; font-size: 12px;">
+                    <thead>
+                        <tr>
+                            <th>Src \ Dst</th>
+                            {% for i in range(16) %}
+                            <th>{{ i }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in matrix %}
+                        <tr>
+                            <td><strong>{{ loop.index0 }}</strong></td>
+                            {% for val in row %}
+                            <td style="{% if val >= 0.8 %}background-color: #ffcccc;{% elif val >= 0.4 %}background-color: #ffebcc;{% endif %}">{{ "%.3f"|format(val) }}</td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+        </details>
     </div>
 
     <table>
@@ -37,6 +78,8 @@
                 <th>理論最大通道負載 (FLITs/cycle)</th>
                 <th>C Model 吞吐量 (Packets/cycle)</th>
                 <th>C Model 平均延遲 (Cycles)</th>
+                <th>BookSim 吞吐量 (Packets/cycle)</th>
+                <th>BookSim 平均延遲 (Cycles)</th>
             </tr>
         </thead>
         <tbody id="table-body">
@@ -70,14 +113,42 @@
             const tbody = document.getElementById('table-body');
             for (const [topo, data] of Object.entries(dseResults)) {
                 const tr = document.createElement('tr');
+                const bsThroughput = data.booksim_throughput !== undefined ? data.booksim_throughput.toFixed(4) : 'N/A';
+                const bsLatency = data.booksim_latency !== undefined ? data.booksim_latency.toFixed(2) : 'N/A';
                 tr.innerHTML = `
                     <td><strong>${topo.toUpperCase()}</strong></td>
                     <td>${data.theory_max_load.toFixed(4)}</td>
                     <td>${data.c_model_throughput.toFixed(4)}</td>
                     <td>${data.c_model_latency.toFixed(2)}</td>
+                    <td>${bsThroughput}</td>
+                    <td>${bsLatency}</td>
                 `;
                 tbody.appendChild(tr);
             }
+        }
+
+        function drawHeatmapLegend(ctx, maxLoad, padding) {
+            const width = 350;
+            const height = 350;
+            const legendX = 20;
+            const legendY = height - padding + 10;
+            const legendW = width - 40;
+            const legendH = 10;
+
+            const grad = ctx.createLinearGradient(legendX, 0, legendX + legendW, 0);
+            grad.addColorStop(0, 'rgb(0, 0, 255)');
+            grad.addColorStop(1, 'rgb(255, 0, 0)');
+
+            ctx.fillStyle = grad;
+            ctx.fillRect(legendX, legendY, legendW, legendH);
+
+            ctx.fillStyle = '#333';
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            ctx.fillText('0', legendX, legendY + legendH + 2);
+            ctx.fillText((maxLoad / 2).toFixed(2), legendX + legendW / 2, legendY + legendH + 2);
+            ctx.fillText(maxLoad.toFixed(2) + (maxLoad > 0 ? ' FLITs' : ''), legendX + legendW, legendY + legendH + 2);
         }
 
         function drawHeatmaps() {
@@ -108,6 +179,7 @@
                 }
 
                 renderTopology(ctx, topo, edgesData, computedMaxLoad);
+                drawHeatmapLegend(ctx, computedMaxLoad, 40);
             }
         }
 

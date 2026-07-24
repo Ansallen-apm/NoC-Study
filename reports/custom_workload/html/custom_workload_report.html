@@ -66,6 +66,692 @@
         <p><strong>資料寬度 (Data Width):</strong> 64 Bytes / cycle</p>
         <p><strong>單一通道極限頻寬 (Link Max BW):</strong> 96 GB/sec</p>
         <p><strong>流量特徵:</strong> 依據使用者給定之非均勻 16x16 機率矩陣與獨立注入率 (BW Utilization)。部分節點要求 100% (96GB/s) 發送頻寬。</p>
+
+        <details style="margin-top: 15px; border: 1px solid #ddd; padding: 10px; border-radius: 4px; background: #f9f9f9;">
+            <summary style="cursor: pointer; font-weight: bold; color: #2980b9;">顯示輸入流量矩陣與注入率 (Show Traffic Matrix & Injection Rates)</summary>
+
+
+            <div style="margin-top: 15px;">
+                <strong>獨立注入率向量 (Injection Rates):</strong>
+                <div style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px;">
+
+                    <span style="padding: 2px 6px; border: 1px solid #ccc; border-radius: 3px; background: #fff; font-size: 12px;">Node 0: 1.0</span>
+
+                    <span style="padding: 2px 6px; border: 1px solid #ccc; border-radius: 3px; background: #fff; font-size: 12px;">Node 1: 0.2</span>
+
+                    <span style="padding: 2px 6px; border: 1px solid #ccc; border-radius: 3px; background: #fff; font-size: 12px;">Node 2: 0.1</span>
+
+                    <span style="padding: 2px 6px; border: 1px solid #ccc; border-radius: 3px; background: #fff; font-size: 12px;">Node 3: 1.0</span>
+
+                    <span style="padding: 2px 6px; border: 1px solid #ccc; border-radius: 3px; background: #fff; font-size: 12px;">Node 4: 1.0</span>
+
+                    <span style="padding: 2px 6px; border: 1px solid #ccc; border-radius: 3px; background: #fff; font-size: 12px;">Node 5: 0.2</span>
+
+                    <span style="padding: 2px 6px; border: 1px solid #ccc; border-radius: 3px; background: #fff; font-size: 12px;">Node 6: 0.2</span>
+
+                    <span style="padding: 2px 6px; border: 1px solid #ccc; border-radius: 3px; background: #fff; font-size: 12px;">Node 7: 1.0</span>
+
+                    <span style="padding: 2px 6px; border: 1px solid #ccc; border-radius: 3px; background: #fff; font-size: 12px;">Node 8: 1.0</span>
+
+                    <span style="padding: 2px 6px; border: 1px solid #ccc; border-radius: 3px; background: #fff; font-size: 12px;">Node 9: 0.2</span>
+
+                    <span style="padding: 2px 6px; border: 1px solid #ccc; border-radius: 3px; background: #fff; font-size: 12px;">Node 10: 0.2</span>
+
+                    <span style="padding: 2px 6px; border: 1px solid #ccc; border-radius: 3px; background: #fff; font-size: 12px;">Node 11: 1.0</span>
+
+                    <span style="padding: 2px 6px; border: 1px solid #ccc; border-radius: 3px; background: #fff; font-size: 12px;">Node 12: 1.0</span>
+
+                    <span style="padding: 2px 6px; border: 1px solid #ccc; border-radius: 3px; background: #fff; font-size: 12px;">Node 13: 0.1</span>
+
+                    <span style="padding: 2px 6px; border: 1px solid #ccc; border-radius: 3px; background: #fff; font-size: 12px;">Node 14: 0.1</span>
+
+                    <span style="padding: 2px 6px; border: 1px solid #ccc; border-radius: 3px; background: #fff; font-size: 12px;">Node 15: 1.0</span>
+
+                </div>
+            </div>
+
+
+
+            <div style="margin-top: 15px; overflow-x: auto;">
+                <strong>非均勻機率矩陣 (Traffic Probability Matrix 16x16):</strong>
+                <table style="width: auto; margin-top: 5px; font-size: 12px;">
+                    <thead>
+                        <tr>
+                            <th>Src \ Dst</th>
+
+                            <th>0</th>
+
+                            <th>1</th>
+
+                            <th>2</th>
+
+                            <th>3</th>
+
+                            <th>4</th>
+
+                            <th>5</th>
+
+                            <th>6</th>
+
+                            <th>7</th>
+
+                            <th>8</th>
+
+                            <th>9</th>
+
+                            <th>10</th>
+
+                            <th>11</th>
+
+                            <th>12</th>
+
+                            <th>13</th>
+
+                            <th>14</th>
+
+                            <th>15</th>
+
+                        </tr>
+                    </thead>
+                    <tbody>
+
+                        <tr>
+                            <td><strong>0</strong></td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.010</td>
+
+                            <td style="">0.010</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="background-color: #ffebcc;">0.700</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.030</td>
+
+                            <td style="">0.170</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.030</td>
+
+                            <td style="">0.020</td>
+
+                            <td style="">0.005</td>
+
+                            <td style="">0.005</td>
+
+                            <td style="">0.020</td>
+
+                        </tr>
+
+                        <tr>
+                            <td><strong>1</strong></td>
+
+                            <td style="">0.056</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.056</td>
+
+                            <td style="">0.185</td>
+
+                            <td style="">0.019</td>
+
+                            <td style="">0.019</td>
+
+                            <td style="">0.185</td>
+
+                            <td style="">0.185</td>
+
+                            <td style="">0.019</td>
+
+                            <td style="">0.019</td>
+
+                            <td style="">0.185</td>
+
+                            <td style="">0.019</td>
+
+                            <td style="">0.019</td>
+
+                            <td style="">0.019</td>
+
+                            <td style="">0.019</td>
+
+                        </tr>
+
+                        <tr>
+                            <td><strong>2</strong></td>
+
+                            <td style="">0.024</td>
+
+                            <td style="">0.024</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.024</td>
+
+                            <td style="">0.122</td>
+
+                            <td style="">0.024</td>
+
+                            <td style="">0.024</td>
+
+                            <td style="">0.122</td>
+
+                            <td style="">0.122</td>
+
+                            <td style="">0.024</td>
+
+                            <td style="">0.024</td>
+
+                            <td style="">0.122</td>
+
+                            <td style="">0.122</td>
+
+                            <td style="">0.049</td>
+
+                            <td style="">0.049</td>
+
+                            <td style="">0.122</td>
+
+                        </tr>
+
+                        <tr>
+                            <td><strong>3</strong></td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.010</td>
+
+                            <td style="">0.010</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.030</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.170</td>
+
+                            <td style="">0.030</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="background-color: #ffebcc;">0.700</td>
+
+                            <td style="">0.020</td>
+
+                            <td style="">0.005</td>
+
+                            <td style="">0.005</td>
+
+                            <td style="">0.020</td>
+
+                        </tr>
+
+                        <tr>
+                            <td><strong>4</strong></td>
+
+                            <td style="">0.150</td>
+
+                            <td style="">0.030</td>
+
+                            <td style="">0.020</td>
+
+                            <td style="">0.040</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="background-color: #ffebcc;">0.450</td>
+
+                            <td style="">0.040</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.250</td>
+
+                            <td style="">0.020</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                        </tr>
+
+                        <tr>
+                            <td><strong>5</strong></td>
+
+                            <td style="">0.080</td>
+
+                            <td style="">0.010</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.080</td>
+
+                            <td style="">0.320</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.070</td>
+
+                            <td style="">0.100</td>
+
+                            <td style="">0.100</td>
+
+                            <td style="">0.070</td>
+
+                            <td style="">0.070</td>
+
+                            <td style="">0.100</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                        </tr>
+
+                        <tr>
+                            <td><strong>6</strong></td>
+
+                            <td style="">0.080</td>
+
+                            <td style="">0.010</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.080</td>
+
+                            <td style="">0.100</td>
+
+                            <td style="">0.070</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.320</td>
+
+                            <td style="">0.100</td>
+
+                            <td style="">0.070</td>
+
+                            <td style="">0.070</td>
+
+                            <td style="">0.100</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                        </tr>
+
+                        <tr>
+                            <td><strong>7</strong></td>
+
+                            <td style="">0.040</td>
+
+                            <td style="">0.030</td>
+
+                            <td style="">0.020</td>
+
+                            <td style="">0.150</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.250</td>
+
+                            <td style="background-color: #ffebcc;">0.450</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.020</td>
+
+                            <td style="">0.040</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                        </tr>
+
+                        <tr>
+                            <td><strong>8</strong></td>
+
+                            <td style="">0.150</td>
+
+                            <td style="">0.030</td>
+
+                            <td style="">0.020</td>
+
+                            <td style="">0.040</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.250</td>
+
+                            <td style="">0.020</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="background-color: #ffebcc;">0.450</td>
+
+                            <td style="">0.040</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                        </tr>
+
+                        <tr>
+                            <td><strong>9</strong></td>
+
+                            <td style="">0.080</td>
+
+                            <td style="">0.010</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.080</td>
+
+                            <td style="">0.100</td>
+
+                            <td style="">0.070</td>
+
+                            <td style="">0.070</td>
+
+                            <td style="">0.100</td>
+
+                            <td style="">0.320</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.070</td>
+
+                            <td style="">0.100</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                        </tr>
+
+                        <tr>
+                            <td><strong>10</strong></td>
+
+                            <td style="">0.080</td>
+
+                            <td style="">0.010</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.080</td>
+
+                            <td style="">0.100</td>
+
+                            <td style="">0.070</td>
+
+                            <td style="">0.070</td>
+
+                            <td style="">0.100</td>
+
+                            <td style="">0.100</td>
+
+                            <td style="">0.070</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.320</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                        </tr>
+
+                        <tr>
+                            <td><strong>11</strong></td>
+
+                            <td style="">0.040</td>
+
+                            <td style="">0.030</td>
+
+                            <td style="">0.020</td>
+
+                            <td style="">0.150</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.020</td>
+
+                            <td style="">0.250</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.040</td>
+
+                            <td style="background-color: #ffebcc;">0.450</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                        </tr>
+
+                        <tr>
+                            <td><strong>12</strong></td>
+
+                            <td style="">0.050</td>
+
+                            <td style="">0.010</td>
+
+                            <td style="">0.010</td>
+
+                            <td style="">0.050</td>
+
+                            <td style="">0.250</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.080</td>
+
+                            <td style="background-color: #ffebcc;">0.450</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.080</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.010</td>
+
+                            <td style="">0.010</td>
+
+                            <td style="">0.000</td>
+
+                        </tr>
+
+                        <tr>
+                            <td><strong>13</strong></td>
+
+                            <td style="background-color: #ffebcc;">0.400</td>
+
+                            <td style="">0.020</td>
+
+                            <td style="">0.020</td>
+
+                            <td style="background-color: #ffebcc;">0.400</td>
+
+                            <td style="">0.040</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.040</td>
+
+                            <td style="">0.040</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.040</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                        </tr>
+
+                        <tr>
+                            <td><strong>14</strong></td>
+
+                            <td style="background-color: #ffebcc;">0.400</td>
+
+                            <td style="">0.020</td>
+
+                            <td style="">0.020</td>
+
+                            <td style="background-color: #ffebcc;">0.400</td>
+
+                            <td style="">0.040</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.040</td>
+
+                            <td style="">0.040</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.040</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                        </tr>
+
+                        <tr>
+                            <td><strong>15</strong></td>
+
+                            <td style="">0.050</td>
+
+                            <td style="">0.010</td>
+
+                            <td style="">0.010</td>
+
+                            <td style="">0.050</td>
+
+                            <td style="">0.080</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.250</td>
+
+                            <td style="">0.080</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="background-color: #ffebcc;">0.450</td>
+
+                            <td style="">0.000</td>
+
+                            <td style="">0.010</td>
+
+                            <td style="">0.010</td>
+
+                            <td style="">0.000</td>
+
+                        </tr>
+
+                    </tbody>
+                </table>
+            </div>
+
+        </details>
     </div>
 
     <table>
@@ -75,6 +761,8 @@
                 <th>理論最大通道負載 (FLITs/cycle)</th>
                 <th>C Model 吞吐量 (Packets/cycle)</th>
                 <th>C Model 平均延遲 (Cycles)</th>
+                <th>BookSim 吞吐量 (Packets/cycle)</th>
+                <th>BookSim 平均延遲 (Cycles)</th>
             </tr>
         </thead>
         <tbody id="table-body">
@@ -109,20 +797,48 @@
 
 
     <script>
-        const dseResults = {"mesh": {"booksim_edge_loads": {"1-\u003e0": 1.0, "10-\u003e9": 0.2273, "11-\u003e10": 0.1818, "12-\u003e8": 0.0909, "13-\u003e12": 0.1364, "14-\u003e13": 0.1818, "15-\u003e14": 0.1818, "2-\u003e1": 0.5909, "3-\u003e2": 0.3636, "4-\u003e0": 0.8636, "5-\u003e4": 0.4091, "6-\u003e5": 0.2727, "7-\u003e6": 0.2273, "8-\u003e4": 0.3182, "9-\u003e8": 0.1818}, "booksim_latency": 543.932, "booksim_throughput": 0.0036875, "c_model_edge_loads": {"0-\u003e1": 0.0728, "0-\u003e4": 0.7887, "1-\u003e0": 0.1775, "1-\u003e2": 0.1588, "1-\u003e5": 0.0244, "10-\u003e11": 0.1943, "10-\u003e14": 0.0147, "10-\u003e6": 0.3606, "10-\u003e9": 0.2099, "11-\u003e10": 0.8454, "11-\u003e15": 0.0411, "11-\u003e7": 0.6827, "12-\u003e13": 0.2442, "12-\u003e8": 0.986, "13-\u003e12": 0.2421, "13-\u003e14": 0.2735, "13-\u003e9": 0.0197, "14-\u003e10": 0.0219, "14-\u003e13": 0.2144, "14-\u003e15": 0.2991, "15-\u003e11": 0.845, "15-\u003e14": 0.1773, "2-\u003e1": 0.1073, "2-\u003e3": 0.1799, "2-\u003e6": 0.0253, "3-\u003e2": 0.0608, "3-\u003e7": 0.6608, "4-\u003e0": 0.584, "4-\u003e5": 0.7942, "4-\u003e8": 0.2633, "5-\u003e1": 0.1467, "5-\u003e4": 0.1899, "5-\u003e6": 0.1929, "5-\u003e9": 0.3012, "6-\u003e10": 0.103, "6-\u003e2": 0.0989, "6-\u003e5": 0.4131, "6-\u003e7": 0.191, "7-\u003e11": 0.5374, "7-\u003e3": 0.6088, "7-\u003e6": 0.8471, "8-\u003e12": 0.0414, "8-\u003e4": 0.7275, "8-\u003e9": 0.8513, "9-\u003e10": 0.208, "9-\u003e13": 0.0139, "9-\u003e5": 0.383, "9-\u003e8": 0.1884}, "c_model_latency": 463.375, "c_model_throughput": 8.1527, "theory_edge_loads": {"0-\u003e1": 0.11, "0-\u003e4": 1.0842, "1-\u003e0": 0.2077, "1-\u003e2": 0.195, "1-\u003e5": 0.0311, "10-\u003e11": 0.196, "10-\u003e14": 0.0187, "10-\u003e6": 0.362, "10-\u003e9": 0.216, "11-\u003e10": 0.85, "11-\u003e15": 0.056, "11-\u003e7": 0.78, "12-\u003e13": 0.25, "12-\u003e8": 1.056, "13-\u003e12": 0.306, "13-\u003e14": 0.28, "13-\u003e9": 0.024, "14-\u003e10": 0.024, "14-\u003e13": 0.28, "14-\u003e15": 0.306, "15-\u003e11": 1.056, "15-\u003e14": 0.25, "2-\u003e1": 0.1462, "2-\u003e3": 0.2077, "2-\u003e6": 0.0311, "3-\u003e2": 0.11, "3-\u003e7": 1.0842, "4-\u003e0": 0.624, "4-\u003e5": 0.85, "4-\u003e8": 0.3451, "5-\u003e1": 0.152, "5-\u003e4": 0.196, "5-\u003e6": 0.204, "5-\u003e9": 0.3229, "6-\u003e10": 0.1129, "6-\u003e2": 0.104, "6-\u003e5": 0.426, "6-\u003e7": 0.196, "7-\u003e11": 0.8751, "7-\u003e3": 0.624, "7-\u003e6": 0.85, "8-\u003e12": 0.056, "8-\u003e4": 0.78, "8-\u003e9": 0.85, "9-\u003e10": 0.204, "9-\u003e13": 0.0187, "9-\u003e5": 0.386, "9-\u003e8": 0.196}, "theory_max_load": 1.0841633865340243}, "ring": {"booksim_edge_loads": {}, "booksim_latency": 503.729, "booksim_throughput": 0.0036875, "c_model_edge_loads": {"0-\u003e1": 0.0269, "0-\u003e15": 0.008, "1-\u003e0": 0.0161, "1-\u003e2": 0.0294, "10-\u003e11": 0.0201, "10-\u003e9": 0.0311, "11-\u003e10": 0.0371, "11-\u003e12": 0.0117, "12-\u003e11": 0.0315, "12-\u003e13": 0.017, "13-\u003e12": 0.0175, "13-\u003e14": 0.0152, "14-\u003e13": 0.0177, "14-\u003e15": 0.0139, "15-\u003e0": 0.02, "15-\u003e14": 0.0186, "2-\u003e1": 0.0168, "2-\u003e3": 0.0286, "3-\u003e2": 0.0162, "3-\u003e4": 0.045, "4-\u003e3": 0.0252, "4-\u003e5": 0.0576, "5-\u003e4": 0.0201, "5-\u003e6": 0.0414, "6-\u003e5": 0.0342, "6-\u003e7": 0.0429, "7-\u003e6": 0.0531, "7-\u003e8": 0.0309, "8-\u003e7": 0.0297, "8-\u003e9": 0.0468, "9-\u003e10": 0.0245, "9-\u003e8": 0.0342}, "c_model_latency": 91.5278, "c_model_throughput": 1.92422, "theory_edge_loads": {"0-\u003e1": 1.288, "0-\u003e15": 0.2323, "1-\u003e0": 0.5378, "1-\u003e2": 1.3551, "10-\u003e11": 0.858, "10-\u003e9": 1.704, "11-\u003e10": 2.0398, "11-\u003e12": 0.124, "12-\u003e11": 1.7469, "12-\u003e13": 0.264, "13-\u003e12": 0.9429, "13-\u003e14": 0.342, "14-\u003e13": 0.9596, "14-\u003e15": 0.42, "15-\u003e0": 0.62, "15-\u003e14": 0.9763, "2-\u003e1": 0.5793, "2-\u003e3": 1.3498, "3-\u003e2": 0.598, "3-\u003e4": 2.0862, "4-\u003e3": 0.972, "4-\u003e5": 1.9791, "5-\u003e4": 1.106, "5-\u003e6": 1.6249, "6-\u003e5": 1.57, "6-\u003e7": 1.6967, "7-\u003e6": 2.25, "7-\u003e8": 1.4237, "8-\u003e7": 1.688, "8-\u003e9": 1.6246, "9-\u003e10": 0.9204, "9-\u003e8": 1.8}, "theory_max_load": 2.25}, "torus": {"booksim_edge_loads": {"1-\u003e0": 0.9091, "10-\u003e11": 0.0909, "10-\u003e9": 0.0909, "11-\u003e8": 0.2727, "12-\u003e0": 0.8182, "13-\u003e12": 0.1818, "14-\u003e13": 0.0909, "14-\u003e15": 0.2727, "15-\u003e12": 0.3636, "2-\u003e1": 0.3636, "2-\u003e3": 0.4545, "3-\u003e0": 1.0, "4-\u003e0": 0.7273, "5-\u003e4": 0.1818, "6-\u003e5": 0.0909, "6-\u003e7": 0.1818, "7-\u003e4": 0.3636, "8-\u003e12": 0.1818, "8-\u003e4": 0.0909, "9-\u003e8": 0.2727}, "booksim_latency": 550.271, "booksim_throughput": 0.0036875, "c_model_edge_loads": {"0-\u003e1": 0.0779, "0-\u003e4": 0.7879, "1-\u003e0": 0.1734, "1-\u003e2": 0.1636, "1-\u003e5": 0.0274, "10-\u003e11": 0.1954, "10-\u003e14": 0.0154, "10-\u003e6": 0.3613, "10-\u003e9": 0.2235, "11-\u003e10": 0.8495, "11-\u003e15": 0.0374, "11-\u003e7": 0.6908, "12-\u003e13": 0.2441, "12-\u003e8": 0.983, "13-\u003e12": 0.2556, "13-\u003e14": 0.2725, "13-\u003e9": 0.0226, "14-\u003e10": 0.0226, "14-\u003e13": 0.2238, "14-\u003e15": 0.2987, "15-\u003e11": 0.8512, "15-\u003e14": 0.1932, "2-\u003e1": 0.1082, "2-\u003e3": 0.1764, "2-\u003e6": 0.029, "3-\u003e2": 0.0653, "3-\u003e7": 0.6604, "4-\u003e0": 0.6055, "4-\u003e5": 0.7911, "4-\u003e8": 0.2724, "5-\u003e1": 0.1484, "5-\u003e4": 0.1967, "5-\u003e6": 0.1984, "5-\u003e9": 0.2987, "6-\u003e10": 0.1085, "6-\u003e2": 0.1024, "6-\u003e5": 0.4262, "6-\u003e7": 0.1931, "7-\u003e11": 0.5387, "7-\u003e3": 0.599, "7-\u003e6": 0.8558, "8-\u003e12": 0.0402, "8-\u003e4": 0.7477, "8-\u003e9": 0.8441, "9-\u003e10": 0.1967, "9-\u003e13": 0.016, "9-\u003e5": 0.3909, "9-\u003e8": 0.2002}, "c_model_latency": 466.507, "c_model_throughput": 8.1775, "theory_edge_loads": {"0-\u003e1": 0.03, "0-\u003e12": 0.056, "0-\u003e3": 0.08, "0-\u003e4": 1.0282, "1-\u003e0": 0.1277, "1-\u003e13": 0.0187, "1-\u003e2": 0.115, "1-\u003e5": 0.0124, "10-\u003e11": 0.156, "10-\u003e6": 0.338, "10-\u003e9": 0.176, "11-\u003e10": 0.81, "11-\u003e7": 0.6, "11-\u003e8": 0.04, "12-\u003e0": 0.18, "12-\u003e13": 0.04, "12-\u003e15": 0.21, "12-\u003e8": 0.876, "13-\u003e1": 0.024, "13-\u003e12": 0.096, "13-\u003e14": 0.07, "14-\u003e13": 0.07, "14-\u003e15": 0.096, "14-\u003e2": 0.024, "15-\u003e11": 0.876, "15-\u003e12": 0.21, "15-\u003e14": 0.04, "15-\u003e3": 0.18, "2-\u003e1": 0.0662, "2-\u003e14": 0.0187, "2-\u003e3": 0.1277, "2-\u003e6": 0.0124, "3-\u003e0": 0.08, "3-\u003e15": 0.056, "3-\u003e2": 0.03, "3-\u003e7": 1.0282, "4-\u003e0": 0.444, "4-\u003e5": 0.81, "4-\u003e7": 0.04, "4-\u003e8": 0.2891, "5-\u003e1": 0.128, "5-\u003e4": 0.156, "5-\u003e6": 0.164, "5-\u003e9": 0.3042, "6-\u003e10": 0.0942, "6-\u003e2": 0.08, "6-\u003e5": 0.386, "6-\u003e7": 0.156, "7-\u003e11": 0.8191, "7-\u003e3": 0.444, "7-\u003e4": 0.04, "7-\u003e6": 0.81, "8-\u003e11": 0.04, "8-\u003e4": 0.6, "8-\u003e9": 0.81, "9-\u003e10": 0.164, "9-\u003e5": 0.362, "9-\u003e8": 0.156}, "theory_max_load": 1.0281540770784596}};
+        const dseResults = {"mesh": {"booksim_edge_loads": {"1-\u003e0": 1.0, "10-\u003e9": 0.2273, "11-\u003e10": 0.1818, "12-\u003e8": 0.0909, "13-\u003e12": 0.1364, "14-\u003e13": 0.1818, "15-\u003e14": 0.1818, "2-\u003e1": 0.5909, "3-\u003e2": 0.3636, "4-\u003e0": 0.8636, "5-\u003e4": 0.4091, "6-\u003e5": 0.2727, "7-\u003e6": 0.2273, "8-\u003e4": 0.3182, "9-\u003e8": 0.1818}, "booksim_latency": 543.932, "booksim_throughput": 0.0036875, "c_model_edge_loads": {"0-\u003e1": 0.0661, "0-\u003e4": 0.7347, "1-\u003e0": 0.1736, "1-\u003e2": 0.1562, "1-\u003e5": 0.0319, "10-\u003e11": 0.1928, "10-\u003e14": 0.0164, "10-\u003e6": 0.3506, "10-\u003e9": 0.2213, "11-\u003e10": 0.823, "11-\u003e15": 0.0424, "11-\u003e7": 0.6053, "12-\u003e13": 0.1842, "12-\u003e8": 0.7724, "13-\u003e12": 0.2178, "13-\u003e14": 0.2186, "13-\u003e9": 0.0168, "14-\u003e10": 0.0181, "14-\u003e13": 0.1821, "14-\u003e15": 0.2467, "15-\u003e11": 0.6978, "15-\u003e14": 0.1424, "2-\u003e1": 0.1131, "2-\u003e3": 0.1755, "2-\u003e6": 0.031, "3-\u003e2": 0.0718, "3-\u003e7": 0.7464, "4-\u003e0": 0.5517, "4-\u003e5": 0.6864, "4-\u003e8": 0.2581, "5-\u003e1": 0.144, "5-\u003e4": 0.1951, "5-\u003e6": 0.1732, "5-\u003e9": 0.2783, "6-\u003e10": 0.1037, "6-\u003e2": 0.0906, "6-\u003e5": 0.4077, "6-\u003e7": 0.1823, "7-\u003e11": 0.6031, "7-\u003e3": 0.5592, "7-\u003e6": 0.8043, "8-\u003e12": 0.0384, "8-\u003e4": 0.6413, "8-\u003e9": 0.8044, "9-\u003e10": 0.2011, "9-\u003e13": 0.0171, "9-\u003e5": 0.3625, "9-\u003e8": 0.1942}, "c_model_latency": 782.726, "c_model_throughput": 7.5946, "theory_edge_loads": {"0-\u003e1": 0.11, "0-\u003e4": 1.0842, "1-\u003e0": 0.2077, "1-\u003e2": 0.195, "1-\u003e5": 0.0311, "10-\u003e11": 0.196, "10-\u003e14": 0.0187, "10-\u003e6": 0.362, "10-\u003e9": 0.216, "11-\u003e10": 0.85, "11-\u003e15": 0.056, "11-\u003e7": 0.78, "12-\u003e13": 0.25, "12-\u003e8": 1.056, "13-\u003e12": 0.306, "13-\u003e14": 0.28, "13-\u003e9": 0.024, "14-\u003e10": 0.024, "14-\u003e13": 0.28, "14-\u003e15": 0.306, "15-\u003e11": 1.056, "15-\u003e14": 0.25, "2-\u003e1": 0.1462, "2-\u003e3": 0.2077, "2-\u003e6": 0.0311, "3-\u003e2": 0.11, "3-\u003e7": 1.0842, "4-\u003e0": 0.624, "4-\u003e5": 0.85, "4-\u003e8": 0.3451, "5-\u003e1": 0.152, "5-\u003e4": 0.196, "5-\u003e6": 0.204, "5-\u003e9": 0.3229, "6-\u003e10": 0.1129, "6-\u003e2": 0.104, "6-\u003e5": 0.426, "6-\u003e7": 0.196, "7-\u003e11": 0.8751, "7-\u003e3": 0.624, "7-\u003e6": 0.85, "8-\u003e12": 0.056, "8-\u003e4": 0.78, "8-\u003e9": 0.85, "9-\u003e10": 0.204, "9-\u003e13": 0.0187, "9-\u003e5": 0.386, "9-\u003e8": 0.196}, "theory_max_load": 1.0841633865340243}, "ring": {"booksim_edge_loads": {"1-\u003e0": 1.0, "11-\u003e12": 0.0667, "12-\u003e13": 0.0667, "13-\u003e14": 0.1333, "14-\u003e15": 0.3333, "15-\u003e0": 1.0, "2-\u003e1": 0.3333, "3-\u003e2": 0.1333, "4-\u003e3": 0.0667, "5-\u003e4": 0.0667, "8-\u003e7": 0.0667, "8-\u003e9": 0.0667, "9-\u003e10": 0.0667}, "booksim_latency": 503.729, "booksim_throughput": 0.0036875, "c_model_edge_loads": {"0-\u003e1": 0.552, "0-\u003e15": 0.0998, "1-\u003e0": 0.2489, "1-\u003e2": 0.5926, "10-\u003e11": 0.4647, "10-\u003e9": 0.543, "11-\u003e10": 0.635, "11-\u003e12": 0.2351, "12-\u003e11": 0.5706, "12-\u003e13": 0.4025, "13-\u003e12": 0.3382, "13-\u003e14": 0.4841, "14-\u003e13": 0.3434, "14-\u003e15": 0.5725, "15-\u003e0": 0.7948, "15-\u003e14": 0.3474, "2-\u003e1": 0.2659, "2-\u003e3": 0.6141, "3-\u003e2": 0.2489, "3-\u003e4": 0.6989, "4-\u003e3": 0.4084, "4-\u003e5": 0.9356, "5-\u003e4": 0.4063, "5-\u003e6": 0.7726, "6-\u003e5": 0.6273, "6-\u003e7": 0.8634, "7-\u003e6": 0.9464, "7-\u003e8": 0.5959, "8-\u003e7": 0.5498, "8-\u003e9": 0.8771, "9-\u003e10": 0.4791, "9-\u003e8": 0.6588}, "c_model_latency": 1882.82, "c_model_throughput": 4.6027, "theory_edge_loads": {"0-\u003e1": 1.288, "0-\u003e15": 0.2323, "1-\u003e0": 0.5378, "1-\u003e2": 1.3551, "10-\u003e11": 0.858, "10-\u003e9": 1.704, "11-\u003e10": 2.0398, "11-\u003e12": 0.124, "12-\u003e11": 1.7469, "12-\u003e13": 0.264, "13-\u003e12": 0.9429, "13-\u003e14": 0.342, "14-\u003e13": 0.9596, "14-\u003e15": 0.42, "15-\u003e0": 0.62, "15-\u003e14": 0.9763, "2-\u003e1": 0.5793, "2-\u003e3": 1.3498, "3-\u003e2": 0.598, "3-\u003e4": 2.0862, "4-\u003e3": 0.972, "4-\u003e5": 1.9791, "5-\u003e4": 1.106, "5-\u003e6": 1.6249, "6-\u003e5": 1.57, "6-\u003e7": 1.6967, "7-\u003e6": 2.25, "7-\u003e8": 1.4237, "8-\u003e7": 1.688, "8-\u003e9": 1.6246, "9-\u003e10": 0.9204, "9-\u003e8": 1.8}, "theory_max_load": 2.25}, "torus": {"booksim_edge_loads": {"1-\u003e0": 0.9091, "10-\u003e11": 0.0909, "10-\u003e9": 0.0909, "11-\u003e8": 0.2727, "12-\u003e0": 0.8182, "13-\u003e12": 0.1818, "14-\u003e13": 0.0909, "14-\u003e15": 0.2727, "15-\u003e12": 0.3636, "2-\u003e1": 0.3636, "2-\u003e3": 0.4545, "3-\u003e0": 1.0, "4-\u003e0": 0.7273, "5-\u003e4": 0.1818, "6-\u003e5": 0.0909, "6-\u003e7": 0.1818, "7-\u003e4": 0.3636, "8-\u003e12": 0.1818, "8-\u003e4": 0.0909, "9-\u003e8": 0.2727}, "booksim_latency": 550.271, "booksim_throughput": 0.0036875, "c_model_edge_loads": {"0-\u003e1": 0.027, "0-\u003e12": 0.0371, "0-\u003e3": 0.0513, "0-\u003e4": 0.9584, "1-\u003e0": 0.0902, "1-\u003e13": 0.0142, "1-\u003e2": 0.1095, "1-\u003e5": 0.0115, "10-\u003e11": 0.2119, "10-\u003e14": 0.0398, "10-\u003e6": 0.2997, "10-\u003e9": 0.0326, "11-\u003e10": 0.7092, "11-\u003e15": 0.2136, "11-\u003e7": 0.0384, "11-\u003e8": 0.1907, "12-\u003e0": 0.6669, "12-\u003e13": 0.0513, "12-\u003e15": 0.1757, "12-\u003e8": 0.4662, "13-\u003e1": 0.0878, "13-\u003e12": 0.047, "13-\u003e14": 0.0658, "14-\u003e13": 0.0029, "14-\u003e15": 0.1431, "14-\u003e2": 0.0595, "15-\u003e11": 0.4446, "15-\u003e12": 0.2416, "15-\u003e14": 0.0143, "15-\u003e3": 0.655, "2-\u003e1": 0.0114, "2-\u003e14": 0.0157, "2-\u003e3": 0.1646, "2-\u003e6": 0.0126, "3-\u003e0": 0.0879, "3-\u003e15": 0.0392, "3-\u003e2": 0.0071, "3-\u003e7": 0.8683, "4-\u003e0": 0.1843, "4-\u003e5": 0.9075, "4-\u003e7": 0.0263, "4-\u003e8": 0.2175, "5-\u003e1": 0.0546, "5-\u003e4": 0.1005, "5-\u003e6": 0.1441, "5-\u003e9": 0.2372, "6-\u003e10": 0.0899, "6-\u003e2": 0.0338, "6-\u003e5": 0.0298, "6-\u003e7": 0.2067, "7-\u003e11": 0.4707, "7-\u003e3": 0.1994, "7-\u003e4": 0.3946, "7-\u003e6": 0.4947, "8-\u003e11": 0.04, "8-\u003e12": 0.2116, "8-\u003e4": 0.0417, "8-\u003e9": 0.8303, "9-\u003e10": 0.1535, "9-\u003e13": 0.0655, "9-\u003e5": 0.2768, "9-\u003e8": 0.0993}, "c_model_latency": 690.551, "c_model_throughput": 7.7393, "theory_edge_loads": {"0-\u003e1": 0.03, "0-\u003e12": 0.056, "0-\u003e3": 0.08, "0-\u003e4": 1.0282, "1-\u003e0": 0.1277, "1-\u003e13": 0.0187, "1-\u003e2": 0.115, "1-\u003e5": 0.0124, "10-\u003e11": 0.156, "10-\u003e6": 0.338, "10-\u003e9": 0.176, "11-\u003e10": 0.81, "11-\u003e7": 0.6, "11-\u003e8": 0.04, "12-\u003e0": 0.18, "12-\u003e13": 0.04, "12-\u003e15": 0.21, "12-\u003e8": 0.876, "13-\u003e1": 0.024, "13-\u003e12": 0.096, "13-\u003e14": 0.07, "14-\u003e13": 0.07, "14-\u003e15": 0.096, "14-\u003e2": 0.024, "15-\u003e11": 0.876, "15-\u003e12": 0.21, "15-\u003e14": 0.04, "15-\u003e3": 0.18, "2-\u003e1": 0.0662, "2-\u003e14": 0.0187, "2-\u003e3": 0.1277, "2-\u003e6": 0.0124, "3-\u003e0": 0.08, "3-\u003e15": 0.056, "3-\u003e2": 0.03, "3-\u003e7": 1.0282, "4-\u003e0": 0.444, "4-\u003e5": 0.81, "4-\u003e7": 0.04, "4-\u003e8": 0.2891, "5-\u003e1": 0.128, "5-\u003e4": 0.156, "5-\u003e6": 0.164, "5-\u003e9": 0.3042, "6-\u003e10": 0.0942, "6-\u003e2": 0.08, "6-\u003e5": 0.386, "6-\u003e7": 0.156, "7-\u003e11": 0.8191, "7-\u003e3": 0.444, "7-\u003e4": 0.04, "7-\u003e6": 0.81, "8-\u003e11": 0.04, "8-\u003e4": 0.6, "8-\u003e9": 0.81, "9-\u003e10": 0.164, "9-\u003e5": 0.362, "9-\u003e8": 0.156}, "theory_max_load": 1.0281540770784596}};
 
         function populateTable() {
             const tbody = document.getElementById('table-body');
             for (const [topo, data] of Object.entries(dseResults)) {
                 const tr = document.createElement('tr');
+                const bsThroughput = data.booksim_throughput !== undefined ? data.booksim_throughput.toFixed(4) : 'N/A';
+                const bsLatency = data.booksim_latency !== undefined ? data.booksim_latency.toFixed(2) : 'N/A';
                 tr.innerHTML = `
                     <td><strong>${topo.toUpperCase()}</strong></td>
                     <td>${data.theory_max_load.toFixed(4)}</td>
                     <td>${data.c_model_throughput.toFixed(4)}</td>
                     <td>${data.c_model_latency.toFixed(2)}</td>
+                    <td>${bsThroughput}</td>
+                    <td>${bsLatency}</td>
                 `;
                 tbody.appendChild(tr);
             }
+        }
+
+        function drawHeatmapLegend(ctx, maxLoad, padding) {
+            const width = 350;
+            const height = 350;
+            const legendX = 20;
+            const legendY = height - padding + 10;
+            const legendW = width - 40;
+            const legendH = 10;
+
+            const grad = ctx.createLinearGradient(legendX, 0, legendX + legendW, 0);
+            grad.addColorStop(0, 'rgb(0, 0, 255)');
+            grad.addColorStop(1, 'rgb(255, 0, 0)');
+
+            ctx.fillStyle = grad;
+            ctx.fillRect(legendX, legendY, legendW, legendH);
+
+            ctx.fillStyle = '#333';
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            ctx.fillText('0', legendX, legendY + legendH + 2);
+            ctx.fillText((maxLoad / 2).toFixed(2), legendX + legendW / 2, legendY + legendH + 2);
+            ctx.fillText(maxLoad.toFixed(2) + (maxLoad > 0 ? ' FLITs' : ''), legendX + legendW, legendY + legendH + 2);
         }
 
         function drawHeatmaps() {
@@ -153,6 +869,7 @@
                 }
 
                 renderTopology(ctx, topo, edgesData, computedMaxLoad);
+                drawHeatmapLegend(ctx, computedMaxLoad, 40);
             }
         }
 

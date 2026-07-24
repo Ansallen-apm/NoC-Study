@@ -36,10 +36,13 @@ def run_booksim(config_filepath, booksim_executable, width, topo):
             # Parse print_activity
             if line.startswith("router_"):
                 # format: router_y_x.switchMonitor:
-                match = re.search(r"router_(\d+)_(\d+)", line)
+                match = re.search(r"router_(\d+)(?:_(\d+))?", line)
                 if match:
-                    y, x = int(match.group(1)), int(match.group(2))
-                    current_router = y * width + x if topo != 'ring' else x
+                    if match.group(2): # 2D router
+                        y, x = int(match.group(1)), int(match.group(2))
+                        current_router = y * width + x
+                    else: # 1D ring router
+                        current_router = int(match.group(1))
             elif "->" in line and current_router != -1:
                 # format: [0 -> 1] 0:8  (input -> output) class:count
                 # We need to extract output port and the count, then accumulate it.
