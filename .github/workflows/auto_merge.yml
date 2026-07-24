@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest # 在最新的 Ubuntu 環境中執行
     steps:
       - name: Checkout repository # 檢索專案的程式碼
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Enable Auto-merge for Pull Request # 啟用自動合併功能
         env:
