@@ -195,7 +195,6 @@
     </div>
 
     <div id="heatmapTooltip"></div>
-    <div id="missingDataMsg" style="display:none; text-align:center; color: #d9534f; margin-top: 10px; font-weight: bold;"></div>
 
 
     </div>
@@ -260,11 +259,9 @@
             // Populate select lists for Radar chart
             let configStrings = [];
             allData.forEach(d => {
-                let s = `${d.topology}_${d.dim}x${d.dim}_VC${d.vcs}_Buf${d.buffer_size}`;
                 if (d.booksim_actual_sat_rate > 0) {
-                    configStrings.push({text: s, ref: d, disabled: false});
-                } else {
-                    configStrings.push({text: s + ' (無資料)', ref: d, disabled: true});
+                    let s = `${d.topology}_${d.dim}x${d.dim}_VC${d.vcs}_Buf${d.buffer_size}`;
+                    configStrings.push({text: s, ref: d});
                 }
             });
             // distinct
@@ -283,10 +280,6 @@
                     const opt = document.createElement('option');
                     opt.value = i;
                     opt.text = u.text;
-                    if (u.disabled) {
-                        opt.disabled = true;
-                        opt.style.color = '#888';
-                    }
                     sel.appendChild(opt);
                 });
             });
@@ -319,7 +312,6 @@
             // Reset visibility
             dseChartCanvas.style.display = 'flex';
             messageOverlay.style.display = 'none';
-            document.getElementById('missingDataMsg').style.display = 'none';
 
             if (currentMode === 'A') {
                 const t = document.getElementById('topoSelect').value;
@@ -420,18 +412,15 @@
 
                 let datasets = [];
                 let topos = [...new Set(allData.map(item => item.topology))];
-                let missingCount = 0;
 
                 topos.forEach((topo, idx) => {
-                    let baseFiltered = allData.filter(d =>
+                    let filtered = allData.filter(d =>
                         d.topology === topo &&
                         (pB === 'all' || d.packet_size.toString() === pB) &&
                         (bB === 'all' || d.buffer_size.toString() === bB) &&
-                        (vB === 'all' || d.vcs.toString() === vB)
+                        (vB === 'all' || d.vcs.toString() === vB) &&
+                        d[yMet] > 0
                     );
-
-                    let filtered = baseFiltered.filter(d => d[yMet] > 0);
-                    missingCount += (baseFiltered.length - filtered.length);
 
                     let dataPoints = filtered.map(d => ({
                         x: d[xMet],
@@ -471,14 +460,6 @@
                     }
                 });
 
-                const missingMsg = document.getElementById('missingDataMsg');
-                if (missingCount > 0) {
-                    missingMsg.style.display = 'block';
-                    missingMsg.innerText = `目前篩選條件下，共 ${missingCount} 筆組態因缺少必要資料未顯示`;
-                } else {
-                    missingMsg.style.display = 'none';
-                }
-
             } else if (currentMode === 'D') {
                 const wR = parseFloat(document.getElementById('weightRouter').value);
                 const wC = parseFloat(document.getElementById('weightChannel').value);
@@ -487,12 +468,9 @@
 
                 let datasets = [];
                 let topos = [...new Set(allData.map(item => item.topology))];
-                let missingCount = 0;
 
                 topos.forEach((topo, idx) => {
-                    let baseFiltered = allData.filter(d => d.topology === topo);
-                    let filtered = baseFiltered.filter(d => d.booksim_actual_sat_rate > 0);
-                    missingCount += (baseFiltered.length - filtered.length);
+                    let filtered = allData.filter(d => d.topology === topo && d.booksim_actual_sat_rate > 0);
 
                     let dataPoints = filtered.map(d => {
                         let area = (d.nodes * wR) + (d.theory_channel_count * wC) + (d.buffer_size * d.vcs * d.nodes * 5 * wB);
@@ -527,14 +505,6 @@
                         }
                     }
                 });
-
-                const missingMsg = document.getElementById('missingDataMsg');
-                if (missingCount > 0) {
-                    missingMsg.style.display = 'block';
-                    missingMsg.innerText = `目前篩選條件下，共 ${missingCount} 筆組態因缺少必要資料未顯示`;
-                } else {
-                    missingMsg.style.display = 'none';
-                }
             } else if (currentMode === 'E') {
                 if(!window.radarUniqueData) return;
 
@@ -821,42 +791,6 @@
                 ctx.textBaseline = 'middle';
                 ctx.fillText(node.id, node.x, node.y);
             }
-
-            // Draw Legend
-            drawHeatmapLegend(ctx);
-        }
-
-        function drawHeatmapLegend(ctx) {
-            const legendWidth = 200;
-            const legendHeight = 20;
-            const padding = 20;
-            const x = ctx.canvas.width - legendWidth - padding;
-            const y = ctx.canvas.height - legendHeight - padding - 20;
-
-            const gradient = ctx.createLinearGradient(x, 0, x + legendWidth, 0);
-            for (let i = 0; i <= 10; i++) {
-                let ratio = i / 10;
-                gradient.addColorStop(ratio, getColorForLoad(ratio * globalMaxLoad, globalMaxLoad));
-            }
-
-            ctx.fillStyle = gradient;
-            ctx.fillRect(x, y, legendWidth, legendHeight);
-
-            ctx.strokeStyle = '#333';
-            ctx.lineWidth = 1;
-            ctx.strokeRect(x, y, legendWidth, legendHeight);
-
-            ctx.fillStyle = '#333';
-            ctx.font = '14px Arial';
-            ctx.textAlign = 'left';
-            ctx.textBaseline = 'top';
-            ctx.fillText('0', x, y + legendHeight + 5);
-
-            ctx.textAlign = 'right';
-            ctx.fillText(globalMaxLoad.toFixed(2), x + legendWidth, y + legendHeight + 5);
-
-            ctx.textAlign = 'center';
-            ctx.fillText('Load', x + legendWidth / 2, y - 20);
         }
 
         function drawArrow(ctx, fromx, fromy, tox, toy, color) {
@@ -1037,21 +971,8 @@
 
             if(allOptions.topology.includes('ring')) {
                 document.getElementById('topoSelect').value = 'ring';
+                document.getElementById('topoSelectC').value = 'ring';
             }
-
-            // Mode C default: find the first one that has valid theory_edge_loads
-            let firstValidForC = allData.find(d =>
-                d.theory_edge_loads &&
-                Object.keys(d.theory_edge_loads).length > 0 &&
-                d.traffic === 'uniform' &&
-                (d.vcs === 1 || d.vcs === 2)
-            );
-
-            if (firstValidForC) {
-                document.getElementById('topoSelectC').value = firstValidForC.topology;
-                document.getElementById('dimSelectC').value = firstValidForC.dim;
-            }
-
             document.getElementById('pSelectB').value = '1';
             document.getElementById('bSelectB').value = '8';
             updateChart();
