@@ -1,0 +1,6 @@
+Loading CA Visualizer from: /app/reports/huawei_c_model/html/ca_visualizer.html
+Total cycles to test: 50
+
+--- Verification Summary ---
+Total Cycles Tested: 50
+Status: ALL PASSED
