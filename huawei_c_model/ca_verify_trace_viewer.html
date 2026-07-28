@@ -177,7 +177,7 @@
                 <h2>拓樸結構 (Topology)</h2>
                 <div class="warning-box" style="margin: 0 0 15px 0; padding: 10px;">
                     <h3 style="font-size: 1rem;">💡 Station 0 與 Bridge 的共存</h3>
-                    <p style="font-size: 0.9em; margin-bottom: 0;">在追蹤資料中，<code>RBRG_L1</code> 與 <code>AICORE/LLC</code> 節點皆可能映射至 Station 0（或其他交會點）。這並非衝突：在 <code>CrossStation</code> 實作中，<code>node_if</code> 與 <code>bridge_if</code> 是兩個獨立的介面陣列，因此它們可以在物理上共存於同一個 Station ID 而不會互相干擾。</p>
+                    <p style="font-size: 0.9em; margin-bottom: 0;">在追蹤資料中，<code>RBRG_L1</code> 與 <code>AICORE/LLC</code> 節點皆可能映射至 Station 0（或其他交會點）。這並非衝突：<code>RBRG_L1</code> 是直接讀寫 <code>Ring</code> 本身的 slot 陣列（<code>next_cw_slots[local_station_id]</code> 等），並不經過 <code>CrossStation</code> 的 <code>node_if</code>。因此即使兩者共用同一個 Station ID，實際上是兩條不會互相碰撞的資料路徑。</p>
                 </div>
 
                 <div class="topo-grid" id="topoGrid">
