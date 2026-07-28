@@ -106,6 +106,9 @@
         function generateLayout() {
             let maxX = 0, maxY = 0;
 
+            const H_SPACING = 4 * GRID_SIZE;
+            const V_SPACING = 4 * GRID_SIZE;
+
             traceData.topology.nodes.forEach(n => {
                 let x = 0;
                 let y = 0;
@@ -116,19 +119,33 @@
                     let s_id = parseInt(parts[1].substring(1));
 
                     if (r_id < 3) {
-                        x = r_id * 3 * GRID_SIZE + MARGIN;
+                        // Vertical rings: fixed X, varying Y
+                        x = r_id * V_SPACING + MARGIN;
                         y = s_id * GRID_SIZE + MARGIN;
+
+                        // Offset vertical stations slightly up at intersections
+                        // Intersections happen when s_id is a multiple of (V_SPACING / GRID_SIZE) = 4
+                        if (s_id % 4 === 0) {
+                            y -= 25;
+                        }
                     } else {
-                        y = (r_id - 3) * 3 * GRID_SIZE + MARGIN;
+                        // Horizontal rings: fixed Y, varying X
+                        y = (r_id - 3) * H_SPACING + MARGIN;
                         x = s_id * GRID_SIZE + MARGIN;
+
+                        // Offset horizontal stations slightly left at intersections
+                        if (s_id % 4 === 0) {
+                            x -= 25;
+                        }
                     }
                 } else if (n.type === 'bridge') {
                     let b_parts = n.id.split('_');
                     if (b_parts.length == 3) {
                         let v = parseInt(b_parts[1]);
                         let h = parseInt(b_parts[2]);
-                        x = v * 3 * GRID_SIZE + MARGIN + 40;
-                        y = (h - 3) * 3 * GRID_SIZE + MARGIN + 40;
+                        // Bridge exactly at intersection
+                        x = v * V_SPACING + MARGIN;
+                        y = (h - 3) * H_SPACING + MARGIN;
                     }
                 }
 

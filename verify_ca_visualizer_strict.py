@@ -34,6 +34,20 @@ def run_strict_verification(page):
 
     errors = []
 
+    # Verify no two nodes share the exact same coordinates (bounding box overlap check)
+    seen_coords = {}
+    for node_id, pos in node_positions.items():
+        coord = (pos["x"], pos["y"])
+        if coord in seen_coords:
+            errors.append({
+                "cycle": "INIT",
+                "type": "Coordinate Overlap",
+                "expected": "Unique coordinates for all nodes",
+                "actual": f"Node {node_id} shares coordinate {coord} with Node {seen_coords[coord]}"
+            })
+        else:
+            seen_coords[coord] = node_id
+
     for i in range(total_cycles):
         cycle_data = trace_data["cycles"][i]
 
@@ -100,17 +114,12 @@ def run_strict_verification(page):
 
             # First, make sure the ID matches to prevent checking the wrong node
             if f"<strong>{node_id}</strong>" not in details_html:
-                # Some node positions might overlap exactly (e.g. R3_S0 and R0_S0) in the visualizer script
-                # generator logic. If they overlap, hovering gives one of them. We log this but it might be
-                # a bug in visualizer generating layout. Let's not fail the whole test if they just overlap.
-                # Actually, wait, R3_S0 is a station. R0_S0 is also a station. Do they overlap?
-                # R_id 3 -> x=0, y=0. R_id 0 -> x=0, y=0.
-                # Ah, x = r_id * 3 * GRID + MARGIN. If r_id=0, x=MARGIN, y=s_id*GRID+MARGIN.
-                # If r_id=3, y=(3-3)*3*GRID+MARGIN=MARGIN, x=s_id*GRID+MARGIN.
-                # So if r_id=3 and s_id=0: y=MARGIN, x=MARGIN.
-                # If r_id=0 and s_id=0: x=MARGIN, y=MARGIN.
-                # Yes, they overlap exactly! This is a known visualization constraint/feature (intersecting rings).
-                pass
+                errors.append({
+                    "cycle": i,
+                    "type": f"Hover node-details mismatch",
+                    "expected": f"<strong>{node_id}</strong>",
+                    "actual": details_html
+                })
             else:
                 # Find expected buffers for this node in this cycle
                 expected_bufs = [b for b in cycle_data.get("buffers", []) if b["node"] == node_id]

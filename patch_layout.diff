@@ -1,0 +1,21 @@
+--- scripts/html_gen/templates/ca_visualizer.html
++++ scripts/html_gen/templates/ca_visualizer.html
+@@ -77,11 +77,17 @@
+
+                     if (r_id < 3) {
+                         // Vertical rings: fixed X, varying Y
+-                        x = r_id * V_SPACING + MARGIN;
++                        x = r_id * V_SPACING + MARGIN;
+                         y = s_id * GRID_SIZE + MARGIN;
++                        // Offset vertical stations slightly (e.g. above intersection)
++                        // The intersection with H rings happens when s_id is a multiple of V_SPACING/GRID_SIZE (which is 4)
++                        if (s_id % 4 === 0) { y -= 15; }
+                     } else {
+                         // Horizontal rings: fixed Y, varying X
+                         y = (r_id - 3) * H_SPACING + MARGIN;
+                         x = s_id * GRID_SIZE + MARGIN;
++                        // Offset horizontal stations slightly (e.g. left of intersection)
++                        // The intersection with V rings happens when s_id is a multiple of H_SPACING/GRID_SIZE (which is 4)
++                        if (s_id % 4 === 0) { x -= 15; }
+                     }
+                 } else if (n.type === 'bridge') {
