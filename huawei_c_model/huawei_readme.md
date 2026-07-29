@@ -61,7 +61,7 @@ make -j$(nproc)
 cd huawei_c_model/build
 ./nocsim --experiment ca_verify --config ../configs/ca_verify_3x3.yaml
 ```
-> 這將產生 `reports/huawei_c_model/ca_trace.json`。
+> 這將產生 `reports/huawei_c_model/data/ca_trace.json`。
 
 ### 2. 生成 HTML 播放器
 回到專案根目錄，執行 Python 腳本將 JSON 轉為視覺化網頁：
@@ -70,8 +70,11 @@ python3 scripts/html_gen/generate_ca_visualizer.py
 ```
 
 ### 3. 觀看與驗證
-使用瀏覽器打開產生的 `reports/huawei_c_model/ca_visualizer.html`。
-您可以透過 **Play/Pause** 或拖曳 **進度條**，觀察：
+除了使用瀏覽器打開產生的 `reports/huawei_c_model/html/ca_visualizer.html` 之外，本專案還提供了以下相關的靜態文件來幫助驗證與理解：
+- **`huawei_c_model/architecture.html`**：架構設計文件。
+- **`huawei_c_model/ca_verify_trace_viewer.html`**：新的 cycle-by-cycle 敘述式 trace viewer，含逐階段的預期行為說明與已知限制警告。
+
+在動態播放器中，您可以透過 **Play/Pause** 或拖曳 **進度條**，觀察：
 - Flit 在節點間的移動。
 - 游標懸停 (Hover) 在橘色的 Bridge 節點上，可觀看其內部 Ingress/Egress 管線與 Queue 的即時變化。
 - 觀察 Bufferless 網路在交會處壅塞時，封包如何發生 Deflection 並持續繞圈。

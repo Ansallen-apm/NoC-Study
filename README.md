@@ -38,13 +38,19 @@ To ensure our theoretical models and eventual hardware implementations are accur
 *   [**To-Do List (`todo.md`)**](./todo.md): Actionable tasks and upcoming milestones.
 
 ## Directory Structure
+*   `huawei_c_model/`: Independent Huawei CMN-style cycle-accurate C++ model (bufferless multi-ring + RBRG bridge), see its [huawei_readme.md](./huawei_c_model/huawei_readme.md).
+*   `noc_arch_trace/`: Architecture specs, trace format (`trace_format.md`), and trace analyzer for a separate 2D Mesh NoC model.
 *   `noc_python_model/`: Pure Python theoretical model (Queueing Theory, Markov Chains, NetworkX Topologies) for mathematical limit predictions.
 *   `noc_c_model/`: Refactored C++ functional model with dynamic yaml loading and double-buffering.
 *   `noc_tlm_model/`: SystemC Transaction Level Modeling (Phase 4).
 *   `noc_rtl/`: Verilog implementation (Phase 4).
 *   `third_party/`: Integrated open-source standalone simulators (`booksim`, `noxim`, `constellation`, `ratatoskr`).
 *   `dse_tools/`: Core Python orchestration toolkit for simulation execution, trace generation, and HTML/Markdown report aggregation.
+*   `config/`: DSE experiment configuration inputs (`.yaml`/`.csv`) for custom workloads.
 *   `reports/`: Centralized directory for all generated JSON results, Markdown summaries, and the Unified HTML Dashboard.
+*   `review/`: Code and design review documents for C models.
+*   `static/`: Shared static resources (CSS/JS) for generated reports.
+*   `tests/`: Top-level Python tests.
 
 <br>
 
@@ -84,10 +90,16 @@ To ensure our theoretical models and eventual hardware implementations are accur
 *   [**待辦事項 (`todo.md`)**](./todo.md): 待辦事項和即將到來的里程碑，包含尚未完成的模組細節。
 
 ## 目錄結構
+*   `huawei_c_model/`: 獨立的 Huawei CMN 風格 cycle-accurate NoC C++ 模型（無緩衝區多環 + RBRG 橋接器），詳見 [huawei_readme.md](./huawei_c_model/huawei_readme.md)。
+*   `noc_arch_trace/`: 另一個 2D Mesh NoC 模型的架構規格、trace 格式定義 (`trace_format.md`) 與分析工具。
 *   `noc_python_model/`: 純 Python 實作的數學理論模型（排隊理論、馬可夫鏈、NetworkX 圖論），用於推算網路效能極限。
 *   `noc_c_model/`: 重構後的 C++ 功能性模型（支援動態 yaml 讀取與雙重緩衝機制）。
 *   `noc_tlm_model/`: SystemC 交易層級建模 (Phase 4)。
 *   `noc_rtl/`: Verilog 實作 (Phase 4)。
 *   `third_party/`: 包含用於交叉驗證的獨立開源模擬器 (`booksim`, `noxim`, `constellation`, `ratatoskr`)。
 *   `dse_tools/`: DSE 核心調度大腦，負責驅動各階層模型、跨引擎模擬器調度、以及互動式統一儀表板 (HTML/Markdown) 的自動生成。
+*   `config/`: DSE 實驗用的輸入設定檔 (`.yaml`/`.csv`)。
 *   `reports/`: 集中存放所有產出的 JSON 數據結果、Markdown 比較表以及視覺化網頁報告。
+*   `review/`: C model 與 Huawei C model 的程式碼/設計 review 文件。
+*   `static/`: 報表產生用的共用靜態資源 (CSS/JS)。
+*   `tests/`: 頂層 Python 測試。
