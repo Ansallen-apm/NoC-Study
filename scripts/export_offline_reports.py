@@ -29,6 +29,18 @@ def export_offline():
                     if item.endswith('.html'):
                         shutil.copy2(os.path.join(html_path, item), dest_topic_path)
 
+    # Copy specific huawei_c_model docs since they are manually linked
+    huawei_docs = [
+        'huawei_c_model/architecture.html',
+        'huawei_c_model/ca_verify_trace_viewer.html'
+    ]
+    for doc in huawei_docs:
+        src_path = os.path.join(base_dir, doc)
+        if os.path.exists(src_path):
+            dest_path = os.path.join(bundle_dir, doc)
+            os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+            shutil.copy2(src_path, dest_path)
+
     # 2. & 3. Sync static assets and render dynamic index.html
     sys.path.insert(0, base_dir)
     from scripts.html_gen.lib.html_utils import sync_root_assets
