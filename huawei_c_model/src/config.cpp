@@ -59,8 +59,10 @@ bool Config::parse(const std::string& filepath) {
                 bc.remote_ring = b["remote_ring"].as<int>();
                 bc.local_station = b["local_station"].as<int>();
                 bc.remote_station = b["remote_station"].as<int>();
-                if (b["d2d_latency_cycles"]) bc.d2d_latency_cycles = b["d2d_latency_cycles"].as<int>();
-                else bc.d2d_latency_cycles = 1;
+                if (b["d2d_latency_cycles"]) bc.d2d_latency_cycles = b["d2d_latency_cycles"].as<int>(); else bc.d2d_latency_cycles = 1;
+                if (b["queue_depth"]) bc.queue_depth = b["queue_depth"].as<int>();
+                if (b["credit_depth"]) bc.credit_depth = b["credit_depth"].as<int>();
+
                 bridges.push_back(bc);
             }
         }

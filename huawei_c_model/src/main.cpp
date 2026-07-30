@@ -43,7 +43,7 @@ void run_server_experiment(const std::string& config_file) {
                             while (!st->node_if[k].eject_q.q.empty()) {
                                 Flit f = st->node_if[k].eject_q.pop_oldest();
                                 if (i >= warm_up) {
-                                    total_latency += f.eject_cycle;
+                                    total_latency += (f.eject_cycle - f.create_cycle);
                                     total_received++;
                                 }
                             }

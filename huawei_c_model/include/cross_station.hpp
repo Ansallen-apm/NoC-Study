@@ -10,6 +10,9 @@
 
 class CrossStation : public Component {
 public:
+    class Simulator* sim_ptr = nullptr;
+    void set_sim(Simulator* s) { sim_ptr = s; }
+public:
     int station_id;
     Ring* ring;
 

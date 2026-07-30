@@ -1,3 +1,4 @@
+#include <stdexcept>
 #include "rbrg_l1.hpp"
 #include <cassert>
 
@@ -6,7 +7,7 @@ RBRG_L1::RBRG_L1(int l_ring, int l_station, int r_ring, int r_station, const RBR
       remote_ring_id(r_ring), remote_station_id(r_station),
       latency_cycles(config.latency_cycles), queue_depth(config.queue_depth),
       router(router_ptr) {
-    assert(latency_cycles > 0 && "RBRG_L1 latency_cycles must be > 0");
+    if (latency_cycles <= 0) throw std::runtime_error("RBRG_L1 latency_cycles must be > 0");
 
     // pipeline stages = latency_cycles
     pipeline_regs_curr.resize(latency_cycles);
@@ -14,7 +15,7 @@ RBRG_L1::RBRG_L1(int l_ring, int l_station, int r_ring, int r_station, const RBR
 }
 
 void RBRG_L1::tick() {
-    assert(local_ring != nullptr && remote_ring != nullptr);
+    if (local_ring == nullptr || remote_ring == nullptr) throw std::runtime_error("RBRG_L1 local_ring or remote_ring is null");
 
     pipeline_regs_next = pipeline_regs_curr;
 
@@ -59,16 +60,39 @@ void RBRG_L1::tick() {
     }
 
     // Stage Final: Inject from egress queue to remote ring
-    // We should choose CW or CCW. For simplicity, if bidir, choose shortest path (left as future optimization, just inject CW for now or whichever is empty)
     if (!egress_queue.empty()) {
-        if (!remote_ring->next_cw_slots[remote_station_id].occupied) {
-            remote_ring->next_cw_slots[remote_station_id].occupied = true;
-            remote_ring->next_cw_slots[remote_station_id].flit = egress_queue.front();
-            egress_queue.pop_front();
-        } else if (remote_ring->bidirectional && !remote_ring->next_ccw_slots[remote_station_id].occupied) {
-            remote_ring->next_ccw_slots[remote_station_id].occupied = true;
-            remote_ring->next_ccw_slots[remote_station_id].flit = egress_queue.front();
-            egress_queue.pop_front();
+        Flit& f = egress_queue.front();
+
+        int cw_dist = (f.dst_node - remote_station_id + remote_ring->num_stations) % remote_ring->num_stations;
+        int ccw_dist = (remote_station_id - f.dst_node + remote_ring->num_stations) % remote_ring->num_stations;
+        Direction preferred_dir = (cw_dist <= ccw_dist) ? Direction::CW : Direction::CCW;
+
+        bool injected = false;
+
+        if (preferred_dir == Direction::CW) {
+            if (!remote_ring->next_cw_slots[remote_station_id].occupied) {
+                remote_ring->next_cw_slots[remote_station_id].occupied = true;
+                remote_ring->next_cw_slots[remote_station_id].flit = f;
+                egress_queue.pop_front();
+                injected = true;
+            } else if (remote_ring->bidirectional && !remote_ring->next_ccw_slots[remote_station_id].occupied) {
+                remote_ring->next_ccw_slots[remote_station_id].occupied = true;
+                remote_ring->next_ccw_slots[remote_station_id].flit = f;
+                egress_queue.pop_front();
+                injected = true;
+            }
+        } else {
+            if (remote_ring->bidirectional && !remote_ring->next_ccw_slots[remote_station_id].occupied) {
+                remote_ring->next_ccw_slots[remote_station_id].occupied = true;
+                remote_ring->next_ccw_slots[remote_station_id].flit = f;
+                egress_queue.pop_front();
+                injected = true;
+            } else if (!remote_ring->next_cw_slots[remote_station_id].occupied) {
+                remote_ring->next_cw_slots[remote_station_id].occupied = true;
+                remote_ring->next_cw_slots[remote_station_id].flit = f;
+                egress_queue.pop_front();
+                injected = true;
+            }
         }
     }
 }

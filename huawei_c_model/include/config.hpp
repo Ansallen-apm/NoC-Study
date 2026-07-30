@@ -28,6 +28,8 @@ struct BridgeConfig {
     int local_station;
     int remote_station;
     int d2d_latency_cycles;
+    int queue_depth = 4;
+    int credit_depth = 16;
 };
 
 struct MultiRingConfig {

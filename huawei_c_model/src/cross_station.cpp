@@ -1,3 +1,4 @@
+#include "simulator.hpp"
 
 #include "cross_station.hpp"
 
@@ -54,7 +55,7 @@ void CrossStation::process_direction(const std::vector<RingSlot>& curr_slots, st
                         swap_sink->accept_swap(victim);
 
                         // 2. Eject traversing flit into newly freed eject Q space
-                        f.eject_cycle = f.hop_count;
+                        f.eject_cycle = (sim_ptr) ? sim_ptr->stats.total_cycles : 0;
                         node_if[k].eject_q.push(f);
                         if (incoming_slot.e_tag && incoming_slot.e_tag_flit_id == f.id) {
                             outgoing_slot.e_tag = false;
@@ -65,8 +66,9 @@ void CrossStation::process_direction(const std::vector<RingSlot>& curr_slots, st
                         node_if[k].inject_q.pop();
 
                         outgoing_slot.occupied = true;
+                        injecting.inject_cycle = (sim_ptr) ? sim_ptr->stats.total_cycles : 0;
                         outgoing_slot.flit = injecting;
-                        swap_executed = true;
+                        swap_executed = true; if (sim_ptr) sim_ptr->stats.swap_count++;
                         break;
                     }
                 }
@@ -99,7 +101,7 @@ void CrossStation::process_direction(const std::vector<RingSlot>& curr_slots, st
                 }
 
                 if (can_eject_now) {
-                    f.eject_cycle = f.hop_count;
+                    f.eject_cycle = (sim_ptr) ? sim_ptr->stats.total_cycles : 0;
                     node_if[k].eject_q.push(f);
                     ejected = true;
                     if (incoming_slot.e_tag && incoming_slot.e_tag_flit_id == f.id) {
@@ -113,11 +115,12 @@ void CrossStation::process_direction(const std::vector<RingSlot>& curr_slots, st
                 outgoing_slot.occupied = false;
             } else {
                 f.deflect_count++;
+                if (sim_ptr) sim_ptr->stats.deflect_count++;
                 if (!incoming_slot.e_tag) {
                     for (int k = 0; k < 2; ++k) {
                         if (node_if[k].eject_q.can_reserve()) {
                             node_if[k].eject_q.reserve(f.id);
-                            outgoing_slot.e_tag = true;
+                            outgoing_slot.e_tag = true; if (sim_ptr) sim_ptr->stats.e_tag_create_count++;
                             outgoing_slot.e_tag_owner_station = station_id;
                             outgoing_slot.e_tag_flit_id = f.id;
                             break;
@@ -148,7 +151,8 @@ void CrossStation::process_direction(const std::vector<RingSlot>& curr_slots, st
             if (port != -1) {
                 Flit injecting = node_if[port].inject_q.front();
                 outgoing_slot.occupied = true;
-                outgoing_slot.flit = injecting;
+                injecting.inject_cycle = (sim_ptr) ? sim_ptr->stats.total_cycles : 0;
+                        outgoing_slot.flit = injecting;
                 node_if[port].inject_q.pop();
                 injected = true;
             }
@@ -163,7 +167,8 @@ void CrossStation::process_direction(const std::vector<RingSlot>& curr_slots, st
             if (owner_port != -1) {
                 Flit injecting = node_if[owner_port].inject_q.front();
                 outgoing_slot.occupied = true;
-                outgoing_slot.flit = injecting;
+                injecting.inject_cycle = (sim_ptr) ? sim_ptr->stats.total_cycles : 0;
+                        outgoing_slot.flit = injecting;
                 outgoing_slot.i_tag = false;
                 node_if[owner_port].inject_q.pop();
                 injected = true;
@@ -179,7 +184,7 @@ void CrossStation::process_direction(const std::vector<RingSlot>& curr_slots, st
         int port = choose_inject_port(dir);
         if (port != -1 && !outgoing_slot.i_tag) {
             Flit injecting = node_if[port].inject_q.front();
-            outgoing_slot.i_tag = true;
+            outgoing_slot.i_tag = true; if (sim_ptr) sim_ptr->stats.i_tag_create_count++;
             outgoing_slot.i_tag_owner_station = station_id;
             outgoing_slot.i_tag_flit_id = injecting.id;
         }

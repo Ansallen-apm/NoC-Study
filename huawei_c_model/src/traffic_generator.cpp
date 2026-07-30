@@ -1,3 +1,4 @@
+#include "simulator.hpp"
 #include "traffic_generator.hpp"
 
 void HotspotGenerator::tick(double injection_rate) {
@@ -23,7 +24,8 @@ void HotspotGenerator::tick(double injection_rate) {
                 f.src_node = src_station;
                 f.dst_ring = target.ring_id;
                 f.dst_node = target.station_id;
-                f.dir = Direction::CW;
+                f.dir = attached_station->choose_direction(f.src_node, f.dst_node, attached_station->ring->num_stations);
+                f.create_cycle = (attached_station->sim_ptr) ? attached_station->sim_ptr->stats.total_cycles : 0;
 
                 attached_station->node_if[k].inject_q.push(f);
                 break;
