@@ -1,3 +1,4 @@
+#include <stdexcept>
 #include "rbrg_l2.hpp"
 #include <cassert>
 
@@ -10,7 +11,7 @@ RBRG_L2::RBRG_L2(int l_ring, int l_station, int r_ring, int r_station,
       queue_depth(q_depth), initial_credits(c_depth), current_credits(c_depth),
       router(router_ptr) {
 
-    assert(d2d_latency_cycles > 0 && "D2D latency must be > 0");
+    if (d2d_latency_cycles <= 0) throw std::runtime_error("D2D latency must be > 0");
 
     d2d_pipeline_curr.resize(d2d_latency_cycles);
     d2d_pipeline_next.resize(d2d_latency_cycles);
@@ -20,7 +21,7 @@ RBRG_L2::RBRG_L2(int l_ring, int l_station, int r_ring, int r_station,
 }
 
 void RBRG_L2::tick() {
-    assert(local_ring != nullptr && remote_ring != nullptr);
+    if (local_ring == nullptr || remote_ring == nullptr) throw std::runtime_error("RBRG_L2 local_ring or remote_ring is null");
 
     d2d_pipeline_next = d2d_pipeline_curr;
     credit_pipeline_next = credit_pipeline_curr;

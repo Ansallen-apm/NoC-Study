@@ -21,6 +21,7 @@ void Simulator::build_from_config() {
 
             for (int s = 0; s < rcfg.stations; ++s) {
                 auto st = std::make_unique<CrossStation>(s, r.get());
+                st->set_sim(this);
                 st->set_deadlock_threshold(deadlock_threshold);
                 stations.push_back(st.get());
                 add_component(std::move(st));
@@ -37,7 +38,7 @@ void Simulator::build_from_config() {
                 auto bridge = std::make_unique<RBRG_L2>(
                     bcfg.local_ring, bcfg.local_station,
                     bcfg.remote_ring, bcfg.remote_station,
-                    bcfg, 4, 16, global_router
+                    bcfg, bcfg.queue_depth, bcfg.credit_depth, global_router
                 );
                 bridge->set_local_ring(ring_map[bcfg.local_ring]);
                 bridge->set_remote_ring(ring_map[bcfg.remote_ring]);
@@ -66,6 +67,7 @@ void Simulator::build_from_config() {
 
                 for (int s = 0; s < mrc.stations_per_ring; ++s) {
                     auto st = std::make_unique<CrossStation>(s, r.get());
+                st->set_sim(this);
                     st->set_deadlock_threshold(deadlock_threshold);
                     stations.push_back(st.get());
                     add_component(std::move(st));
@@ -129,6 +131,7 @@ void Simulator::instantiate_server_cpu() {
 
         for (int i = 0; i < rc.stations; ++i) {
             auto s = std::make_unique<CrossStation>(i, r.get());
+            s->set_sim(this);
             stations.push_back(s.get());
             add_component(std::move(s));
         }
@@ -148,6 +151,7 @@ void Simulator::instantiate_ai_processor() {
             rings.push_back(r.get());
             for (int s_idx = 0; s_idx < vr.stations_per_ring; ++s_idx) {
                 auto s = std::make_unique<CrossStation>(s_idx, r.get());
+                s->set_sim(this);
                 stations.push_back(s.get());
                 add_component(std::move(s));
             }
@@ -163,6 +167,7 @@ void Simulator::instantiate_ai_processor() {
             rings.push_back(r.get());
             for (int s_idx = 0; s_idx < hr.stations_per_ring; ++s_idx) {
                 auto s = std::make_unique<CrossStation>(s_idx, r.get());
+                s->set_sim(this);
                 stations.push_back(s.get());
                 add_component(std::move(s));
             }
@@ -182,6 +187,7 @@ void Simulator::init_topology() {
         rings.push_back(r.get());
         for (int i = 0; i < 4; ++i) {
             auto s = std::make_unique<CrossStation>(i, r.get());
+            s->set_sim(this);
             stations.push_back(s.get());
             add_component(std::move(s));
         }
@@ -192,6 +198,7 @@ void Simulator::init_topology() {
         rings.push_back(r.get());
         for (int i = 0; i < 8; ++i) {
             auto s = std::make_unique<CrossStation>(i, r.get());
+            s->set_sim(this);
             stations.push_back(s.get());
             add_component(std::move(s));
         }
