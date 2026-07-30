@@ -91,4 +91,8 @@ cd huawei_c_model/build
 
 **重點測試涵蓋：**
 - `Phase1Test ~ Phase6Test`：針對半環、全環、I-tag/E-tag 預留、RBRG-L1/L2 以及 SWAP 機制的獨立功能驗證。
+- `ConfigTest.*`：驗證 YAML 解析正確性，以及當缺少必要的拓撲/節點欄位時的快速失敗 (fail-fast) 機制。
+- `ChaosStressTest.FlitConservationAndLiveness`：高負載下的壓力測試，驗證嚴格的封包守恆 (注入 == 彈出 + 飛行中 + 佇列中)；此測試最初抓出了 RBRG 重複彈出的錯誤。
+- `EjectQueueFuzzTest.FuzzCapacityInvariant`：模糊測試，驗證無論 reserve/push 呼叫如何交錯，EjectQueue 的物理大小永遠不會超過容量限制；防範先前發現的 can_reserve()/push() 容量退化問題。
+- `ValidationTest.RoundRobinFairness`：驗證站點的多個輸入埠獲得公平的輪詢 (round-robin) 注入仲裁。
 - `ValidationTest.FlitConservation`：驗證封包在傳輸過程中沒有發生遺失或意外複製。
