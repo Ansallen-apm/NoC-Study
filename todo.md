@@ -167,6 +167,8 @@
 *   [ ] **統一設定檔解析**：確保 C++, TLM, RTL 各階層模型與 Testbench 皆能動態讀取 `NoC_config.yaml` 進行初始化。
 *   [ ] **單元測試與 CI/CD**：為 Python 工具與 C++ 元件撰寫單元測試。整合 GitHub Actions 等 CI/CD 流程以自動編譯模型並執行測試。
 *   [ ] **端到端黃金驗證 (End-to-End Golden Verification)**：建立自動化管線，將相同的流量 Trace 注入所有模型中，並精確比對它們的週期級行為是否完全一致。
+*   [ ] **設定檔分裂 (Config Drift)**：noc_c_model/tests/run_golden_tests.py 用的黃金回歸測試設定檔（tests/golden/{mesh,torus,ring}.yaml）跟實際 DSE 掃描共用的 dse_tools/config/NoC_config.yaml 是兩份完全獨立、欄位不一致的檔案（黃金測試那份有 frequency_mhz、flit_width_bits，卻缺少 traffic_pattern、warmup_cycles、sweep_range）。待辦內容：統一這兩份設定檔案的來源，或至少讓黃金測試改讀共用的 NoC_config.yaml，避免回歸測試跟實際掃描的設定悄悄走偏而沒人發現。
+*   [ ] **noc_arch_trace/ 孤兒化 (Orphaned Trace Toolkit)**：noc_arch_trace/trace_analyzer.py 跟 trace_format.md 沒有被 repo 裡任何其他腳本呼叫或引用，是完全獨立的原型；而且它文件定義的 trace 格式（3 欄：src dst payload）跟實際生產流程在用的格式（dse_tools/runners/run_c_model_dse.py 產生、noc_c_model 黃金測試消費的 4 欄：src dst payload cycle）不一致，已經跟不上實作。待辦內容：把 trace_analyzer.py 更新成能吃真實的 4 欄格式並實際接進 DSE pipeline（例如在跑完一次 sweep 後自動分析注入流量分佈），或者如果這個工具已經不再需要，就明確標記為棄用/移除，不要留著一份跟現狀對不上的規格文件誤導後續開發者。
 
 ## 階段 5：統一綜合報告平台 (Unified HTML Dashboard)
 *(目的：將散落的各階段報告整合為一個專業、多頁籤的視覺化儀表板)*
