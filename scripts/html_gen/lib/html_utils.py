@@ -61,8 +61,22 @@ def sync_root_assets(dest_dir):
     # Sort for consistent ordering
     available_reports.sort(key=lambda x: x['title'])
 
-    # 3. Render and save index.html
-    index_html_content = render_template('index.html', base_path='./', datatables=False, chart_js=False, reports=available_reports)
+    # 3. Define related manual docs
+    related_docs = [
+        {
+            'path': 'huawei_c_model/architecture.html',
+            'title': '架構設計文件 (Architecture)',
+            'desc': 'Huawei CA 模型的軟體與微架構設計說明。'
+        },
+        {
+            'path': 'huawei_c_model/ca_verify_trace_viewer.html',
+            'title': 'CA Trace 逐拍檢視器 (Trace Viewer)',
+            'desc': 'ca_verify_3x3 情境的 cycle-by-cycle trace 檢視與預期行為敘述。'
+        }
+    ]
+
+    # 4. Render and save index.html
+    index_html_content = render_template('index.html', base_path='./', datatables=False, chart_js=False, reports=available_reports, related_docs=related_docs)
     index_path = os.path.join(dest_dir, 'index.html')
     with open(index_path, 'w', encoding='utf-8') as f:
         f.write(index_html_content)

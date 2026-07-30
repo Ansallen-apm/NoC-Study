@@ -32,4 +32,18 @@
             {% endif %}
         </ul>
     </div>
+
+    {% if related_docs %}
+    <div class="card">
+        <h2>相關技術文件 (Related Documentation)</h2>
+        <ul class="report-list">
+            {% for doc in related_docs %}
+            <li>
+                <a href="{{ base_path }}{{ doc.path }}">{{ doc.title }}</a>
+                <div class="report-desc">{{ doc.desc }}</div>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
 {% endblock %}
