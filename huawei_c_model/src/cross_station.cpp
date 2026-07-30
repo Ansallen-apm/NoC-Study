@@ -116,6 +116,7 @@ void CrossStation::process_direction(const std::vector<RingSlot>& curr_slots, st
             } else {
                 f.deflect_count++;
                 if (sim_ptr) sim_ptr->stats.deflect_count++;
+                if (sim_ptr) sim_ptr->stats.deflect_count++;
                 if (!incoming_slot.e_tag) {
                     for (int k = 0; k < 2; ++k) {
                         if (node_if[k].eject_q.can_reserve()) {
