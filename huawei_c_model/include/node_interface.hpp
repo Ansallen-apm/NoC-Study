@@ -63,7 +63,7 @@ public:
     // doesn't exceed the queue's MAX capacity. We DO NOT check current size
     // to allow reservations when the queue is physically full (decoupled).
     bool can_reserve() const {
-        return (q.size() + reserved_flit_ids.size()) < capacity && reserved_flit_ids.size() < max_reservations;
+        return reserved_flit_ids.size() < max_reservations;
     }
 
     void reserve(uint64_t flit_id) {
