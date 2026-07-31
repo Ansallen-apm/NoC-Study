@@ -98,7 +98,7 @@
 *   [ ] **建立高壓混沌拓撲與流量**：建構多環交會網路，並注入極高頻率的 Uniform Random 流量，搭配極小 Buffer 強迫觸發壅塞。
 *   [ ] **實作動態不變性斷言 (Runtime Invariants)**：在模擬過程中即時驗證「Flit 守恆定理」與「Slot 互斥佔用」。
 *   [ ] **實作死結解除與活躍度檢查 (Liveness Check)**：監控網路中是否存在永久卡死的封包，證明 SWAP 與 Deflection 機制在極端複合狀態下依然有效。
-*   [ ] **量化邊界案例覆蓋率**：統計並印出 Deflection、E-tag、I-tag 與 SWAP 在測試中的觸發總數，證明行為覆蓋充分。
+*   [x] **量化邊界案例覆蓋率**：統計並印出 Deflection、E-tag、I-tag 與 SWAP 在測試中的觸發總數，證明行為覆蓋充分。
 
 ## 階段 3：交叉驗證整合 (Cross-Verification Integration)
 
@@ -191,15 +191,15 @@
 *(基於使用者回報的程式碼審查結果，尚未實作)*
 
 ### Huawei C Model — 嚴重問題
-*   [ ] **恢復 8fc4963 修正 (Chaos Test & RBRG eject bug)**：找回 `test_chaos_stress.cpp`，並修復 `rbrg_l1.cpp` / `rbrg_l2.cpp` 中 eject 判斷從 `curr_slots` 改為 `next_cw_slots`/`next_ccw_slots`，以避免 flit 重複。
-*   [ ] **EjectQueue 大小限制**：在 `EjectQueue::can_reserve()` 加上 `q.size()` 檢查，防止 tiny buffer 時超過設定容量。
-*   [ ] **YAML 缺欄位驗證**：在 `config.cpp` 加上必填欄位檢查與預設值（例如 `RingConfig::stations`），防止未初始化變數導致溢位、除零或記憶體爆量。
-*   [ ] **E-tag / I-tag 真實測試**：補齊 `test_e_tag.cpp` / `test_i_tag.cpp`，移除空殼 `EXPECT_TRUE(true)`，寫入真正測試防餓死與防死鎖邏輯的程式碼。
+*   [x] **恢復 8fc4963 修正 (Chaos Test & RBRG eject bug)**：找回 `test_chaos_stress.cpp`，並修復 `rbrg_l1.cpp` / `rbrg_l2.cpp` 中 eject 判斷從 `curr_slots` 改為 `next_cw_slots`/`next_ccw_slots`，以避免 flit 重複。
+*   [x] **EjectQueue 大小限制**：在 `EjectQueue::can_reserve()` 加上 `q.size()` 檢查，防止 tiny buffer 時超過設定容量。
+*   [x] **YAML 缺欄位驗證**：在 `config.cpp` 加上必填欄位檢查與預設值（例如 `RingConfig::stations`），防止未初始化變數導致溢位、除零或記憶體爆量。
+*   [x] **E-tag / I-tag 真實測試**：補齊 `test_e_tag.cpp` / `test_i_tag.cpp`，移除空殼 `EXPECT_TRUE(true)`，寫入真正測試防餓死與防死鎖邏輯的程式碼。
 
 ### Huawei C Model — 中等問題
-*   [ ] **Latency 統計修正**：確保 `create_cycle` 與 `inject_cycle` 有正確賦值，讓 latency 記錄真實 cycle 而非 hop count。
-*   [ ] **RBRG 轉發邏輯優化**：轉發到對環時，根據目的地作最短路徑選擇，不再永遠「先試 CW」。
-*   [ ] **Release Assert 安全性**：將 release build 下會被拿掉的 assert 替換為強制的錯誤判斷與拋出例外，避免越界存取。
+*   [x] **Latency 統計修正**：確保 `create_cycle` 與 `inject_cycle` 有正確賦值，讓 latency 記錄真實 cycle 而非 hop count。
+*   [x] **RBRG 轉發邏輯優化**：轉發到對環時，根據目的地作最短路徑選擇，不再永遠「先試 CW」。
+*   [x] **Release Assert 安全性**：將 release build 下會被拿掉的 assert 替換為強制的錯誤判斷與拋出例外，避免越界存取。
 
 ### DSE Tools / Python 工具鏈 — 嚴重問題
 *   [ ] **多模型比較圖表硬編碼**：修改 `generate_multi_model_cmp.py`，不要用寫死的 key 比較資料，改為動態讀取 config 以免不同拓樸的結果被錯誤疊加。

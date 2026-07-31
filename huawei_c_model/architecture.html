@@ -738,11 +738,11 @@
             <p>下列為原始 <code>Huawei_CA_model_plan.md</code> 設計文件與當前程式碼庫的實際差異。接手與維護者請務必以此為準，避免錯誤假設：</p>
             <ul>
                 <li><strong><code>StatCollector</code> 是空殼：</strong>計畫中的延遲百分位、bridge 佔用率皆無實作；出貨實驗指標全在 <code>main.cpp</code> 中臨時湊算。</li>
-                <li><strong>時間戳欄位為假：</strong><code>Flit::create_cycle</code>/<code>inject_cycle</code> 皆為死欄位未賦值；<code>eject_cycle</code> 實質上存的是 <code>hop_count</code>，計算出的不是真實的 cycle 延遲。</li>
-                <li><strong>方向選擇形同虛設：</strong>CW/CCW 最短路徑選擇邏輯雖存在，但 <code>HotspotGenerator</code> 硬編碼為 CW，實際實驗中未被觸發。</li>
+                <li><del><strong>時間戳欄位為假：</strong><code>Flit::create_cycle</code>/<code>inject_cycle</code> 皆為死欄位未賦值；<code>eject_cycle</code> 實質上存的是 <code>hop_count</code>，計算出的不是真實的 cycle 延遲。</del> <em>(Round 2 已修正，見 commit 66709c9 — create_cycle/inject_cycle/eject_cycle 現在都使用真實 cycle 數)</em></li>
+                <li><del><strong>方向選擇形同虛設：</strong>CW/CCW 最短路徑選擇邏輯雖存在，但 <code>HotspotGenerator</code> 硬編碼為 CW，實際實驗中未被觸發。</del> <em>(Round 2 已修正，見 commit 66709c9 — 流量產生器與 RBRG_L1 egress 都已改用 choose_direction 最短路徑)</em></li>
                 <li><strong>DRM 並非狀態機：</strong>DRM 實作為一簡單布林開關，無退避延滯機制，只要注入成功一次即退出。</li>
                 <li><strong>SWAP 在 AI 拓樸無效：</strong>由於 SWAP 需要 <code>SwapSink</code>（目前只有 RBRG_L2 實作），在 AI-processor 中即使觸發 DRM 也是靜默無效的操作。</li>
-                <li><strong>RBRG_L2 參數寫死：</strong>其 <code>queue_depth</code> 與 <code>credit_depth</code> 在程式碼中寫死，無法透過 YAML 配置。</li>
+                <li><del><strong>RBRG_L2 參數寫死：</strong>其 <code>queue_depth</code> 與 <code>credit_depth</code> 在程式碼中寫死，無法透過 YAML 配置。</del> <em>(Round 2 已修正，見 commit 66709c9 — queue_depth/credit_depth 已開放 YAML 設定)</em></li>
                 <li><strong>Trace 視覺化限制：</strong>完全不支援 <code>RBRG_L2</code> 或是 Die 對 Die 的拓樸，僅捕捉 L1 Bridge。</li>
                 <li><strong>AI 實驗的「讀寫比」假象：</strong>雖然實驗名稱宣稱測試讀寫比（read/write ratio），但流量產生器無區分 flit type 邏輯，純粹只是重新命名後的注入率掃描。</li>
                 <li><strong>執行入口殘留：</strong><code>Simulator::run()</code> 與 <code>init_topology()</code> 等函數目前皆為測試用殘留代碼，正式實驗手寫了自己的迴圈。</li>
