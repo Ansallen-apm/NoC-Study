@@ -65,6 +65,13 @@
         <label>Traffic:</label> <select id="selTraffic" onchange="updateView()"></select>
         <label>Routing:</label> <select id="selRouting" onchange="updateView()"></select>
         <label>VCs:</label> <select id="selVCs" onchange="updateView()"></select>
+
+        <div style="margin-top: 15px;">
+            <h4>Available Configurations with Complete Data (Click to switch):</h4>
+            <div id="completeDataLinks" style="display: flex; flex-wrap: wrap; gap: 10px;">
+                <!-- Populated by JS -->
+            </div>
+        </div>
     </div>
 
     <!-- Charts and Tables -->
@@ -80,6 +87,9 @@
         <div class="chart-container">
             <canvas id="throughputChart"></canvas>
         </div>
+        <p style="font-size: 0.9em; color: #666; margin-top: 10px;">
+            *註：Python M/D/1 理論模型主要用於延遲 (Latency) 分析，假設在飽和前吞吐量等於注入率，因此不顯示於此圖表中。
+        </p>
     </div>
 
     <div class="card">
@@ -110,10 +120,19 @@
 
 
     <script>
-        const aggregatedData = [{"dim": 2, "models": {"booksim": [{"thr": 0.01, "x": 0.01, "y": 11.9574}, {"thr": 0.05, "x": 0.05, "y": 11.9192}, {"thr": 0.1, "x": 0.1, "y": 12.5949}, {"thr": 0.15, "x": 0.15, "y": 13.202}, {"thr": 0.2, "x": 0.2, "y": 14.1646}, {"thr": 0.25, "x": 0.25, "y": 17.8589}, {"thr": 0.3, "x": 0.3, "y": 32.2339}, {"thr": 0.35, "x": 0.35, "y": 225.184}], "c_model": [], "python_md1": []}, "routing": "xy", "topology": "mesh", "traffic": "uniform", "vcs": 1}, {"dim": 3, "models": {"booksim": [{"thr": 0.01, "x": 0.01, "y": 17.2941}, {"thr": 0.05, "x": 0.05, "y": 16.1121}, {"thr": 0.1, "x": 0.1, "y": 16.9466}, {"thr": 0.15, "x": 0.15, "y": 17.2404}, {"thr": 0.2, "x": 0.2, "y": 19.059}, {"thr": 0.25, "x": 0.25, "y": 21.9908}, {"thr": 0.3, "x": 0.3, "y": 48.2298}, {"thr": 0.35, "x": 0.35, "y": 267.982}], "c_model": [], "python_md1": []}, "routing": "xy", "topology": "mesh", "traffic": "uniform", "vcs": 1}, {"dim": 4, "models": {"booksim": [{"thr": 0.01, "x": 0.01, "y": 19.1613}, {"thr": 0.05, "x": 0.05, "y": 19.8195}, {"thr": 0.1, "x": 0.1, "y": 20.608}, {"thr": 0.15, "x": 0.15, "y": 22.1939}, {"thr": 0.2, "x": 0.2, "y": 25.0048}, {"thr": 0.25, "x": 0.25, "y": 33.9927}, {"thr": 0.3, "x": 0.3, "y": 252.588}], "c_model": [{"thr": 0.80999, "x": 0.05, "y": 7.65022}, {"thr": 1.59518, "x": 0.1, "y": 12.0366}, {"thr": 2.19634, "x": 0.15, "y": 158.301}, {"thr": 2.22129, "x": 0.2, "y": 952.822}, {"thr": 2.20795, "x": 0.25, "y": 1765.15}], "python_md1": []}, "routing": "xy", "topology": "mesh", "traffic": "uniform", "vcs": 1}, {"dim": 5, "models": {"booksim": [{"thr": 0.01, "x": 0.01, "y": 23.2521}, {"thr": 0.05, "x": 0.05, "y": 23.9751}, {"thr": 0.1, "x": 0.1, "y": 25.0072}, {"thr": 0.15, "x": 0.15, "y": 27.4199}, {"thr": 0.2, "x": 0.2, "y": 33.7834}, {"thr": 0.25, "x": 0.25, "y": 249.63}], "c_model": [], "python_md1": []}, "routing": "xy", "topology": "mesh", "traffic": "uniform", "vcs": 1}, {"dim": 2, "models": {"booksim": [{"thr": 0.01, "x": 0.01, "y": 12.766}, {"thr": 0.05, "x": 0.05, "y": 13.4293}, {"thr": 0.1, "x": 0.1, "y": 12.9038}, {"thr": 0.15, "x": 0.15, "y": 13.4156}, {"thr": 0.2, "x": 0.2, "y": 13.3543}, {"thr": 0.25, "x": 0.25, "y": 13.7543}, {"thr": 0.3, "x": 0.3, "y": 13.7529}, {"thr": 0.35, "x": 0.35, "y": 13.8797}, {"thr": 0.4, "x": 0.4, "y": 13.9774}, {"thr": 0.45, "x": 0.45, "y": 14.521}, {"thr": 0.5, "x": 0.5, "y": 15.3997}, {"thr": 0.6, "x": 0.6, "y": 29.0946}, {"thr": 0.7, "x": 0.7, "y": 285.735}], "c_model": [], "python_md1": []}, "routing": "dim_order", "topology": "torus", "traffic": "uniform", "vcs": 2}, {"dim": 6, "models": {"booksim": [{"thr": 0.01, "x": 0.01, "y": 26.6006}, {"thr": 0.05, "x": 0.05, "y": 27.4262}, {"thr": 0.1, "x": 0.1, "y": 29.1403}, {"thr": 0.15, "x": 0.15, "y": 33.1667}, {"thr": 0.2, "x": 0.2, "y": 149.635}], "c_model": [], "python_md1": []}, "routing": "xy", "topology": "mesh", "traffic": "uniform", "vcs": 1}, {"dim": 3, "models": {"booksim": [{"thr": 0.01, "x": 0.01, "y": 15.8382}, {"thr": 0.05, "x": 0.05, "y": 14.9731}, {"thr": 0.1, "x": 0.1, "y": 15.3551}, {"thr": 0.15, "x": 0.15, "y": 15.1245}, {"thr": 0.2, "x": 0.2, "y": 15.6884}, {"thr": 0.25, "x": 0.25, "y": 15.7703}, {"thr": 0.3, "x": 0.3, "y": 15.8581}, {"thr": 0.35, "x": 0.35, "y": 16.3177}, {"thr": 0.4, "x": 0.4, "y": 16.8521}, {"thr": 0.45, "x": 0.45, "y": 17.6918}, {"thr": 0.5, "x": 0.5, "y": 18.5768}, {"thr": 0.6, "x": 0.6, "y": 39.2129}, {"thr": 0.7, "x": 0.7, "y": 315.037}], "c_model": [], "python_md1": []}, "routing": "dim_order", "topology": "torus", "traffic": "uniform", "vcs": 2}, {"dim": 4, "models": {"booksim": [{"thr": 0.01, "x": 0.01, "y": 12.4894}, {"thr": 0.05, "x": 0.05, "y": 12.798}, {"thr": 0.1, "x": 0.1, "y": 13.2203}, {"thr": 0.15, "x": 0.15, "y": 13.356}, {"thr": 0.2, "x": 0.2, "y": 13.5653}, {"thr": 0.25, "x": 0.25, "y": 13.6}, {"thr": 0.3, "x": 0.3, "y": 14.2655}, {"thr": 0.35, "x": 0.35, "y": 14.4262}, {"thr": 0.4, "x": 0.4, "y": 15.2878}, {"thr": 0.45, "x": 0.45, "y": 16.2499}, {"thr": 0.5, "x": 0.5, "y": 18.0369}, {"thr": 0.6, "x": 0.6, "y": 145.211}], "c_model": [], "python_md1": [{"x": 0.05, "y": 25.9357}, {"x": 0.1, "y": 56.9401}, {"x": 0.15, "y": 651.971}, {"x": 0.2, "y": 1112.98}, {"x": 0.25, "y": 1401.11}, {"x": 0.3, "y": 1593.26}, {"x": 0.4, "y": 1814.87}]}, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"dim": 5, "models": {"booksim": [{"thr": 0.01, "x": 0.01, "y": 14.1667}, {"thr": 0.05, "x": 0.05, "y": 14.2933}, {"thr": 0.1, "x": 0.1, "y": 14.414}, {"thr": 0.15, "x": 0.15, "y": 14.3716}, {"thr": 0.2, "x": 0.2, "y": 14.6425}, {"thr": 0.25, "x": 0.25, "y": 15.5429}, {"thr": 0.3, "x": 0.3, "y": 15.9557}, {"thr": 0.35, "x": 0.35, "y": 16.1933}, {"thr": 0.4, "x": 0.4, "y": 18.3996}, {"thr": 0.45, "x": 0.45, "y": 20.2682}, {"thr": 0.5, "x": 0.5, "y": 92.8125}], "c_model": [], "python_md1": []}, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"dim": 4, "models": {"booksim": [{"thr": 0.01, "x": 0.01, "y": 18.7097}, {"thr": 0.05, "x": 0.05, "y": 19.5303}, {"thr": 0.1, "x": 0.1, "y": 19.3719}, {"thr": 0.15, "x": 0.15, "y": 19.4487}, {"thr": 0.2, "x": 0.2, "y": 20.0513}, {"thr": 0.25, "x": 0.25, "y": 20.3661}, {"thr": 0.3, "x": 0.3, "y": 21.1047}, {"thr": 0.35, "x": 0.35, "y": 21.6854}, {"thr": 0.4, "x": 0.4, "y": 23.5238}, {"thr": 0.45, "x": 0.45, "y": 25.351}, {"thr": 0.5, "x": 0.5, "y": 36.4431}, {"thr": 0.6, "x": 0.6, "y": 283.888}], "c_model": [], "python_md1": []}, "routing": "dim_order", "topology": "torus", "traffic": "uniform", "vcs": 2}, {"dim": 6, "models": {"booksim": [{"thr": 0.01, "x": 0.01, "y": 15.5}, {"thr": 0.05, "x": 0.05, "y": 15.6949}, {"thr": 0.1, "x": 0.1, "y": 15.8719}, {"thr": 0.15, "x": 0.15, "y": 16.5795}, {"thr": 0.2, "x": 0.2, "y": 17.0548}, {"thr": 0.25, "x": 0.25, "y": 17.8369}, {"thr": 0.3, "x": 0.3, "y": 18.6373}, {"thr": 0.35, "x": 0.35, "y": 20.7526}, {"thr": 0.4, "x": 0.4, "y": 99.9259}], "c_model": [], "python_md1": []}, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"dim": 7, "models": {"booksim": [{"thr": 0.01, "x": 0.01, "y": 16.5077}, {"thr": 0.05, "x": 0.05, "y": 16.928}, {"thr": 0.1, "x": 0.1, "y": 17.5299}, {"thr": 0.15, "x": 0.15, "y": 18.3486}, {"thr": 0.2, "x": 0.2, "y": 19.2025}, {"thr": 0.25, "x": 0.25, "y": 19.865}, {"thr": 0.3, "x": 0.3, "y": 23.587}, {"thr": 0.35, "x": 0.35, "y": 253.417}], "c_model": [], "python_md1": []}, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"dim": 5, "models": {"booksim": [{"thr": 0.01, "x": 0.01, "y": 21.7149}, {"thr": 0.05, "x": 0.05, "y": 21.8538}, {"thr": 0.1, "x": 0.1, "y": 22.1427}, {"thr": 0.15, "x": 0.15, "y": 22.3191}, {"thr": 0.2, "x": 0.2, "y": 22.9023}, {"thr": 0.25, "x": 0.25, "y": 23.7628}, {"thr": 0.3, "x": 0.3, "y": 24.8401}, {"thr": 0.35, "x": 0.35, "y": 26.8341}, {"thr": 0.4, "x": 0.4, "y": 30.3635}, {"thr": 0.45, "x": 0.45, "y": 138.748}], "c_model": [], "python_md1": []}, "routing": "dim_order", "topology": "torus", "traffic": "uniform", "vcs": 2}, {"dim": 8, "models": {"booksim": [{"thr": 0.01, "x": 0.01, "y": 19.7903}, {"thr": 0.05, "x": 0.05, "y": 19.3159}, {"thr": 0.1, "x": 0.1, "y": 19.747}, {"thr": 0.15, "x": 0.15, "y": 20.3691}, {"thr": 0.2, "x": 0.2, "y": 20.9994}, {"thr": 0.25, "x": 0.25, "y": 23.1729}, {"thr": 0.3, "x": 0.3, "y": 133.73}], "c_model": [], "python_md1": []}, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"dim": 12, "models": {"booksim": [{"thr": 0.01, "x": 0.01, "y": 25.5726}, {"thr": 0.05, "x": 0.05, "y": 25.0218}, {"thr": 0.1, "x": 0.1, "y": 26.6285}, {"thr": 0.15, "x": 0.15, "y": 27.6961}, {"thr": 0.2, "x": 0.2, "y": 223.194}], "c_model": [], "python_md1": []}, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"dim": 16, "models": {"booksim": [{"thr": 0.01, "x": 0.01, "y": 32.3613}, {"thr": 0.05, "x": 0.05, "y": 32.2398}, {"thr": 0.1, "x": 0.1, "y": 34.0225}, {"thr": 0.15, "x": 0.15, "y": 64.4269}, {"thr": 0.2, "x": 0.2, "y": 219.311}], "c_model": [], "python_md1": []}, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"dim": 24, "models": {"booksim": [{"thr": 0.01, "x": 0.01, "y": 43.4573}, {"thr": 0.05, "x": 0.05, "y": 44.2786}, {"thr": 0.1, "x": 0.1, "y": 78.6394}, {"thr": 0.15, "x": 0.15, "y": 279.762}], "c_model": [], "python_md1": []}, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"dim": 6, "models": {"booksim": [{"thr": 0.01, "x": 0.01, "y": 25.5823}, {"thr": 0.05, "x": 0.05, "y": 25.4599}, {"thr": 0.1, "x": 0.1, "y": 25.6197}, {"thr": 0.15, "x": 0.15, "y": 26.4397}, {"thr": 0.2, "x": 0.2, "y": 27.1041}, {"thr": 0.25, "x": 0.25, "y": 29.102}, {"thr": 0.3, "x": 0.3, "y": 32.3896}, {"thr": 0.35, "x": 0.35, "y": 55.8284}, {"thr": 0.4, "x": 0.4, "y": 306.901}], "c_model": [], "python_md1": []}, "routing": "dim_order", "topology": "torus", "traffic": "uniform", "vcs": 2}];
+        const aggregatedData = [{"dim": 2, "models": {"booksim": [{"thr": 0.01, "x": 0.01, "y": 11.9574}, {"thr": 0.05, "x": 0.05, "y": 11.9192}, {"thr": 0.1, "x": 0.1, "y": 12.5949}, {"thr": 0.15, "x": 0.15, "y": 13.202}, {"thr": 0.2, "x": 0.2, "y": 14.1646}, {"thr": 0.25, "x": 0.25, "y": 17.8589}, {"thr": 0.3, "x": 0.3, "y": 32.2339}, {"thr": 0.35, "x": 0.35, "y": 225.184}], "c_model": [], "python_md1": []}, "routing": "xy", "topology": "mesh", "traffic": "uniform", "vcs": 1}, {"dim": 3, "models": {"booksim": [{"thr": 0.01, "x": 0.01, "y": 17.2941}, {"thr": 0.05, "x": 0.05, "y": 16.1121}, {"thr": 0.1, "x": 0.1, "y": 16.9466}, {"thr": 0.15, "x": 0.15, "y": 17.2404}, {"thr": 0.2, "x": 0.2, "y": 19.059}, {"thr": 0.25, "x": 0.25, "y": 21.9908}, {"thr": 0.3, "x": 0.3, "y": 48.2298}, {"thr": 0.35, "x": 0.35, "y": 267.982}], "c_model": [], "python_md1": []}, "routing": "xy", "topology": "mesh", "traffic": "uniform", "vcs": 1}, {"dim": 4, "models": {"booksim": [{"thr": 0.01, "x": 0.01, "y": 19.1613}, {"thr": 0.05, "x": 0.05, "y": 19.8195}, {"thr": 0.1, "x": 0.1, "y": 20.608}, {"thr": 0.15, "x": 0.15, "y": 22.1939}, {"thr": 0.2, "x": 0.2, "y": 25.0048}, {"thr": 0.25, "x": 0.25, "y": 33.9927}, {"thr": 0.3, "x": 0.3, "y": 252.588}], "c_model": [{"thr": 0.80999, "x": 0.05, "y": 7.65022}, {"thr": 1.59518, "x": 0.1, "y": 12.0366}, {"thr": 2.19634, "x": 0.15, "y": 158.301}, {"thr": 2.22129, "x": 0.2, "y": 952.822}, {"thr": 2.20795, "x": 0.25, "y": 1765.15}], "python_md1": []}, "routing": "xy", "topology": "mesh", "traffic": "uniform", "vcs": 1}, {"dim": 5, "models": {"booksim": [{"thr": 0.01, "x": 0.01, "y": 23.2521}, {"thr": 0.05, "x": 0.05, "y": 23.9751}, {"thr": 0.1, "x": 0.1, "y": 25.0072}, {"thr": 0.15, "x": 0.15, "y": 27.4199}, {"thr": 0.2, "x": 0.2, "y": 33.7834}, {"thr": 0.25, "x": 0.25, "y": 249.63}], "c_model": [], "python_md1": []}, "routing": "xy", "topology": "mesh", "traffic": "uniform", "vcs": 1}, {"dim": 2, "models": {"booksim": [{"thr": 0.01, "x": 0.01, "y": 12.766}, {"thr": 0.05, "x": 0.05, "y": 13.4293}, {"thr": 0.1, "x": 0.1, "y": 12.9038}, {"thr": 0.15, "x": 0.15, "y": 13.4156}, {"thr": 0.2, "x": 0.2, "y": 13.3543}, {"thr": 0.25, "x": 0.25, "y": 13.7543}, {"thr": 0.3, "x": 0.3, "y": 13.7529}, {"thr": 0.35, "x": 0.35, "y": 13.8797}, {"thr": 0.4, "x": 0.4, "y": 13.9774}, {"thr": 0.45, "x": 0.45, "y": 14.521}, {"thr": 0.5, "x": 0.5, "y": 15.3997}, {"thr": 0.6, "x": 0.6, "y": 29.0946}, {"thr": 0.7, "x": 0.7, "y": 285.735}], "c_model": [], "python_md1": []}, "routing": "dim_order", "topology": "torus", "traffic": "uniform", "vcs": 2}, {"dim": 6, "models": {"booksim": [{"thr": 0.01, "x": 0.01, "y": 26.6006}, {"thr": 0.05, "x": 0.05, "y": 27.4262}, {"thr": 0.1, "x": 0.1, "y": 29.1403}, {"thr": 0.15, "x": 0.15, "y": 33.1667}, {"thr": 0.2, "x": 0.2, "y": 149.635}], "c_model": [], "python_md1": []}, "routing": "xy", "topology": "mesh", "traffic": "uniform", "vcs": 1}, {"dim": 3, "models": {"booksim": [{"thr": 0.01, "x": 0.01, "y": 15.8382}, {"thr": 0.05, "x": 0.05, "y": 14.9731}, {"thr": 0.1, "x": 0.1, "y": 15.3551}, {"thr": 0.15, "x": 0.15, "y": 15.1245}, {"thr": 0.2, "x": 0.2, "y": 15.6884}, {"thr": 0.25, "x": 0.25, "y": 15.7703}, {"thr": 0.3, "x": 0.3, "y": 15.8581}, {"thr": 0.35, "x": 0.35, "y": 16.3177}, {"thr": 0.4, "x": 0.4, "y": 16.8521}, {"thr": 0.45, "x": 0.45, "y": 17.6918}, {"thr": 0.5, "x": 0.5, "y": 18.5768}, {"thr": 0.6, "x": 0.6, "y": 39.2129}, {"thr": 0.7, "x": 0.7, "y": 315.037}], "c_model": [], "python_md1": []}, "routing": "dim_order", "topology": "torus", "traffic": "uniform", "vcs": 2}, {"dim": 4, "models": {"booksim": [{"thr": 0.01, "x": 0.01, "y": 12.4894}, {"thr": 0.05, "x": 0.05, "y": 12.798}, {"thr": 0.1, "x": 0.1, "y": 13.2203}, {"thr": 0.15, "x": 0.15, "y": 13.356}, {"thr": 0.2, "x": 0.2, "y": 13.5653}, {"thr": 0.25, "x": 0.25, "y": 13.6}, {"thr": 0.3, "x": 0.3, "y": 14.2655}, {"thr": 0.35, "x": 0.35, "y": 14.4262}, {"thr": 0.4, "x": 0.4, "y": 15.2878}, {"thr": 0.45, "x": 0.45, "y": 16.2499}, {"thr": 0.5, "x": 0.5, "y": 18.0369}, {"thr": 0.6, "x": 0.6, "y": 145.211}], "c_model": [], "python_md1": [{"x": 0.05, "y": 25.9357}, {"x": 0.1, "y": 56.9401}, {"x": 0.15, "y": 651.971}, {"x": 0.2, "y": 1112.98}, {"x": 0.25, "y": 1401.11}, {"x": 0.3, "y": 1593.26}, {"x": 0.35, "y": 1722.19}, {"x": 0.4, "y": 1814.87}]}, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"dim": 5, "models": {"booksim": [{"thr": 0.01, "x": 0.01, "y": 14.1667}, {"thr": 0.05, "x": 0.05, "y": 14.2933}, {"thr": 0.1, "x": 0.1, "y": 14.414}, {"thr": 0.15, "x": 0.15, "y": 14.3716}, {"thr": 0.2, "x": 0.2, "y": 14.6425}, {"thr": 0.25, "x": 0.25, "y": 15.5429}, {"thr": 0.3, "x": 0.3, "y": 15.9557}, {"thr": 0.35, "x": 0.35, "y": 16.1933}, {"thr": 0.4, "x": 0.4, "y": 18.3996}, {"thr": 0.45, "x": 0.45, "y": 20.2682}, {"thr": 0.5, "x": 0.5, "y": 92.8125}], "c_model": [], "python_md1": []}, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"dim": 4, "models": {"booksim": [{"thr": 0.01, "x": 0.01, "y": 18.7097}, {"thr": 0.05, "x": 0.05, "y": 19.5303}, {"thr": 0.1, "x": 0.1, "y": 19.3719}, {"thr": 0.15, "x": 0.15, "y": 19.4487}, {"thr": 0.2, "x": 0.2, "y": 20.0513}, {"thr": 0.25, "x": 0.25, "y": 20.3661}, {"thr": 0.3, "x": 0.3, "y": 21.1047}, {"thr": 0.35, "x": 0.35, "y": 21.6854}, {"thr": 0.4, "x": 0.4, "y": 23.5238}, {"thr": 0.45, "x": 0.45, "y": 25.351}, {"thr": 0.5, "x": 0.5, "y": 36.4431}, {"thr": 0.6, "x": 0.6, "y": 283.888}], "c_model": [], "python_md1": []}, "routing": "dim_order", "topology": "torus", "traffic": "uniform", "vcs": 2}, {"dim": 6, "models": {"booksim": [{"thr": 0.01, "x": 0.01, "y": 15.5}, {"thr": 0.05, "x": 0.05, "y": 15.6949}, {"thr": 0.1, "x": 0.1, "y": 15.8719}, {"thr": 0.15, "x": 0.15, "y": 16.5795}, {"thr": 0.2, "x": 0.2, "y": 17.0548}, {"thr": 0.25, "x": 0.25, "y": 17.8369}, {"thr": 0.3, "x": 0.3, "y": 18.6373}, {"thr": 0.35, "x": 0.35, "y": 20.7526}, {"thr": 0.4, "x": 0.4, "y": 99.9259}], "c_model": [], "python_md1": []}, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"dim": 7, "models": {"booksim": [{"thr": 0.01, "x": 0.01, "y": 16.5077}, {"thr": 0.05, "x": 0.05, "y": 16.928}, {"thr": 0.1, "x": 0.1, "y": 17.5299}, {"thr": 0.15, "x": 0.15, "y": 18.3486}, {"thr": 0.2, "x": 0.2, "y": 19.2025}, {"thr": 0.25, "x": 0.25, "y": 19.865}, {"thr": 0.3, "x": 0.3, "y": 23.587}, {"thr": 0.35, "x": 0.35, "y": 253.417}], "c_model": [], "python_md1": []}, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"dim": 5, "models": {"booksim": [{"thr": 0.01, "x": 0.01, "y": 21.7149}, {"thr": 0.05, "x": 0.05, "y": 21.8538}, {"thr": 0.1, "x": 0.1, "y": 22.1427}, {"thr": 0.15, "x": 0.15, "y": 22.3191}, {"thr": 0.2, "x": 0.2, "y": 22.9023}, {"thr": 0.25, "x": 0.25, "y": 23.7628}, {"thr": 0.3, "x": 0.3, "y": 24.8401}, {"thr": 0.35, "x": 0.35, "y": 26.8341}, {"thr": 0.4, "x": 0.4, "y": 30.3635}, {"thr": 0.45, "x": 0.45, "y": 138.748}], "c_model": [], "python_md1": []}, "routing": "dim_order", "topology": "torus", "traffic": "uniform", "vcs": 2}, {"dim": 8, "models": {"booksim": [{"thr": 0.01, "x": 0.01, "y": 19.7903}, {"thr": 0.05, "x": 0.05, "y": 19.3159}, {"thr": 0.1, "x": 0.1, "y": 19.747}, {"thr": 0.15, "x": 0.15, "y": 20.3691}, {"thr": 0.2, "x": 0.2, "y": 20.9994}, {"thr": 0.25, "x": 0.25, "y": 23.1729}, {"thr": 0.3, "x": 0.3, "y": 133.73}], "c_model": [], "python_md1": []}, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"dim": 12, "models": {"booksim": [{"thr": 0.01, "x": 0.01, "y": 25.5726}, {"thr": 0.05, "x": 0.05, "y": 25.0218}, {"thr": 0.1, "x": 0.1, "y": 26.6285}, {"thr": 0.15, "x": 0.15, "y": 27.6961}, {"thr": 0.2, "x": 0.2, "y": 223.194}], "c_model": [], "python_md1": []}, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"dim": 16, "models": {"booksim": [{"thr": 0.01, "x": 0.01, "y": 32.3613}, {"thr": 0.05, "x": 0.05, "y": 32.2398}, {"thr": 0.1, "x": 0.1, "y": 34.0225}, {"thr": 0.15, "x": 0.15, "y": 64.4269}, {"thr": 0.2, "x": 0.2, "y": 219.311}], "c_model": [], "python_md1": []}, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"dim": 24, "models": {"booksim": [{"thr": 0.01, "x": 0.01, "y": 43.4573}, {"thr": 0.05, "x": 0.05, "y": 44.2786}, {"thr": 0.1, "x": 0.1, "y": 78.6394}, {"thr": 0.15, "x": 0.15, "y": 279.762}], "c_model": [], "python_md1": []}, "routing": "dim_order", "topology": "ring", "traffic": "uniform", "vcs": 2}, {"dim": 6, "models": {"booksim": [{"thr": 0.01, "x": 0.01, "y": 25.5823}, {"thr": 0.05, "x": 0.05, "y": 25.4599}, {"thr": 0.1, "x": 0.1, "y": 25.6197}, {"thr": 0.15, "x": 0.15, "y": 26.4397}, {"thr": 0.2, "x": 0.2, "y": 27.1041}, {"thr": 0.25, "x": 0.25, "y": 29.102}, {"thr": 0.3, "x": 0.3, "y": 32.3896}, {"thr": 0.35, "x": 0.35, "y": 55.8284}, {"thr": 0.4, "x": 0.4, "y": 306.901}], "c_model": [], "python_md1": []}, "routing": "dim_order", "topology": "torus", "traffic": "uniform", "vcs": 2}];
 
         let latencyChartObj = null;
         let throughputChartObj = null;
+
+        function setFilters(t, d, tr, r, v) {
+            document.getElementById('selTopo').value = t;
+            document.getElementById('selDim').value = d;
+            document.getElementById('selTraffic').value = tr;
+            document.getElementById('selRouting').value = r;
+            document.getElementById('selVCs').value = v;
+            updateView();
+        }
 
         function initFilters() {
             const topos = new Set();
@@ -130,21 +149,68 @@
                 vcs.add(d.vcs);
             });
 
-            const populate = (id, set) => {
+            // For numbers, sort numerically; for strings, sort alphabetically.
+            const populate = (id, set, isNumeric) => {
                 const el = document.getElementById(id);
                 el.innerHTML = '';
-                Array.from(set).sort().forEach(v => {
+                let arr = Array.from(set);
+                if (isNumeric) {
+                    arr.sort((a, b) => parseFloat(a) - parseFloat(b));
+                } else {
+                    arr.sort();
+                }
+                arr.forEach(v => {
                     let opt = document.createElement("option");
                     opt.value = v; opt.text = v;
                     el.appendChild(opt);
                 });
             };
 
-            populate('selTopo', topos);
-            populate('selDim', dims);
-            populate('selTraffic', traffics);
-            populate('selRouting', routings);
-            populate('selVCs', vcs);
+            populate('selTopo', topos, false);
+            populate('selDim', dims, true);
+            populate('selTraffic', traffics, false);
+            populate('selRouting', routings, false);
+            populate('selVCs', vcs, true);
+
+            // Set default selections to the first record in aggregatedData, if it exists
+            if (aggregatedData && aggregatedData.length > 0) {
+                const defaultRecord = aggregatedData[0];
+                document.getElementById('selTopo').value = defaultRecord.topology;
+                document.getElementById('selDim').value = defaultRecord.dim;
+                document.getElementById('selTraffic').value = defaultRecord.traffic;
+                document.getElementById('selRouting').value = defaultRecord.routing;
+                document.getElementById('selVCs').value = defaultRecord.vcs;
+            }
+
+            // Populate links for configurations with complete data (all 3 models)
+            const linksContainer = document.getElementById('completeDataLinks');
+            linksContainer.innerHTML = '';
+            let completeCount = 0;
+
+            aggregatedData.forEach(d => {
+                const hasBS = d.models && d.models.booksim && d.models.booksim.length > 0;
+                const hasCM = d.models && d.models.c_model && d.models.c_model.length > 0;
+                const hasPM = d.models && d.models.python_md1 && d.models.python_md1.length > 0;
+
+                if (hasBS && hasCM && hasPM) {
+                    completeCount++;
+                    const btn = document.createElement('button');
+                    btn.innerText = `${d.topology}, Dim:${d.dim}, Traffic:${d.traffic}, Routing:${d.routing}, VCs:${d.vcs}`;
+                    btn.style.padding = "5px 10px";
+                    btn.style.cursor = "pointer";
+                    btn.style.border = "1px solid #007bff";
+                    btn.style.backgroundColor = "#e7f1ff";
+                    btn.style.color = "#007bff";
+                    btn.style.borderRadius = "4px";
+
+                    btn.onclick = () => setFilters(d.topology, d.dim, d.traffic, d.routing, d.vcs);
+                    linksContainer.appendChild(btn);
+                }
+            });
+
+            if (completeCount === 0) {
+                linksContainer.innerHTML = '<span style="color: #666; font-style: italic;">No configurations with complete three-way data found.</span>';
+            }
         }
 
         function updateView() {
